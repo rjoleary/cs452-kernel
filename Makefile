@@ -33,13 +33,13 @@ build/%.s: src/%.c
 build/%.o: build/%.s
 	$(AS) $(ASFLAGS) -o $@ $<
 
-build/kernel.elf: $(OBJ) orex.ld src/kernel/buildstr.c
-	$(XCC) -S $(CFLAGS) -o build/kernel/buildstr.s src/kernel/buildstr.c
-	$(AS) $(ASFLAGS) -o build/kernel/buildstr.o src/kernel/buildstr.s
+build/kernel.elf: $(OBJ) orex.ld
+	$(XCC) -S $(CFLAGS) -o build/buildstr.s buildstr.c
+	$(AS) $(ASFLAGS) -o build/buildstr.o src/buildstr.s
 	$(LD) $(LDFLAGS) -o build/kernel.elf $(OBJ) -lgcc
 
 clean:
 	-rm -rf build/*
 
 upload: build/kernel.elf
-	cp build/kernel.elf /u/cs452/tftp/ARM/temp/coldwell.elf
+	cp build/kernel.elf /u/cs452/tftp/ARM/$(USER)/coldwell.elf
