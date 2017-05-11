@@ -39,13 +39,13 @@ enum RunState {
 
 // Task descriptor
 struct Td {
-    Tid tid;        // task id
-    Tid ptid;       // parent's task id
-    Priority pri;   // priority
-    struct Td *nextReady;  // next TD in the ready queue, or NULL
-    struct Td *sendReady;  // next TD in the send queue, or NULL
-    enum RunState state; // current run state
-    void *stack;    // current stack pointer
+    Tid tid;              // task id (-1 if td is unallocated)
+    Tid ptid;             // parent's task id
+    Priority pri;         // priority
+    struct Td *nextReady; // next TD in the ready queue, or NULL
+    struct Td *sendReady; // next TD in the send queue, or NULL
+    enum RunState state;  // current run state
+    void *stack;          // current stack pointer
 };
 
 #endif // TD_H__INCLUDED
