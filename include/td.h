@@ -12,29 +12,29 @@ enum RunState {
     // The task that has just run, is running, or is about to run. Scheduling,
     // which happens near the end of kernel processing, changes the active
     // task. On a single processor only one task can be active at a time.
-    Active = 0,
+    ACTIVE = 0,
 
     // The task is ready to be activated.
-    Ready,
+    READY,
 
     // The task will never again run, but still retains its resources: memory,
     // TD, etc.
-    Zombie,
+    ZOMBIE,
 
     // The task has executed Receive, and is waiting for a task to send to it.
-    SendBlocked,
+    SEND_BLOCKED,
 
     // The task has executed Send, and is waiting for the message to be
     // received.
-    ReceiveBlocked,
+    RECEIVE_BLOCKED,
 
     // The task have executed Send and its message has been received, but it
     // has not received a reply.
-    ReplyBlocked,
+    REPLY_BLOCKED,
 
     // The task has executed AwaitEvent, but the event on which it is waiting
     // has not occurred.
-    EventBlocked,
+    EVENT_BLOCKED,
 };
 
 // Task descriptor
