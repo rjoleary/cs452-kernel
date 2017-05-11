@@ -153,7 +153,7 @@ int bwa2d( char ch ) {
 
 char bwa2i( char ch, const char **src, int base, int *nump ) {
 	int num, digit;
-	char *p;
+	const char *p;
 
 	p = *src; num = 0;
 	while( ( digit = bwa2d( ch ) ) >= 0 ) {

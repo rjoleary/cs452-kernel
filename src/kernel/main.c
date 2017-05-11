@@ -7,6 +7,8 @@ int main() {
     const char* buildstr();
     bwputstr(COM2, buildstr());
     bwputstr(COM2, "\r\nHello World!\r\n");
+    unsigned int num = 3;
+    bwprintf(COM2, "%d", __builtin_clz(num));
 
     initTds();
 
