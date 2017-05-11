@@ -61,8 +61,8 @@
 	#define LBEN_MASK	0x80	// loopback 
 #define UART_FLAG_OFFSET	0x18	// low 8 bits
 	#define CTS_MASK	0x1
-	#define DCD_MASK	0x2
-	#define DSR_MASK	0x4
+	#define DSR_MASK	0x2
+	#define DCD_MASK	0x4
 	#define TXBUSY_MASK	0x8
 	#define RXFE_MASK	0x10	// Receive buffer empty
 	#define TXFF_MASK	0x20	// Transmit buffer full
