@@ -105,7 +105,7 @@ int bwputr( int channel, unsigned int reg ) {
 	return bwputc( channel, ' ' );
 }
 
-int bwputstr( int channel, char *str ) {
+int bwputstr( int channel, const char *str ) {
 	while( *str ) {
 		if( bwputc( channel, *str ) < 0 ) return -1;
 		str++;
@@ -151,7 +151,7 @@ int bwa2d( char ch ) {
 	return -1;
 }
 
-char bwa2i( char ch, char **src, int base, int *nump ) {
+char bwa2i( char ch, const char **src, int base, int *nump ) {
 	int num, digit;
 	char *p;
 
@@ -191,7 +191,7 @@ void bwi2a( int num, char *bf ) {
 	bwui2a( num, 10, bf );
 }
 
-void bwformat ( int channel, char *fmt, va_list va ) {
+void bwformat ( int channel, const char *fmt, va_list va ) {
 	char bf[12];
 	char ch, lz;
 	int w;
@@ -246,7 +246,7 @@ void bwformat ( int channel, char *fmt, va_list va ) {
 	}
 }
 
-void bwprintf( int channel, char *fmt, ... ) {
+void bwprintf( int channel, const char *fmt, ... ) {
     va_list va;
 
     va_start(va,fmt);
