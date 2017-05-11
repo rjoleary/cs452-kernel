@@ -2,7 +2,7 @@
 #define SWAP_H__INCLUDED
 
 #define MAKE_SWAP(T, Name)					\
-inline void Swap##Name(T *lhs, T *rhs) {	\
+inline void swap##Name(T *lhs, T *rhs) {	\
 	T temp = *lhs;							\
 	*lhs = *rhs;							\
 	*rhs = temp;							\
