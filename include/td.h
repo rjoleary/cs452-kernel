@@ -48,4 +48,11 @@ struct Td {
     void *stack;          // current stack pointer
 };
 
+// Initialize task descriptors.
+void initTds();
+
+// Return a Td or NULL if Td does not exist.
+// Runtime: O(n)
+struct Td* getTdByTid(Tid tid);
+
 #endif // TD_H__INCLUDED
