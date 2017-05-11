@@ -8,7 +8,7 @@
 // The first three of these states are needed for task creation; the next three
 // are needed for message passing; and the seventh is needed for hardware
 // interrupts.
-typedef enum {
+enum RunState {
     // The task that has just run, is running, or is about to run. Scheduling,
     // which happens near the end of kernel processing, changes the active
     // task. On a single processor only one task can be active at a time.
@@ -35,17 +35,17 @@ typedef enum {
     // The task has executed AwaitEvent, but the event on which it is waiting
     // has not occurred.
     EventBlocked,
-} RunState;
+};
 
 // Task descriptor
-typedef struct {
+struct Td {
     Tid tid;        // task id
     Tid ptid;       // parent's task id
     Priority pri;   // priority
-    Td *nextReady;  // next TD in the ready queue, or NULL
-    Td *sendReady;  // next TD in the send queue, or NULL
-    RunState state; // current run state
+    struct Td *nextReady;  // next TD in the ready queue, or NULL
+    struct Td *sendReady;  // next TD in the send queue, or NULL
+    enum RunState state; // current run state
     void *stack;    // current stack pointer
-} Td;
+};
 
 #endif // TD_H__INCLUDED
