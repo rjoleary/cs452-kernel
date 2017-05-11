@@ -42,4 +42,4 @@ clean:
 	-rm -rf build/*
 
 upload: build/kernel.elf
-	cp build/kernel.elf /u/cs452/tftp/ARM/rj2olear/kernel.elf
+	cp build/kernel.elf /u/cs452/tftp/ARM/temp/coldwell.elf
