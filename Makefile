@@ -34,8 +34,8 @@ build/%.o: build/%.s
 	$(AS) $(ASFLAGS) -o $@ $<
 
 build/kernel.elf: $(OBJ) orex.ld
-	$(XCC) -S $(CFLAGS) -o build/buildstr.s buildstr.c
-	$(AS) $(ASFLAGS) -o build/buildstr.o src/buildstr.s
+	$(XCC) -S $(CFLAGS) -o build/kernel/buildstr.s src/kernel/buildstr.c
+	$(AS) $(ASFLAGS) -o build/kernel/buildstr.o build/kernel/buildstr.s
 	$(LD) $(LDFLAGS) -o build/kernel.elf $(OBJ) -lgcc
 
 clean:
