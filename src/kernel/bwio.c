@@ -56,7 +56,7 @@ int bwsetspeed( int channel, int speed ) {
 		return 0;
 	case 2400:
 		*high = 0x0;
-		*low = 0x90;
+		*low = 0xBF;
 		return 0;
 	default:
 		return -1;
@@ -201,12 +201,11 @@ void bwformat ( int channel, char *fmt, va_list va ) {
 		if ( ch != '%' )
 			bwputc( channel, ch );
 		else {
-			lz = 0; w = 0;
+			lz = ' '; w = 0;
 			ch = *(fmt++);
 			switch ( ch ) {
 			case '0':
-				lz = 1; ch = *(fmt++);
-				break;
+				lz = '0'; ch = *(fmt++);
 			case '1':
 			case '2':
 			case '3':
@@ -248,10 +247,10 @@ void bwformat ( int channel, char *fmt, va_list va ) {
 }
 
 void bwprintf( int channel, char *fmt, ... ) {
-        va_list va;
+    va_list va;
 
-        va_start(va,fmt);
-        bwformat( channel, fmt, va );
-        va_end(va);
+    va_start(va,fmt);
+    bwformat( channel, fmt, va );
+    va_end(va);
 }
 
