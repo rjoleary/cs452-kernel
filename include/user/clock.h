@@ -12,7 +12,7 @@
 //   is not guaranteed because the caller may have to wait on higher priority
 //   tasks.
 //
-//   delay is (almost) identical to Pass if ticks is zero or negative.
+//   delay is (almost) identical to pass if ticks is zero or negative.
 //
 //   The size of a tick is normally application dependent. In CS452 this term
 //   it is 10 milliseconds.
