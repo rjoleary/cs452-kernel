@@ -3,6 +3,8 @@
 #ifndef USER_INT_H__INCLUDED
 #define USER_INT_H__INCLUDED
 
+#include "syscall.h"
+
 // awaitEvent - wait for an external event.
 //
 // Description:
@@ -13,6 +15,6 @@
 //   >-1: volatile data, in the form of a positive integer.
 //   -ERR_INVID: invalid event.
 //   -ERR_CORRUPT: corrupted volatile data.
-int awaitEvent(int eventid);
+int awaitEvent(int eventid) SYSCALL(SYS_AWAITEVENT)
 
 #endif // USER_INT_H__INCLUDED
