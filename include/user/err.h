@@ -9,7 +9,7 @@ enum Error {
     ERR_INVID,
     ERR_BADITC,
     ERR_CORRUPT,
-    ERR_UNKN, // keep as the last error
+    ERR_UNKN,
 };
 
 const char *err2str(int err);
