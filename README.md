@@ -17,3 +17,12 @@ When the kernel is built, the compiler's source directory is set to
 
 When a user task is built, for example `test`, the source directory is
 `src/test/` and the include directory is `include/user/`.
+
+## Style Guide
+
+- Defines / macros: `UPPER_SNAKE_CASE`
+- Enum values: `UPPER_SNAKE_CASE`
+- Enums: `UpperCamelCase`
+- Functions: `lowerCamelCase`
+- Types: `UpperCamelCase`
+- Variables: `lowerCamelCase`
