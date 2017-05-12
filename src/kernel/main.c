@@ -63,15 +63,14 @@ int main() {
     initTask1(&tds[0], userStacks[0]);
     initStack(initMain, &tds[0].sp);
     initScheduler(&scheduler);
+    readyProcess(&scheduler, &tds[0]);
 
     volatile void **SVC_VECTOR = (void*)0x28;
     void kernel_entry(void);
     *SVC_VECTOR = &kernel_entry;
 
     for (int i = 0; i < 4; ++i) {
-        // TODO: scheduler
-        //struct Td* active = getNextProcess(&scheduler);
-        struct Td* active = &tds[0];
+        struct Td* active = getNextProcess(&scheduler);
         bwprintf(COM2, "Context switching to TID %d\r\n", active->tid);
 
         // Context switch
