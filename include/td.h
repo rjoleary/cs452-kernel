@@ -49,10 +49,10 @@ struct Td {
 };
 
 // Initialize task descriptors.
-void initTds();
+void initTds(struct Td *tds);
 
 // Return a Td or NULL if Td does not exist.
 // Runtime: O(n)
-struct Td* getTdByTid(Tid tid);
+struct Td* getTdByTid(struct Td *tds, Tid tid);
 
 #endif // TD_H__INCLUDED

@@ -10,12 +10,6 @@ struct Td *schedule() {
     return 0;
 }
 
-void activate(struct Td *td, struct Request *req) {
-}
-
-void handle(const struct Request *req) {
-}
-
 void svcHandle(unsigned id) {
     // SWI immediate value is only 24bits.
     id &= 0xffffff;
@@ -30,30 +24,18 @@ int main() {
     const char* buildstr(void);
     bwprintf(COM2, "%s\r\n", buildstr());
 
-    initTds();
-
-
-
-
+    struct Td tds[NUM_TD];
+    initTds(&tds);
+    struct Scheduler scheduler;
+    initScheduler(&scheduler);
 
     volatile void **SVC_VECTOR = (void*)0x28;
     void kernel_entry(void);
     *SVC_VECTOR = &kernel_entry;
 
-    myTid();
+    for (int i = 0; i < 4; ++i) {
+        struct Td* active = getNextProcess(scheduler);
 
-
-
-
-
-    PANIC("done");
-
-    struct Request request;
-    struct Td *active;
-    while (1) {
-        active = schedule();
-        activate(active, &request);
-        handle(&request);
     }
 
     return 0;

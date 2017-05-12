@@ -1,15 +1,13 @@
 #include <def.h>
 #include <td.h>
 
-static struct Td tds[NUM_TD];
-
-void initTds() {
+void initTds(struct Td *tds) {
     for (int i = 0; i < NUM_TD; i++) {
         tds[i].tid = -1;
     }
 }
 
-struct Td* getTdByTid(Tid tid) {
+struct Td* getTdByTid(struct Td *tds, Tid tid) {
     for (int i = 0; i < NUM_TD; i++) {
         if (tds[i].tid == tid) {
             return &tds[i];
