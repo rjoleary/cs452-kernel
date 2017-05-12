@@ -1,7 +1,20 @@
-#include <def.h>
-#include <td.h>
 #include <bwio.h>
+#include <def.h>
 #include <panic.h>
+#include <req.h>
+#include <td.h>
+
+struct Td *schedule() {
+    // TODO
+    return 0;
+}
+
+void activate(struct Td *td, struct Request *req) {
+}
+
+void handle(const struct Request *req) {
+    // TODO
+}
 
 int main() {
     bwsetspeed(COM2, 115200);
@@ -16,7 +29,13 @@ int main() {
 
     initTds();
 
-    PANIC("THIS IS A TEST");
+    struct Request request;
+    struct Td *active;
+    while (1) {
+        active = schedule();
+        activate(active, &request);
+        handle(&request);
+    }
 
     return 0;
 }
