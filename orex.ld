@@ -22,6 +22,9 @@ _BssStart = . ;
 _BssEnd = . ;
 } >ram
 
+/* Needed for global variables containing pointers to other global variables. */
+.data.rel.local : { *(.data.rel.local*) } >ram
+
 text : /* The actual instructions. */
 {
 *(.text)
