@@ -8,6 +8,7 @@ void initTds(struct Td *tds) {
 }
 
 struct Td* getTdByTid(struct Td *tds, Tid tid) {
+    // TODO: may be inefficient
     for (int i = 0; i < NUM_TD; i++) {
         if (tds[i].tid == tid) {
             return &tds[i];

@@ -45,7 +45,7 @@ struct Td {
     struct Td *nextReady; // next TD in the ready queue, or NULL
     struct Td *sendReady; // next TD in the send queue, or NULL
     enum RunState state;  // current run state
-    void *stack;          // current stack pointer
+    void *sp;             // current stack pointer
 };
 
 // Initialize task descriptors.
