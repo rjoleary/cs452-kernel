@@ -3,6 +3,7 @@
 #include <panic.h>
 #include <req.h>
 #include <td.h>
+#include <user/task.h>
 
 struct Td *schedule() {
     // TODO
@@ -13,21 +14,36 @@ void activate(struct Td *td, struct Request *req) {
 }
 
 void handle(const struct Request *req) {
-    // TODO
+}
+
+void svcHandle() {
+    bwputstr(COM2, "HANDLE\r\n");
+    PANIC("HANDLE");
 }
 
 int main() {
+    // Print the build string (date + time).
     bwsetspeed(COM2, 115200);
     bwsetfifo(COM2, OFF);
-
-    // Print the build string (date + time).
     const char* buildstr();
-    bwputstr(COM2, buildstr());
-    bwputstr(COM2, "\r\nHello World!\r\n");
-    unsigned int num = 3;
-    bwprintf(COM2, "%d", __builtin_clz(num));
+    bwprintf(COM2, "%s\r\n", buildstr());
 
     initTds();
+
+
+
+
+
+    volatile void **SVC_VECTOR = (void*)0x28;
+    *SVC_VECTOR = &svcHandle;
+
+    myTid();
+
+
+
+
+
+    PANIC("done");
 
     struct Request request;
     struct Td *active;

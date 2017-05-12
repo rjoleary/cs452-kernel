@@ -4,6 +4,7 @@
 #define USER_TASK_H__INCLUDED
 
 #include "types.h"
+#include "syscall.h"
 
 // create - instantiate a task.
 //
@@ -29,7 +30,14 @@ Tid create(Priority priority, void (*code)());
 //
 // Returns:
 //   tid: the positive integer task id of the task that calls it.
-Tid myTid();
+Tid myTid() {
+    asm volatile (
+        "swi %0"
+        :
+        : "i" (SYS_MYTID)
+    );
+    return -1;
+}
 
 // myParentTid - return the task id of the task that created the calling task.
 //
