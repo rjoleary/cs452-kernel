@@ -11,8 +11,8 @@
 //
 // Returns:
 //   >-1: volatile data, in the form of a positive integer.
-//   ERR_INVID: invalid event.
-//   ERR_CORRUPT: corrupted volatile data.
+//   -ERR_INVID: invalid event.
+//   -ERR_CORRUPT: corrupted volatile data.
 int awaitEvent(int eventid);
 
 #endif // USER_INT_H__INCLUDED
