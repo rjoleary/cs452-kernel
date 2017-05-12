@@ -17,7 +17,8 @@ ASFLAGS	= -mcpu=arm920t -mapcs-32
 LDFLAGS = -init main -Map build/kernel.map -N -T orex.ld -L/u/wbcowan/gnuarm-4.0.2/lib/gcc/arm-elf/4.0.2
 
 SRC = $(wildcard src/*/*.c)
-OBJ = $(patsubst src/%.c, build/%.o, $(SRC))
+ASM = $(wildcard src/*/*.s)
+OBJ = $(patsubst src/%.c, build/%.o, $(SRC)) $(patsubst src/%.s, build/%.o, $(ASM))
 
 .PHONY: all builddir clean upload
 
@@ -31,6 +32,10 @@ build/%.s: src/%.c
 	$(XCC) -S $(CFLAGS) -o $@ $<
 
 build/%.o: build/%.s
+	$(AS) $(ASFLAGS) -o $@ $<
+
+build/%.o: src/%.s
+	mkdir -p $(dir $@)
 	$(AS) $(ASFLAGS) -o $@ $<
 
 build/kernel.elf: $(OBJ) orex.ld
