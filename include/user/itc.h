@@ -33,9 +33,9 @@
 //   >-1: The size of the message responded by the replying task. The message
 //        is less than or equal to the size of the buffer provided for it.
 //        Longer responses are truncated.
-//   -1: The reply message was truncated.
-//   -2: The task id supplied is not the task id of an existing task.
-//   -3: The send-receive-reply transaction could not be completed.
+//   ERR_TRUNC: The reply message was truncated.
+//   ERR_INVID: The task id supplied is not the task id of an existing task.
+//   ERR_BADITC: The send-receive-reply transaction could not be completed.
 int send(Tid tid, char *msg, int msglen, char *reply, int rplen);
 
 // receive - receive a message from a task.
@@ -58,7 +58,7 @@ int send(Tid tid, char *msg, int msglen, char *reply, int rplen);
 // Returns:
 //   >-1: The size of the message received, which is less than or equal to the
 //        size of the message buffer supplied. Longer messages are truncated.
-//   -1: The message is truncated.
+//   ERR_TRUNC: The message is truncated.
 int receive(Tid *tid, char *msg, int msglen);
 
 // reply - reply to a message.
@@ -71,10 +71,10 @@ int receive(Tid *tid, char *msg, int msglen);
 //   priority the sender runs first.
 //
 // Returns
-//   0: The reply succeeded.
-//   -1: The message was truncated.
-//   -2: The task id is not the task id of an existing task.
-//   -3: The task id is not the task id of a reply blocked task.
+//   ERR_OK: The reply succeeded.
+//   ERR_TRUNC: The message was truncated.
+//   ERR_INVID: The task id is not the task id of an existing task.
+//   ERR_BADITC: The task id is not the task id of a reply blocked task.
 int reply(Tid tid, char *reply, int rplen);
 
 #endif // USER_ITC_H__INCLUDED

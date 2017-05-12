@@ -20,9 +20,9 @@
 //   delay is actually a wrapper for a send to the clock server.
 //
 // Returns:
-//   0: Success.
-//   -1: The clock server task id is invalid.
-//   -2: The delay was zero or negative.
+//   ERR_OK: Success.
+//   ERR_INVID: The clock server task id is invalid.
+//   ERR_BADARG: The delay was zero or negative.
 int delay(Tid tid, int ticks);
 
 // time - give the time since clock server start up.
@@ -39,7 +39,7 @@ int delay(Tid tid, int ticks);
 //
 // Returns:
 //   >-1: The time in ticks since the clock server initialized.
-//   -1: The clock server task id is invalid.
+//   ERR_INVID: The clock server task id is invalid.
 int time(Tid tid);
 
 // delayUntil - wait until a time.
@@ -59,9 +59,9 @@ int time(Tid tid);
 //   delayUntil is actually a wrapper for a send to the clock server.
 //
 // Returns;
-//   0: Success.
-//   -1: The clock server task id is invalid.
-//   -2: The delay was zero or negative.
+//   ERR_OK: Success.
+//   ERR_INVID: The clock server task id is invalid.
+//   ERR_BADARG: The delay was zero or negative.
 int delayUntil(Tid tid, int ticks);
 
 #endif // USER_CLOCK_H__INCLUDED

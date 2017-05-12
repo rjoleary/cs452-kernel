@@ -28,8 +28,8 @@ int getc(Tid tid, int uart);
 //   putc is actually a wrapper for a send to the serial server.
 //
 // Returns:
-//   0 Success.
-//   -1 The server task id is not the task id of an existing task.
+//   ERR_OK: Success.
+//   ERR_INVID: The server task id is not the task id of an existing task.
 int putc(Tid tid, int uart, char ch);
 
 #endif // USER_IO_H__INCLUDED

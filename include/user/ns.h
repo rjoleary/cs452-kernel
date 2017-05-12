@@ -21,14 +21,15 @@
 //   registerAs is actually a wrapper covering a send to the name server.
 //
 // Returns:
-//   0: Success.
-//   -1: The nameserver task id inside the wrapper is invalid.
+//   ERR_OK: Success.
+//   ERR_INVID: The nameserver task id inside the wrapper is invalid.
 int registerAs(char *name);
 
 // whoIs - query the nameserver.
 //
 // Description:
-//   whoIs asks the nameserver for the task id of the task that is registered under the given name.
+//   whoIs asks the nameserver for the task id of the task that is registered
+//   under the given name.
 //
 //   Whether whoIs blocks waiting for a registration or returns with an error
 //   if no task is registered under the given name is implementation-dependent.
@@ -41,7 +42,7 @@ int registerAs(char *name);
 //
 // Returns:
 //   tid: The task id of the registered task.
-//   -1: The nameserver task id inside the wrapper is invalid.
+//   ERR_INVID: The nameserver task id inside the wrapper is invalid.
 int whoIs(char *name);
 
 #endif // USER_NS_H__INCLUEDED
