@@ -1,5 +1,5 @@
-#include "minheap.h"
-#include "swap.h"
+#include <minheap.h>
+#include <swap.h>
 
 #define MINHEAP_ROOT 0
 

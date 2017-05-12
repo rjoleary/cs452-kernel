@@ -41,7 +41,7 @@ enum RunState {
 struct Td {
     Tid tid;              // task id (-1 if td is unallocated)
     Tid ptid;             // parent's task id
-    Priority pri;         // priority
+    Priority pri;         // priority 0 to 31
     struct Td *nextReady; // next TD in the ready queue, or NULL
     struct Td *sendReady; // next TD in the send queue, or NULL
     enum RunState state;  // current run state
