@@ -9,12 +9,12 @@ void readyProcess(struct Scheduler *scheduler, struct Td *td) {
     unsigned int priBit = 1 << td->pri;
     // There are other ready processes for this priority
     if (scheduler->status & priBit) {
-        scheduler->entries[priBit].last->nextReady = td;
-        scheduler->entries[priBit].last = td;
+        scheduler->entries[td->pri].last->nextReady = td;
+        scheduler->entries[td->pri].last = td;
     }
     else {
-        scheduler->entries[priBit].first =
-            scheduler->entries[priBit].last = td;
+        scheduler->entries[td->pri].first =
+            scheduler->entries[td->pri].last = td;
         scheduler->status |= priBit;
     }
 }
