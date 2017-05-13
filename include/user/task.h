@@ -3,10 +3,7 @@
 #ifndef USER_TASK_H__INCLUDED
 #define USER_TASK_H__INCLUDED
 
-#include "syscall.h"
 #include "types.h"
-
-// TODO: using static unused functions in this file is a hack.
 
 // create - instantiate a task.
 //
@@ -23,7 +20,7 @@
 //   tid: the positive integer task id of the newly created task. The task id
 //   is unique in the sense that no task has, will have or has had the same
 //   task id.
-static __attribute__ ((unused))  Tid create(Priority priority, void (*code)()) SYSCALLR(SYS_CREATE)
+Tid create(Priority priority, void (*code)());
 
 // myTid - return my task id.
 //
@@ -32,7 +29,7 @@ static __attribute__ ((unused))  Tid create(Priority priority, void (*code)()) S
 //
 // Returns:
 //   tid: the positive integer task id of the task that calls it.
-static __attribute__ ((unused))  Tid myTid() SYSCALLR(SYS_MYTID)
+Tid myTid(void);
 
 // myParentTid - return the task id of the task that created the calling task.
 //
@@ -43,14 +40,14 @@ static __attribute__ ((unused))  Tid myTid() SYSCALLR(SYS_MYTID)
 //
 // Returns:
 //   tid: the task id of the task that created the calling task
-static __attribute__ ((unused))  Tid myParentTid() SYSCALLR(SYS_MYPARENTID)
+Tid myParentTid(void);
 
 // pass - cease execution, remaining ready to run
 //
 // Description:
 //   pass causes a task to stop executing. The task is moved to the end of its
 //   priority queue, and will resume executing when next sheduled.
-static __attribute__ ((unused))  void pass() SYSCALL(SYS_PASS)
+void pass(void);
 
 // exit_ - terminate execution forever.
 //
@@ -63,7 +60,7 @@ static __attribute__ ((unused))  void pass() SYSCALL(SYS_PASS)
 // Returns:
 //   exit does not return. If a point occurs where all tasks have exited the
 //   kernel should return cleanly to RedBoot.
-static __attribute__ ((unused))  void exit_() SYSCALL(SYS_EXIT)
+void exit_(void);
 
 // destroy
 // TODO:  Please see the separate document for destroy. Re-using resources is complicated.
