@@ -37,7 +37,7 @@
 //   -ERR_TRUNC: The reply message was truncated.
 //   -ERR_INVID: The task id supplied is not the task id of an existing task.
 //   -ERR_BADITC: The send-receive-reply transaction could not be completed.
-int send(Tid tid, char *msg, int msglen, char *reply, int rplen) SYSCALL(SYS_SEND)
+int send(Tid tid, char *msg, int msglen, char *reply, int rplen);
 
 // receive - receive a message from a task.
 //
@@ -60,7 +60,7 @@ int send(Tid tid, char *msg, int msglen, char *reply, int rplen) SYSCALL(SYS_SEN
 //   >-1: The size of the message received, which is less than or equal to the
 //        size of the message buffer supplied. Longer messages are truncated.
 //   -ERR_TRUNC: The message is truncated.
-int receive(Tid *tid, char *msg, int msglen) SYSCALL(SYS_RECEIVE)
+int receive(Tid *tid, char *msg, int msglen);
 
 // reply - reply to a message.
 //
@@ -76,6 +76,6 @@ int receive(Tid *tid, char *msg, int msglen) SYSCALL(SYS_RECEIVE)
 //   -ERR_TRUNC: The message was truncated.
 //   -ERR_INVID: The task id is not the task id of an existing task.
 //   -ERR_BADITC: The task id is not the task id of a reply blocked task.
-int reply(Tid tid, char *reply, int rplen) SYSCALL(SYS_REPLY)
+int reply(Tid tid, char *reply, int rplen);
 
 #endif // USER_ITC_H__INCLUDED

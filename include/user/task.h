@@ -20,7 +20,7 @@
 //   tid: the positive integer task id of the newly created task. The task id
 //   is unique in the sense that no task has, will have or has had the same
 //   task id.
-Tid create(Priority priority, void (*code)());
+Tid create(Priority priority, void (*code)(void));
 
 // myTid - return my task id.
 //
@@ -49,7 +49,7 @@ Tid myParentTid(void);
 //   priority queue, and will resume executing when next sheduled.
 void pass(void);
 
-// exit_ - terminate execution forever.
+// exeunt - terminate execution forever.
 //
 // Description:
 //   exit causes a task to cease execution permanently. It is removed from all
@@ -58,11 +58,12 @@ void pass(void);
 //   not reclaimed.
 //
 // Returns:
-//   exit does not return. If a point occurs where all tasks have exited the
+//   exeunt does not return. If a point occurs where all tasks have exited the
 //   kernel should return cleanly to RedBoot.
-void exit_(void);
+void exeunt(void);
 
 // destroy
 // TODO:  Please see the separate document for destroy. Re-using resources is complicated.
+void destroy(void);
 
 #endif // USER_TASK_H__INCLUDED

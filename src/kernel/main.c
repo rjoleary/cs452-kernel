@@ -1,10 +1,13 @@
 #include <bwio.h>
 #include <def.h>
 #include <panic.h>
-#include <req.h>
 #include <td.h>
 #include <user/task.h>
+#include <syscall.h>
 #include <scheduler.h>
+#include <task.h>
+#include <itc.h>
+#include <event.h>
 
 // Forward decls
 const char* buildstr(void);
@@ -43,7 +46,26 @@ void initStack(const void *entrypoint, void **sp) {
 }
 
 void svcHandle(unsigned id) {
-    bwprintf(COM2, "HANDLE %u\r\n", id);
+    // Maps syscall number to kernel function.
+    // TODO: make const static
+    void *jumpTable[10];
+    jumpTable[SYS_CREATE]     = kCreate;
+    jumpTable[SYS_MYTID]      = kMyTid;
+    jumpTable[SYS_MYPARENTID] = kMyParentTid;
+    jumpTable[SYS_PASS]       = kPass;
+    jumpTable[SYS_EXEUNT]     = kExeunt;
+    jumpTable[SYS_DESTROY]    = kDestroy;
+    jumpTable[SYS_SEND]       = kSend;
+    jumpTable[SYS_RECEIVE]    = kReceive;
+    jumpTable[SYS_REPLY]      = kReply;
+    jumpTable[SYS_AWAITEVENT] = kAwaitEvent;
+
+    bwprintf(COM2, "HANDLE %x\r\n", id);
+    if (id >= SYS_NUM) { // TODO: signedness?
+        PANIC("bad syscall number");
+    }
+    void (*f)(void) = jumpTable[id];
+    f();
     PANIC("HANDLE");
 }
 
@@ -64,23 +86,12 @@ int main() {
     readyProcess(&scheduler, &tds[0]);
 
     volatile void **SVC_VECTOR = (void*)0x28;
-    void kernel_entry(void);
     *SVC_VECTOR = &kernel_entry;
 
-    for (int i = 0; i < 4; ++i) {
+    while (1) {
         struct Td* active = getNextProcess(&scheduler);
         bwprintf(COM2, "Context switching to TID %d\r\n", active->tid);
-
-        // Context switch
-        asm volatile (
-            // Copy stack pointer from active->sp to sp register.
-            "mov sp, %0\n\t"
-            // Pop the rest of the registers off of the stack, including pc.
-            // LDMEA = LoaD Multiple from Empty Ascending stack
-            "ldmea sp!, {r0-r12,pc}" // TODO: works, but might not conform to gcc abi
-            :
-            : "r" (active->sp)
-        );
+        kernel_exit(active->sp);
     }
 
     return 0;
