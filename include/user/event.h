@@ -1,7 +1,7 @@
 // Interrupt processing
 
-#ifndef USER_INT_H__INCLUDED
-#define USER_INT_H__INCLUDED
+#ifndef USER_EVENT_H__INCLUDED
+#define USER_EVENT_H__INCLUDED
 
 #include "syscall.h"
 
@@ -17,4 +17,4 @@
 //   -ERR_CORRUPT: corrupted volatile data.
 int awaitEvent(int eventid) SYSCALL(SYS_AWAITEVENT)
 
-#endif // USER_INT_H__INCLUDED
+#endif // USER_EVENT_H__INCLUDED
