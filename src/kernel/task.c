@@ -1,5 +1,6 @@
 #include <task.h>
 #include <bwio.h>
+#include <panic.h>
 
 Tid kCreate(Priority priority, void (*code)()) {
     // TODO: implement
@@ -27,6 +28,7 @@ void kPass(void) {
 void kExeunt(void) {
     // TODO: implement
     bwputstr(COM2, "SYSCALL: exeunt\r\n");
+    PANIC("NOT IMPLEMENTED");
 }
 
 void kDestroy(void) {

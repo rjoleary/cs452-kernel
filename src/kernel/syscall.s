@@ -15,4 +15,4 @@ kernel_exit:
     # Pop the rest of the registers off of the stack, including pc.
     # LDMEA = LoaD Multiple from Empty Ascending stack
     # TODO: works, but might not conform to gcc abi
-    ldmea sp!, {r0-r12,pc}
+    ldmea sp!, {r0-r12,lr,pc}

@@ -39,13 +39,13 @@ void initStack(const void *entrypoint, void **sp) {
     *(word++) = 0; // r10/sl
     *(word++) = 0; // r11/fp
     *(word++) = 0; // r12/ip
-    //*(word++) = 0; // r14/lr  TODO: what should happen after a task returns?
+    *(word++) = (unsigned)exeunt; // r14/lr
     *(word++) = (unsigned)entrypoint; // r15/pc
     // TODO: process status register
     *sp = (void*)word;
 }
 
-void svcHandle(unsigned id) {
+int svcHandle(unsigned id) {
     // Maps syscall number to kernel function.
     // TODO: make const static
     void *jumpTable[10];
@@ -64,9 +64,10 @@ void svcHandle(unsigned id) {
     if (id >= SYS_NUM) { // TODO: signedness?
         PANIC("bad syscall number");
     }
-    void (*f)(void) = jumpTable[id];
-    f();
-    PANIC("HANDLE");
+    int (*f)(void) = jumpTable[id];
+    int r = f();
+    bwprintf(COM2, "RETURN %d\r\n", r);
+    return r;
 }
 
 int main() {

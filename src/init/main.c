@@ -5,5 +5,5 @@
 
 void initMain() {
     bwputstr(COM2, "Init task\r\n");
-    myTid();
+    bwprintf(COM2, "myTid=%d\r\n", myTid());
 }
