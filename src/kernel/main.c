@@ -43,8 +43,6 @@ void initStack(const void *entrypoint, void **sp) {
 }
 
 void svcHandle(unsigned id) {
-    // SWI immediate value is only 24bits.
-    id &= 0xffffff;
     bwprintf(COM2, "HANDLE %u\r\n", id);
     PANIC("HANDLE");
 }
