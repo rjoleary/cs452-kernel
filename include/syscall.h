@@ -4,7 +4,7 @@
 #include "user/syscall.h"
 
 void kernel_entry(void);
-void kernel_exit(void *sp);
+enum Syscall kernel_exit(void *sp);
 
 // Data structure copies function call from user stack to kernel stack.
 struct Request {

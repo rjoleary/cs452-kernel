@@ -89,11 +89,11 @@ int main() {
     volatile void **SVC_VECTOR = (void*)0x28;
     *SVC_VECTOR = &kernel_entry;
 
+    struct Td* active = getNextProcess(&scheduler);
     while (1) {
-        struct Td* active = getNextProcess(&scheduler);
         bwprintf(COM2, "Context switching to TID %d\r\n", active->tid);
-        kernel_exit(active->sp);
-        PANIC("RE-ENTERED KERNEL");
+        enum Syscall syscall = kernel_exit(active->sp);
+        bwprintf(COM2, "SYSCALL %x\r\n", syscall);
     }
 
     return 0;

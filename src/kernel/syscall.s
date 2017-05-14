@@ -17,15 +17,12 @@ kernel_entry:
     @ Restore the kernel's state and stack pointer. r1 is used as a scratch register.
     mov r1, #kernel_sp
     ldr sp, [r1]
-    mov r1, #0 @ set to zero indicates returning from a syscall
-    ldmfa sp!, {r0-r12,lr,pc}
+    ldmfa sp!, {r4-r11,r13,pc}
 
 kernel_exit:
     @ Store kernel's state and stack pointer. r1 is used as a scratch register.
     mov r1, #kernel_sp
-    stmfa sp!, {r0-r12,lr,pc}
-    cmp r1, #0 @ check if returning via syscall
-    bxeq lr
+    stmfa sp!, {r4-r11,r13,lr}
     str sp, [r1]
     @ Copy stack pointer from active->sp to sp register.
     mov sp, r0
