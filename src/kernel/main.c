@@ -93,6 +93,7 @@ int main() {
         struct Td* active = getNextProcess(&scheduler);
         bwprintf(COM2, "Context switching to TID %d\r\n", active->tid);
         kernel_exit(active->sp);
+        PANIC("RE-ENTERED KERNEL");
     }
 
     return 0;
