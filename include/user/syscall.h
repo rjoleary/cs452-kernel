@@ -4,7 +4,7 @@
 enum Syscall {
     SYS_CREATE = 0,
     SYS_MYTID,
-    SYS_MYPARENTID,
+    SYS_MYPARENTTID,
     SYS_PASS,
     SYS_EXEUNT,
     SYS_DESTROY,
