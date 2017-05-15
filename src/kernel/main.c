@@ -8,7 +8,7 @@
 
 // Forward decls
 const char* buildstr(void);
-void initMain(void);
+void firstMain(void);
 
 // All tasks start with this stub. It enforces calling exeunt when the task
 // returns. This function always runs in usermode.
@@ -19,7 +19,7 @@ void taskStub(void (*entrypoint)()) {
 }
 
 // First task must be created by hand.
-void initTask1(struct Td *td, void *stack) {
+void initFirstTask(struct Td *td, void *stack) {
     td->tid = 1;
     td->ptid = 1;
     td->pri = 3;
@@ -56,8 +56,8 @@ int main() {
     struct Scheduler scheduler;
 
     initTds(tds);
-    initTask1(&tds[0], userStacks[0] + STACK_SZ - 4);
-    initStack(initMain, &tds[0].sp);
+    initFirstTask(&tds[0], userStacks[0] + STACK_SZ - 4);
+    initStack(firstMain, &tds[0].sp);
     initScheduler(&scheduler);
     readyProcess(&scheduler, &tds[0]);
 
@@ -68,11 +68,9 @@ int main() {
     unsigned ret;
     while (1) {
         bwprintf(COM2, "Context switching to TID %d\r\n", active->tid);
-        bwprintf(COM2, "Context switching to sp %d\r\n", active->sp);
         enum Syscall syscall = kernel_exit(active->sp);
         extern void *user_sp;
         active->sp = user_sp;
-        bwprintf(COM2, "SYSCALL %x\r\n", syscall);
         switch (syscall) {
             case SYS_CREATE:
                 bwprintf(COM2, "int create(priority=, code=) = \r\n"); // TODO: args
