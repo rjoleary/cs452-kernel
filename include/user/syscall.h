@@ -25,11 +25,7 @@ enum Syscall {
 
 // Append to syscall with a return value.
 #define SYSCALLR(id) { \
-    asm volatile (     \
-        "swi %0"       \
-        :              \
-        : "i" (id)     \
-    );                 \
+    SYSCALL(id)        \
     return -1;         \
 }
 

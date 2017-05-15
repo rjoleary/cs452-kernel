@@ -33,6 +33,7 @@ void initStack(const void *entrypoint, void **sp) {
     unsigned *word = *sp;
     *(--word) = (unsigned)entrypoint; // r15/pc
     //*(--word) = (unsigned)exeunt; // r14/lr
+    // no r12 or r13
     *(--word) = 0; // r11/fp
     *(--word) = 0; // r10/sl
     *(--word) = 0; // r9
@@ -51,12 +52,12 @@ int main() {
     bwsetfifo(COM2, OFF);
     bwprintf(COM2, "%s\r\n", buildstr());
 
-    static char userStacks[NUM_TD][STACK_SZ];
+    unsigned userStacks[NUM_TD][STACK_SZ/4];
     struct Td tds[NUM_TD];
     struct Scheduler scheduler;
 
     initTds(tds);
-    initFirstTask(&tds[0], userStacks[0] + STACK_SZ - 4);
+    initFirstTask(&tds[0], userStacks[0] + STACK_SZ/4 - 1);
     initStack(firstMain, &tds[0].sp);
     initScheduler(&scheduler);
     readyProcess(&scheduler, &tds[0]);
@@ -68,9 +69,9 @@ int main() {
     unsigned ret;
     while (1) {
         bwprintf(COM2, "Context switching to TID %d\r\n", active->tid);
-        enum Syscall syscall = kernel_exit(active->sp);
-        extern void *user_sp;
-        active->sp = user_sp;
+        bwprintf(COM2, "Context switching to sp 0x%08x\r\n", active->sp);
+        enum Syscall syscall = kernel_exit(&active->sp);
+        bwprintf(COM2, "SYSCALL %x\r\n", syscall);
         switch (syscall) {
             case SYS_CREATE:
                 bwprintf(COM2, "int create(priority=, code=) = \r\n"); // TODO: args
