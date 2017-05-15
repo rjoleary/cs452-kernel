@@ -5,9 +5,6 @@
 #include <user/task.h>
 #include <syscall.h>
 #include <scheduler.h>
-#include <task.h>
-#include <itc.h>
-#include <event.h>
 
 // Forward decls
 const char* buildstr(void);
@@ -48,31 +45,6 @@ void initStack(const void *entrypoint, void **sp) {
     *sp = (void*)word;
 }
 
-int svcHandle(unsigned id) {
-    // Maps syscall number to kernel function.
-    // TODO: make const static
-    void *jumpTable[10];
-    jumpTable[SYS_CREATE]      = kCreate;
-    jumpTable[SYS_MYTID]       = kMyTid;
-    jumpTable[SYS_MYPARENTTID] = kMyParentTid;
-    jumpTable[SYS_PASS]        = kPass;
-    jumpTable[SYS_EXEUNT]      = kExeunt;
-    jumpTable[SYS_DESTROY]     = kDestroy;
-    jumpTable[SYS_SEND]        = kSend;
-    jumpTable[SYS_RECEIVE]     = kReceive;
-    jumpTable[SYS_REPLY]       = kReply;
-    jumpTable[SYS_AWAITEVENT]  = kAwaitEvent;
-
-    bwprintf(COM2, "HANDLE %x\r\n", id);
-    if (id >= SYS_NUM) { // TODO: signedness?
-        PANIC("bad syscall number");
-    }
-    int (*f)(void) = jumpTable[id];
-    int r = f();
-    bwprintf(COM2, "RETURN %d\r\n", r);
-    return r;
-}
-
 int main() {
     // Print the build string (date + time).
     bwsetspeed(COM2, 115200);
@@ -103,28 +75,47 @@ int main() {
         bwprintf(COM2, "SYSCALL %x\r\n", syscall);
         switch (syscall) {
             case SYS_CREATE:
+                bwprintf(COM2, "int create(priority=, code=) = \r\n"); // TODO: args
+                // TODO
+                break;
             case SYS_MYTID:
+                bwprintf(COM2, "int myTid() = \r\n"); // TODO: args
                 ret = active->tid;
                 break;
             case SYS_MYPARENTTID:
+                bwprintf(COM2, "int myParentTid() = \r\n"); // TODO: args
                 ret = active->ptid;
                 break;
             case SYS_PASS:
+                bwprintf(COM2, "void pass()\r\n");
+                // TODO
                 break;
             case SYS_EXEUNT:
+                bwprintf(COM2, "void exeunt()\r\n");
+                // TODO
                 PANIC("Task exited");
                 break;
             case SYS_DESTROY:
+                bwprintf(COM2, "void destroy()\r\n");
+                // TODO
                 break;
             case SYS_SEND:
+                bwprintf(COM2, "int send(tid=, msg=, msglen=, reply=, rplen=) = \r\n"); // TODO: args
+                // TODO
                 break;
             case SYS_RECEIVE:
+                bwprintf(COM2, "int receive(tid=, msg=, msglen=) = \r\n"); // TODO: args
+                // TODO
                 break;
             case SYS_REPLY:
+                bwprintf(COM2, "int reply(tid=, reply=, rplen=) = \r\n"); // TODO: args
+                // TODO
                 break;
             case SYS_AWAITEVENT:
+                bwprintf(COM2, "int awaitEvent(eventid=) = \r\n"); // TODO: args
+                // TODO
                 break;
-            case SYS_NUM: default:
+            default:
                 PANIC("bad syscall number");
         }
     }

@@ -12,9 +12,6 @@ enum Syscall {
     SYS_RECEIVE,
     SYS_REPLY,
     SYS_AWAITEVENT,
-
-    // Number of syscalls. Must be last.
-    SYS_NUM,
 };
 
 // Append to syscall with no return value.
