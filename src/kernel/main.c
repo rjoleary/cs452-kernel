@@ -13,6 +13,14 @@
 const char* buildstr(void);
 void initMain(void);
 
+// All tasks start with this stub. It enforces calling exeunt when the task
+// returns. This function always runs in usermode.
+// TODO: use
+void taskStub(void (*entrypoint)()) {
+    entrypoint();
+    exeunt();
+}
+
 // First task must be created by hand.
 void initTask1(struct Td *td, void *stack) {
     td->tid = 1;
