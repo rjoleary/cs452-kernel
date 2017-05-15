@@ -5,11 +5,11 @@
     do {                                  \
     asm volatile (                        \
         "stmfd sp, {r0-r15}\n\t"          \
-        "add sp, sp, #64\n\t"             \
+        "add sp, sp, #-64\n\t"            \
         "mrs r0, CPSR\n\t"                \
         "mrs r1, SPSR\n\t"                \
         "stmfd sp, {r0,r1}\n\t"           \
-        "add sp, sp, #2"                  \
+        "add sp, sp, #-8"                 \
     );                                    \
     unsigned *regs;                       \
     asm volatile (                        \
