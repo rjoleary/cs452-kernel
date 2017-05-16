@@ -13,7 +13,7 @@ void testMain(void); // TODO: remove
 // First task must be created by hand.
 void initFirstTask(struct Td *td, void *stack) {
     td->tid = 0;
-    td->ptid = 1;
+    td->ptid = 0;
     td->pri = 3;
     td->nextReady = 0;
     td->sendReady = 0;
