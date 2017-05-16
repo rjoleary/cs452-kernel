@@ -53,8 +53,8 @@ int main() {
         switch (syscall) {
             case SYS_CREATE: {
                 // TODO: arguments are hard-coded atm.
-                Priority priority = 5; // arg 0
-                void *code = testMain; // arg 1
+                Priority priority = req.a[0];
+                void *code = (void*)req.a[1];
                 bwprintf(COM2, "int create(priority=%d, code=%d) = ", priority, code);
                 if (used_tds == NUM_TD) {
                     ret = -2;
