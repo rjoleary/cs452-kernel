@@ -1,9 +1,10 @@
-// Exports facilities for task descriptors.
+// Exports facilities for tasks.
 
-#ifndef TD_H__INCLUDED
-#define TD_H__INCLUDED
+#ifndef TASK_H__INCLUDED
+#define TASK_H__INCLUDED
 
 #include "types.h"
+#include "user/task.h"
 
 // The first three of these states are needed for task creation; the next three
 // are needed for message passing; and the seventh is needed for hardware
@@ -55,4 +56,6 @@ void initTds(struct Td *tds);
 // Runtime: O(n)
 struct Td* getTdByTid(struct Td *tds, Tid tid);
 
-#endif // TD_H__INCLUDED
+void initStack(const void *entrypoint, void **sp);
+
+#endif // TASK_H__INCLUDED
