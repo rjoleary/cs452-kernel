@@ -1,5 +1,6 @@
 #include <scheduler.h>
 #include <task.h>
+#include <bwio.h>
 
 void initScheduler(struct Scheduler *scheduler) {
     scheduler->status = 0;
@@ -28,7 +29,7 @@ struct Td* getNextProcess(struct Scheduler *scheduler) {
         scheduler->entries[lowestPri].first = ready->nextReady;
     }
     else {
-        scheduler->status &= ~lowestPri;
+        scheduler->status &= ~(1 << lowestPri);
     }
     return ready;
 }

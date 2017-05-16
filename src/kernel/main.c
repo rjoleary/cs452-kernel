@@ -12,7 +12,7 @@ void testMain(void); // TODO: remove
 
 // First task must be created by hand.
 void initFirstTask(struct Td *td, void *stack) {
-    td->tid = 1;
+    td->tid = 0;
     td->ptid = 1;
     td->pri = 3;
     td->nextReady = 0;
@@ -29,6 +29,7 @@ int main() {
 
     // TODO: user tasks should not be on the kernel stack!
     unsigned userStacks[NUM_TD][STACK_SZ/4];
+    unsigned used_tds = 1;
     struct Td tds[NUM_TD];
     struct Scheduler scheduler;
 
@@ -41,61 +42,100 @@ int main() {
     volatile void **SVC_VECTOR = (void*)0x28;
     *SVC_VECTOR = &kernel_entry;
 
-    struct Td* active = getNextProcess(&scheduler);
     unsigned ret;
     while (1) {
+        struct Td* active = getNextProcess(&scheduler);
         struct Request req;
         bwprintf(COM2, "Context switching to TID %d\r\n", active->tid);
-        bwprintf(COM2, "Context switching to sp 0x%08x\r\n", active->sp);
         enum Syscall syscall = kernel_exit(&active->sp, &req);
-        bwprintf(COM2, "Request: %08x %08x %08x %08x %08x", req.a[0], req.a[1], req.a[2], req.a[3], req.a[4]);
-        bwprintf(COM2, "SYSCALL %x\r\n", syscall);
+        bwprintf(COM2, "Request: %08x %08x %08x %08x %08x", req.a[0], req.a[1],
+            req.a[2], req.a[3], req.a[4]);
         switch (syscall) {
             case SYS_CREATE: {
                 // TODO: arguments are hard-coded atm.
-                Priority priority = 3;
-                void *code = testMain;
-                bwprintf(COM2, "int create(priority=%d, code=%d) = \r\n", priority, code);
-                // TODO
+                Priority priority = 5; // arg 0
+                void *code = testMain; // arg 1
+                bwprintf(COM2, "int create(priority=%d, code=%d) = ", priority, code);
+                if (used_tds == NUM_TD) {
+                    ret = -2;
+                } else if (priority < 0 || 31 < priority) {
+                    ret = -1;
+                } else {
+                    tds[used_tds].tid       = used_tds;
+                    tds[used_tds].ptid      = active->tid;
+                    tds[used_tds].pri       = priority;
+                    tds[used_tds].nextReady = 0;
+                    tds[used_tds].sendReady = 0;
+                    tds[used_tds].state     = READY;
+                    tds[used_tds].sp        = userStacks[used_tds];
+                    initStack(testMain, &tds[used_tds].sp);
+                    readyProcess(&scheduler, &tds[used_tds]);
+                    ret = used_tds;
+                    used_tds++;
+                }
+                readyProcess(&scheduler, active);
+                bwprintf(COM2, "%d\r\n", ret);
                 break;
             }
-            case SYS_MYTID:
-                bwprintf(COM2, "int myTid() = \r\n"); // TODO: args
+
+            case SYS_MYTID: {
+                bwprintf(COM2, "int myTid() = ");
                 ret = active->tid;
+                readyProcess(&scheduler, active);
+                bwprintf(COM2, "%d\r\n", ret);
                 break;
-            case SYS_MYPARENTTID:
-                bwprintf(COM2, "int myParentTid() = \r\n"); // TODO: args
+            }
+
+            case SYS_MYPARENTTID: {
+                bwprintf(COM2, "int myParentTid() = ");
                 ret = active->ptid;
+                readyProcess(&scheduler, active);
+                bwprintf(COM2, "%d\r\n", ret);
                 break;
-            case SYS_PASS:
+            }
+
+            case SYS_PASS: {
                 bwprintf(COM2, "void pass()\r\n");
-                // TODO
+                readyProcess(&scheduler, active);
                 break;
-            case SYS_EXEUNT:
+            }
+
+            case SYS_EXEUNT: {
                 bwprintf(COM2, "void exeunt()\r\n");
-                // TODO
-                PANIC("Task exited");
+                active->state = ZOMBIE;
                 break;
-            case SYS_DESTROY:
+            }
+
+            case SYS_DESTROY: {
                 bwprintf(COM2, "void destroy()\r\n");
                 // TODO
                 break;
-            case SYS_SEND:
+            }
+
+            case SYS_SEND: {
                 bwprintf(COM2, "int send(tid=, msg=, msglen=, reply=, rplen=) = \r\n"); // TODO: args
                 // TODO
                 break;
-            case SYS_RECEIVE:
+            }
+
+            case SYS_RECEIVE: {
                 bwprintf(COM2, "int receive(tid=, msg=, msglen=) = \r\n"); // TODO: args
                 // TODO
                 break;
-            case SYS_REPLY:
+            }
+
+            case SYS_REPLY: {
                 bwprintf(COM2, "int reply(tid=, reply=, rplen=) = \r\n"); // TODO: args
                 // TODO
                 break;
-            case SYS_AWAITEVENT:
+            }
+
+            case SYS_AWAITEVENT: {
                 bwprintf(COM2, "int awaitEvent(eventid=) = \r\n"); // TODO: args
                 // TODO
                 break;
+            }
+
             default:
                 PANIC("bad syscall number");
         }
