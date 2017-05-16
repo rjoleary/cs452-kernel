@@ -1,5 +1,5 @@
-#include <user/task.h>
-#include <user/syscall.h>
+#include <task.h>
+#include <syscall.h>
 
 Tid create(Priority priority, void (*code)(void)) SYSCALLR(SYS_CREATE)
 Tid myTid(void) SYSCALLR(SYS_MYTID)

@@ -1,6 +1,6 @@
 #include <scheduler.h>
 #include <task.h>
-#include <bwio.h>
+#include <user/bwio.h>
 
 void initScheduler(struct Scheduler *scheduler) {
     scheduler->status = 0;

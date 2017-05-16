@@ -1,4 +1,4 @@
-#include <user/task.h>
+#include <task.h>
 
 void idleMain() {
     while (1) {

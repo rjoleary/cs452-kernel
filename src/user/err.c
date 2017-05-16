@@ -1,4 +1,4 @@
-#include <user/err.h>
+#include <err.h>
 
 const char *err2str(int err) {
     if (err < 0) {

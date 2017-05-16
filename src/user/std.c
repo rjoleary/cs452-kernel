@@ -1,4 +1,4 @@
-#include <user/std.h>
+#include <std.h>
 
 void *memcpy(void *dest, const void *src, unsigned n) {
     return __builtin_memcpy(dest, src, n);

@@ -1,4 +1,4 @@
-#include <bwio.h>
+#include <user/bwio.h>
 #include <panic.h>
 
 void panic(unsigned *regs, const char *str, const char *file, int line) {

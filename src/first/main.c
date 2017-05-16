@@ -1,5 +1,4 @@
-#include <user/task.h>
-#include <panic.h>
+#include <task.h>
 
 // TODO: don't use bwio.h
 #include <bwio.h>
