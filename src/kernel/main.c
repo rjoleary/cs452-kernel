@@ -44,9 +44,11 @@ int main() {
     struct Td* active = getNextProcess(&scheduler);
     unsigned ret;
     while (1) {
+        struct Request req;
         bwprintf(COM2, "Context switching to TID %d\r\n", active->tid);
         bwprintf(COM2, "Context switching to sp 0x%08x\r\n", active->sp);
-        enum Syscall syscall = kernel_exit(&active->sp);
+        enum Syscall syscall = kernel_exit(&active->sp, &req);
+        bwprintf(COM2, "Request: %08x %08x %08x %08x %08x", req.a[0], req.a[1], req.a[2], req.a[3], req.a[4]);
         bwprintf(COM2, "SYSCALL %x\r\n", syscall);
         switch (syscall) {
             case SYS_CREATE: {
@@ -97,6 +99,9 @@ int main() {
             default:
                 PANIC("bad syscall number");
         }
+        unsigned *sp = (unsigned *)active->sp;
+        *(--sp) = ret;
+        active->sp = sp;
     }
 
     return 0;

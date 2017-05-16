@@ -29,6 +29,7 @@ void initStack(const void *entrypoint, void **sp) {
     unsigned *word = *sp;
     *(--word) = (unsigned)taskStub; // r15/pc
     // no r12 or r13
+    // no r12-r14
     *(--word) = 0; // r11/fp
     *(--word) = 0; // r10/sl
     *(--word) = 0; // r9
@@ -37,6 +38,6 @@ void initStack(const void *entrypoint, void **sp) {
     *(--word) = 0; // r6
     *(--word) = 0; // r5
     *(--word) = (unsigned)entrypoint; // r4
-    // TODO: process status register
+    *(--word) = 0; // return value
     *sp = (void*)word;
 }

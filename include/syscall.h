@@ -3,16 +3,15 @@
 
 #include "user/syscall.h"
 
+struct Request;
+
 void kernel_entry(void);
-enum Syscall kernel_exit(void **sp);
+enum Syscall kernel_exit(void **sp, struct Request *);
 
 // Data structure copies function call from user stack to kernel stack.
 struct Request {
-    enum Syscall syscall;
     // Up to five arguments
     unsigned a[5];
-    // One return value
-    unsigned r0;
 } __attribute__((packed));
 
 #endif // SYCALL_H__INCLUDED
