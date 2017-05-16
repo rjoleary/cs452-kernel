@@ -42,7 +42,6 @@ void initStack(const void *entrypoint, void **sp) {
     *(--word) = 0; // r6
     *(--word) = 0; // r5
     *(--word) = 0; // r4
-    // TODO: process status register
     *sp = (void*)word;
 }
 
