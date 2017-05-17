@@ -6,9 +6,8 @@
 
 // The test tasks are created by the first task and perform the following:
 void testMain() {
-    int tid = myTid();
-    int pTid = myParentTid();
-    bwprintf(COM2, "TestUserTask: myTid()=%d, myParentTid()=%d\r\n", tid, pTid);
+    bwprintf(COM2, "TestUserTask: myTid()=%d, myParentTid()=%d\r\n", myTid(), myParentTid());
     pass();
     bwprintf(COM2, "TestUserTask: myTid()=%d, myParentTid()=%d\r\n", myTid(), myParentTid());
+    exeunt();
 }
