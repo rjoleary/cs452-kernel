@@ -1,7 +1,8 @@
 #include <def.h>
 #include <task.h>
-#include <user/bwio.h>
 #include <panic.h>
+#include <user/bwio.h>
+#include <console.h>
 
 void initTds(struct Td *tds) {
     for (int i = 0; i < NUM_TD; i++) {
@@ -23,9 +24,9 @@ struct Td* getTdByTid(struct Td *tds, Tid tid) {
 // returns. This function always runs in usermode.
 void taskStub() {
     register void (*entrypoint)(void) asm("r4");
-    bwputstr(COM2, "Started task stub\r\n");
+    bwputstr(COM2, BEGIN_SYS_CL "Started task stub\r\n" END_CL);
     entrypoint();
-    bwputstr(COM2, "Exiting task stub\r\n");
+    bwputstr(COM2, BEGIN_SYS_CL "Exiting task stub\r\n" END_CL);
     exeunt();
 }
 

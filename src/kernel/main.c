@@ -4,6 +4,7 @@
 #include <task.h>
 #include <syscall.h>
 #include <scheduler.h>
+#include <console.h>
 
 // Forward decls
 const char* buildstr(void);
@@ -45,15 +46,14 @@ int main() {
     while (1) {
         struct Td* active = getNextProcess(&scheduler);
         struct Request req;
-        bwprintf(COM2, "Context switching to TID %d\r\n", active->tid);
+        bwprintf(COM2, BEGIN_SYS_CL "Context switching to TID %d\r\n" END_CL, active->tid);
         enum Syscall syscall = kernel_exit(&active->sp, &req);
-        bwprintf(COM2, "Request: %08x %08x %08x %08x %08x", req.a[0], req.a[1],
+        bwprintf(COM2, BEGIN_SYS_CL "Request: %08x %08x %08x %08x %08x\r\n" END_CL, req.a[0], req.a[1],
             req.a[2], req.a[3], req.a[4]);
         switch (syscall) {
             case SYS_CREATE: {
                 Priority priority = req.a[0];
                 void *code = (void*)req.a[1];
-                bwprintf(COM2, "int create(priority=%d, code=%d) = ", priority, code);
                 // TODO: Use proper error codes
                 if (used_tds == NUM_TD) {
                     ret = -2;
@@ -66,45 +66,44 @@ int main() {
                     tds[used_tds].nextReady = 0;
                     tds[used_tds].sendReady = 0;
                     tds[used_tds].state     = READY;
-                    tds[used_tds].sp        = userStacks[used_tds];
+                    tds[used_tds].sp        = userStacks[used_tds] + STACK_SZ/4;
                     initStack(code, &tds[used_tds].sp);
                     readyProcess(&scheduler, &tds[used_tds]);
                     ret = used_tds;
                     used_tds++;
                 }
                 readyProcess(&scheduler, active);
-                bwprintf(COM2, "%d\r\n", ret);
+                bwprintf(COM2, BEGIN_SYS_CL "int create(priority=%d, code=%d) = %d\r\n" END_CL,
+                        priority, code, ret);
                 break;
             }
 
             case SYS_MYTID: {
-                bwprintf(COM2, "int myTid() = ");
                 ret = active->tid;
                 readyProcess(&scheduler, active);
-                bwprintf(COM2, "%d\r\n", ret);
+                bwprintf(COM2, BEGIN_SYS_CL "int myTid() = %d\r\n" END_CL, ret);
                 break;
             }
 
             case SYS_MYPARENTTID: {
-                bwprintf(COM2, "int myParentTid() = ");
                 ret = active->ptid;
                 readyProcess(&scheduler, active);
-                bwprintf(COM2, "%d\r\n", ret);
+                bwprintf(COM2, BEGIN_SYS_CL "int myParentTid() = %d\r\n" END_CL, ret);
                 break;
             }
 
             case SYS_PASS: {
-                bwprintf(COM2, "void pass()\r\n");
                 readyProcess(&scheduler, active);
+                bwprintf(COM2, BEGIN_SYS_CL "void pass()\r\n" END_CL);
                 break;
             }
 
             case SYS_EXEUNT: {
-                bwprintf(COM2, "void exeunt()\r\n");
                 active->state = ZOMBIE;
+                bwprintf(COM2, BEGIN_SYS_CL "void exeunt()\r\n" END_CL);
                 break;
             }
-
+            /*
             case SYS_DESTROY: {
                 bwprintf(COM2, "void destroy()\r\n");
                 // TODO
@@ -134,7 +133,7 @@ int main() {
                 // TODO
                 break;
             }
-
+            */
             default:
                 PANIC("bad syscall number");
         }
