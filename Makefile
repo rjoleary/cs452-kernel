@@ -23,7 +23,7 @@ OBJ = $(patsubst src/%.c, build/%.o, $(SRC)) $(patsubst src/%.s, build/%.o, $(AS
 .PHONY: all builddir clean upload
 
 # Prevent make from deleting intermediate files.
-.PRECIOUS: build/%.o build/%.s
+.PRECIOUS: build/%.o build/%.s build/kernel/%.s
 
 all: build/kernel.elf
 
