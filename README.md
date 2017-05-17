@@ -2,9 +2,9 @@
 
 Name: The Coldwell Kernel
 
-Students: Ryan O'Leary (rj2oleary) and Yelnar Dakeshov (TODO)
+Students: Ryan O'Leary (rj2oleary) and Elnar Dakeshov (edakesho)
 
-Student Ids: 20509502 and TODO
+Student Ids: 20509502 and 20577578
 
 Date: May 26, 2017
 
