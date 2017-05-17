@@ -19,6 +19,7 @@ bss : /* Uninitialized data. */
 {
 _BssStart = . ;
 *(.bss)
+*(user_stacks)
 _BssEnd = . ;
 } >ram
 

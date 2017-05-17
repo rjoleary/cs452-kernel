@@ -21,6 +21,8 @@ void initFirstTask(struct Td *td, void *stack) {
     td->sp = stack;
 }
 
+__attribute__((section("user_stacks"))) static unsigned userStacks[NUM_TD][STACK_SZ/4];
+
 int main() {
     // Print the build string (date + time).
     bwsetspeed(COM2, 115200);
@@ -28,7 +30,6 @@ int main() {
     bwprintf(COM2, "%s\r\n", buildstr());
 
     // TODO: user tasks should not be on the kernel stack!
-    unsigned userStacks[NUM_TD][STACK_SZ/4];
     unsigned used_tds = 1;
     struct Td tds[NUM_TD];
     struct Scheduler scheduler;
@@ -42,14 +43,17 @@ int main() {
     volatile void **SVC_VECTOR = (void*)0x28;
     *SVC_VECTOR = &kernel_entry;
 
-    unsigned ret;
     while (1) {
         struct Td* active = getNextProcess(&scheduler);
+        if (!active) {
+            break;
+        }
         struct Request req;
         bwprintf(COM2, BEGIN_SYS_CL "Context switching to TID %d\r\n" END_CL, active->tid);
         enum Syscall syscall = kernel_exit(&active->sp, &req);
         bwprintf(COM2, BEGIN_SYS_CL "Request: %08x %08x %08x %08x %08x\r\n" END_CL, req.a[0], req.a[1],
             req.a[2], req.a[3], req.a[4]);
+        unsigned ret = -1;
         switch (syscall) {
             case SYS_CREATE: {
                 Priority priority = req.a[0];
@@ -142,5 +146,6 @@ int main() {
         active->sp = sp;
     }
 
+    bwprintf(COM2, BEGIN_SYS_CL "No active tasks, returning\r\n" END_CL);
     return 0;
 }
