@@ -20,6 +20,8 @@
 //   tid: the positive integer task id of the newly created task. The task id
 //   is unique in the sense that no task has, will have or has had the same
 //   task id.
+//   -ERR_BADARG: the priority is invalid.
+//   -ERR_NORES: the kernel is out of task decriptors.
 Tid create(Priority priority, void (*code)(void));
 
 // myTid - return my task id.
