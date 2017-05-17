@@ -12,22 +12,26 @@ kernel_entry:
     ldr r0, [lr, #-4]
     @ SWI immediate value is the last 24 bits of the instruction.
     and r0, r0, #0x00ffffff
+    @ Move pc for user
+    mov r2, lr
     @ Switch to system mode to access cpsr,sp,lr
     msr cpsr, #0xDF
     @ Store user values into their sp
-    stmfd sp!, {r4-r11,lr}
+    stmfd sp!, {r2}
+    stmfd sp!, {lr}
+    stmfd sp!, {r4-r12}
     @ Store user sp
     mov r2, sp
     @ Move into supervisor mode
     msr cpsr, #0xD3
     @ Load stored args
     ldmfd sp!, {r4-r7}
-    @ Load sp, request
+    @ Load user sp, request
     ldmfd sp!, {r1,r3}
     @ Store request
     stmea r3!, {r4-r7}
     @ Load kernel registers
-    ldmfd sp!, {r4-r11,lr}
+    ldmfd sp!, {r4-r12,lr}
     @ Store user sp into td
     str r2, [r1]
     mov pc, lr
@@ -37,19 +41,21 @@ kernel_exit:
     @ r0 holds the current task's stack pointer
     @ r1 holds pointer to request
     @ lr saved because it is overwritten after swi
-    stmfd sp!, {r0,r1,r4-r11,lr}
+    stmfd sp!, {r0,r1,r4-r12,lr}
     @ Load the user sp
     ldr r1, [r0]
-    @ Load user saved values from their sp, also ret value
-    ldmfd r1!, {r3-r11}
-    @ Load the user's pc
-    ldmfd r1!, {r2}
-    @ Store the user's sp 
+    sub r1, r1, #48
     str r1, [r0]
+    add r0, r1, #48
+    @ Load user saved values from their sp, also ret value
+    ldmfd r0!, {r3-r12}
+    @ Load the user's lr and pc
+    ldmfd r0!, {r1,r2}
     @ Switch to system mode
     msr cpsr, #0xDF
-    @ Put the user's sp into user's sp
-    mov sp, r1
+    @ Put the user's sp and lr
+    mov sp, r0
+    mov lr, r1
     @ Switch back to supervisor mode
     msr cpsr, #0xD3
     @ Set spsr to user mode with interrupts

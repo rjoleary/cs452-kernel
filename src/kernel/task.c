@@ -1,5 +1,7 @@
 #include <def.h>
 #include <task.h>
+#include <user/bwio.h>
+#include <panic.h>
 
 void initTds(struct Td *tds) {
     for (int i = 0; i < NUM_TD; i++) {
@@ -20,16 +22,19 @@ struct Td* getTdByTid(struct Td *tds, Tid tid) {
 // All tasks start with this stub. It enforces calling exeunt when the task
 // returns. This function always runs in usermode.
 void taskStub() {
-    register void (*entrypoint)() asm("r4");
+    register void (*entrypoint)(void) asm("r4");
+    bwputstr(COM2, "Started task stub\r\n");
     entrypoint();
+    bwputstr(COM2, "Exiting task stub\r\n");
     exeunt();
 }
 
 void initStack(const void *entrypoint, void **sp) {
     unsigned *word = *sp;
     *(--word) = (unsigned)taskStub; // r15/pc
-    // no r12 or r13
-    // no r12-r14
+    *(--word) = 0; // r14/lr
+    // no r13/sp
+    *(--word) = 0; // r12/ip
     *(--word) = 0; // r11/fp
     *(--word) = 0; // r10/sl
     *(--word) = 0; // r9

@@ -8,7 +8,6 @@
 // Forward decls
 const char* buildstr(void);
 void firstMain(void);
-void testMain(void); // TODO: remove
 
 // First task must be created by hand.
 void initFirstTask(struct Td *td, void *stack) {
@@ -34,7 +33,7 @@ int main() {
     struct Scheduler scheduler;
 
     initTds(tds);
-    initFirstTask(&tds[0], userStacks[0] + STACK_SZ/4 - 1);
+    initFirstTask(&tds[0], userStacks[0] + STACK_SZ/4);
     initStack(firstMain, &tds[0].sp);
     initScheduler(&scheduler);
     readyProcess(&scheduler, &tds[0]);
@@ -52,10 +51,10 @@ int main() {
             req.a[2], req.a[3], req.a[4]);
         switch (syscall) {
             case SYS_CREATE: {
-                // TODO: arguments are hard-coded atm.
                 Priority priority = req.a[0];
                 void *code = (void*)req.a[1];
                 bwprintf(COM2, "int create(priority=%d, code=%d) = ", priority, code);
+                // TODO: Use proper error codes
                 if (used_tds == NUM_TD) {
                     ret = -2;
                 } else if (priority < 0 || 31 < priority) {
@@ -68,7 +67,7 @@ int main() {
                     tds[used_tds].sendReady = 0;
                     tds[used_tds].state     = READY;
                     tds[used_tds].sp        = userStacks[used_tds];
-                    initStack(testMain, &tds[used_tds].sp);
+                    initStack(code, &tds[used_tds].sp);
                     readyProcess(&scheduler, &tds[used_tds]);
                     ret = used_tds;
                     used_tds++;

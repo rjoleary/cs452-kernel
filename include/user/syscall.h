@@ -24,9 +24,10 @@ enum Syscall {
 }
 
 // Append to syscall with a return value.
-#define SYSCALLR(id) { \
-    SYSCALL(id)        \
-    return -1;         \
+#define SYSCALLR(id) {          \
+    SYSCALL(id)                 \
+    register int ret asm("r0"); \
+    return ret;                 \
 }
 
 #endif // USER_SYSCALL_H__INCLUDED
