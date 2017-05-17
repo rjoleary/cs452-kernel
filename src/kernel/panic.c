@@ -17,6 +17,11 @@ void panic(unsigned *regs, const char *str, const char *file, int line) {
     bwprintf(COM2, "r4: 0x%08x  r9: 0x%08x   lr: 0x%08x\r\n",
         regs[6], regs[11], regs[16]);
 
+    bwputstr(COM2, "\r\nTop of stack:\r\n");
+    for (int i = 0; i < 10; i++) {
+        bwprintf(COM2, "%d: 0x%08x\r\n", i, ((unsigned*)regs[15])[i]);
+    }
+
     bwputstr(COM2, "\r\nSystem requires reboot\r\n");
     while (1);
 }

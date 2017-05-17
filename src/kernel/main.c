@@ -13,7 +13,7 @@ void firstMain(void);
 // First task must be created by hand.
 void initFirstTask(struct Td *td, void *stack) {
     td->tid = 0;
-    td->ptid = 0;
+    td->ptid = td->tid;
     td->pri = 3;
     td->nextReady = 0;
     td->sendReady = 0;
@@ -27,16 +27,15 @@ int main() {
     // Print the build string (date + time).
     bwsetspeed(COM2, 115200);
     bwsetfifo(COM2, OFF);
-    bwprintf(COM2, "%s\r\n", buildstr());
+    bwprintf(COM2, BEGIN_SYS_CL "  [-] %s\r\n" END_CL, buildstr());
 
-    // TODO: user tasks should not be on the kernel stack!
     unsigned used_tds = 1;
     struct Td tds[NUM_TD];
     struct Scheduler scheduler;
 
     initTds(tds);
     initFirstTask(&tds[0], userStacks[0] + STACK_SZ/4);
-    initStack(firstMain, &tds[0].sp);
+    initStack(firstMain, tds[0].sp);
     initScheduler(&scheduler);
     readyProcess(&scheduler, &tds[0]);
 
@@ -48,17 +47,13 @@ int main() {
         if (!active) {
             break;
         }
-        struct Request req;
-        bwprintf(COM2, BEGIN_SYS_CL "Context switching to TID %d\r\n" END_CL, active->tid);
-        enum Syscall syscall = kernel_exit(&active->sp, &req);
-        bwprintf(COM2, BEGIN_SYS_CL "Request: %08x %08x %08x %08x %08x\r\n" END_CL, req.a[0], req.a[1],
-            req.a[2], req.a[3], req.a[4]);
-        unsigned ret = -1;
-        switch (syscall) {
+        active->sp = kernel_exit(active->sp);
+        switch (reqSyscall(active)) {
             case SYS_CREATE: {
-                Priority priority = req.a[0];
-                void *code = (void*)req.a[1];
+                Priority priority = reqArg(active, 0);
+                void *code = (void*)reqArg(active, 1);
                 // TODO: Use proper error codes
+                int ret;
                 if (used_tds == NUM_TD) {
                     ret = -2;
                 } else if (priority < 0 || 31 < priority) {
@@ -71,40 +66,43 @@ int main() {
                     tds[used_tds].sendReady = 0;
                     tds[used_tds].state     = READY;
                     tds[used_tds].sp        = userStacks[used_tds] + STACK_SZ/4;
-                    initStack(code, &tds[used_tds].sp);
+                    initStack(code, tds[used_tds].sp);
                     readyProcess(&scheduler, &tds[used_tds]);
                     ret = used_tds;
                     used_tds++;
                 }
+                reqSetReturn(active, ret);
                 readyProcess(&scheduler, active);
-                bwprintf(COM2, BEGIN_SYS_CL "int create(priority=%d, code=%d) = %d\r\n" END_CL,
-                        priority, code, ret);
+                bwprintf(COM2, BEGIN_SYS_CL "  [%d] int create(priority=%d, code=%d) = %d\r\n" END_CL,
+                        active->tid, priority, code, ret);
                 break;
             }
 
             case SYS_MYTID: {
-                ret = active->tid;
+                int ret = active->tid;
                 readyProcess(&scheduler, active);
-                bwprintf(COM2, BEGIN_SYS_CL "int myTid() = %d\r\n" END_CL, ret);
+                reqSetReturn(active, ret);
+                bwprintf(COM2, BEGIN_SYS_CL "  [%d] int myTid() = %d\r\n" END_CL, active->tid, ret);
                 break;
             }
 
             case SYS_MYPARENTTID: {
-                ret = active->ptid;
+                int ret = active->ptid;
                 readyProcess(&scheduler, active);
-                bwprintf(COM2, BEGIN_SYS_CL "int myParentTid() = %d\r\n" END_CL, ret);
+                reqSetReturn(active, ret);
+                bwprintf(COM2, BEGIN_SYS_CL "  [%d] int myParentTid() = %d\r\n" END_CL, active->tid, ret);
                 break;
             }
 
             case SYS_PASS: {
                 readyProcess(&scheduler, active);
-                bwprintf(COM2, BEGIN_SYS_CL "void pass()\r\n" END_CL);
+                bwprintf(COM2, BEGIN_SYS_CL "  [%d] void pass()\r\n" END_CL, active->tid);
                 break;
             }
 
             case SYS_EXEUNT: {
                 active->state = ZOMBIE;
-                bwprintf(COM2, BEGIN_SYS_CL "void exeunt()\r\n" END_CL);
+                bwprintf(COM2, BEGIN_SYS_CL "  [%d] void exeunt()\r\n" END_CL, active->tid);
                 break;
             }
             /*
@@ -141,11 +139,8 @@ int main() {
             default:
                 PANIC("bad syscall number");
         }
-        unsigned *sp = (unsigned *)active->sp;
-        *(--sp) = ret;
-        active->sp = sp;
     }
 
-    bwprintf(COM2, BEGIN_SYS_CL "No active tasks, returning\r\n" END_CL);
+    bwprintf(COM2, BEGIN_SYS_CL "  [-] No active tasks, returning\r\n" END_CL);
     return 0;
 }

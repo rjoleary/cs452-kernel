@@ -56,6 +56,10 @@ void initTds(struct Td *tds);
 // Runtime: O(n)
 struct Td* getTdByTid(struct Td *tds, Tid tid);
 
-void initStack(const void *entrypoint, void **sp);
+void initStack(const void *entrypoint, void *sp);
+
+unsigned reqSyscall(struct Td *td);
+unsigned reqArg(struct Td *td, int i);
+void reqSetReturn(struct Td *td, unsigned v);
 
 #endif // TASK_H__INCLUDED
