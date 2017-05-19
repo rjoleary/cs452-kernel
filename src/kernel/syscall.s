@@ -15,15 +15,21 @@ kernel_entry:
     msr cpsr, #0xd3
     @ Store lr as pc in user's stack.
     stmfd r0, {lr}
+    @ Store the stored PSR in the user's stack.
+    @ r1: holds the task's PSR
+    mrs r1, spsr
+    str r1, [r0, #-0x44]
     @ Restore kernel registers and return.
     ldmea sp, {r4-r12,sp,pc}
 
 kernel_exit:
-    @ r0: holds the user's stack pointer
+    @ r0: holds the task's stack pointer (passed as arg 0)
     @ Store kernel's registers onto kernel's stack.
     stmfd sp, {r4-r12,sp,lr}
     @ Restore the task's psr.
-    msr spsr, #0x10
+    @ r1: holds the task's PSR
+    ldr r1, [r0, #-0x44]
+    msr spsr, r1
     @ Load the task's pc into lr_svc.
     ldr lr, [r0, #-4]
     @ Load the rest of the user registers.
