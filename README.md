@@ -60,7 +60,20 @@ In RedBoot, run the following:
 
 ### Explanation
 
-    TODO
+The first two lines of output are the first task, since it is the only ready
+task. Next, it creates two tasks, however since they have a lower priority the
+first task takes precedence over them. Next, the first task creates another user
+task, but since it has a higher priority it starts running before the first task
+gets a chance to print. The higher priority task prints then passes. However, 
+it is the only high priority task and so it gets to run again and prints again.
+The high priority task exits and the first task gets to run again. Since it was
+in the middle of printing, it finishes doing that. Again, it creates a higher
+priority task that gets to run before it, with identical results. The first user
+task then exits. Now there are 2 lower priority tasks. The first of the two
+prints and then calls pass. Since both tasks have the same priority, the second
+low priority task gets to run. It prints and passes to the first task, which
+prints and exits. Lastly, the second task prints and exits also.
+
 
 
 ## Description
@@ -161,7 +174,16 @@ each priority.
 If no tasks are available for scheduling, the kernel exits and returns to the
 RedBoot prompt.
 
-TODO: bit twiddling, constant time scheduling
+Since there are 32 priorities, each priority queue's state can be represented
+with a single bit in a 32 bit integer. Additionally, querying the first bit that
+is toggled can be done in constant time. We use `__builtin_clz` for this
+purpose. If the bit is toggled on, that means there are ready tasks for the
+given priority. Otherwise, the bit is toggled off.
+
+The queues are represented using an intrusive singly linked list. This way,
+insertion to the end and removal from the front are constant time operations.
+Additionally, there is little size overhead as we only need to store an extra
+pointer per task.
 
 
 ### System Calls
@@ -221,16 +243,16 @@ Page 45
 
 ### Strace
 
-TODO
+Additional debug information can be enabled by using `make STRACE_ENABLED=1`
+when building. This will enable a printout of some useful information such as
+the program's memory layout, a build time, as well as additional trace output
+for all system calls. The output is also in a darker color to distinguish it
+from normal output.
 
 ## Bugs
 
 - No known bugs.
 
 ## Checksums
-
-Run `md5sum $(git ls-files)`:
-
-    TODO
 
 Git hash: TODO
