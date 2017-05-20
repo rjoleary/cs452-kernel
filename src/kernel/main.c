@@ -6,17 +6,33 @@
 #include <syscall.h>
 #include <task.h>
 
-// Forward decls
+// Forward declarations
 const char* buildstr(void);
 void firstMain(void);
 
+// The attribute allows us to specify the exact location of the user stacks in
+// the linker script. This will be useful when it comes to memory protection.
 __attribute__((section("user_stacks"))) static unsigned userStacks[NUM_TD][STACK_SZ/4];
 
 int main() {
+    unsigned *kernelStack = (unsigned*)(&kernelStack + 1);
+
     // Print the build string (date + time).
     bwsetspeed(COM2, 115200);
     bwsetfifo(COM2, OFF);
-    STRACE("  [-] %s", buildstr());
+    STRACE("  [-] Built %s", buildstr());
+
+    // Print memory layout.
+#ifdef STRACE_ENABLED
+    extern char _DataStart, _DataEnd, _BssStart, _BssEnd;
+    extern char userStart, userEnd, textStart, textEnd;
+    STRACE("  [-] Memory layout:");
+    STRACE("  [-] 0x%08x - 0x%08x: data", &_DataStart, &_DataEnd);
+    STRACE("  [-] 0x%08x - 0x%08x: bss", &_BssStart, &_BssEnd);
+    STRACE("  [-]   0x%08x - 0x%08x: user stacks (%d)", &userStart, &userEnd, NUM_TD);
+    STRACE("  [-] 0x%08x - 0x%08x: text", &textStart, &textEnd);
+    STRACE("  [-] 0x%08x - 0x%08x: kernel stack", &textEnd, kernelStack);
+#endif
 
     unsigned used_tds = 1;
     struct Td tds[NUM_TD];

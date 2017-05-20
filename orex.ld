@@ -19,12 +19,15 @@ bss : /* Uninitialized data. */
 {
 _BssStart = . ;
 *(.bss)
+userStart = . ;
 *(user_stacks)
+userEnd = . ;
 _BssEnd = . ;
 } >ram
 
 text : /* The actual instructions. */
 {
+textStart = . ;
 *(.text)
 *(.got)
 *(.got.plt)
@@ -32,5 +35,6 @@ text : /* The actual instructions. */
 *(.glue_7)
 *(.glue_7t)
 *(.rodata.str1.4)
+textEnd = . ;
 } >ram
 }
