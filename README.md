@@ -41,7 +41,21 @@ In RedBoot, run the following:
 
 ### Output
 
-    TODO
+    FirstUserTask: entering
+    FirstUserTask: myTid()=0
+    FirstUserTask: created tid 1
+    FirstUserTask: created tid 2
+    TestUserTask: myTid()=3, myParentTid()=0
+    TestUserTask: myTid()=3, myParentTid()=0
+    FirstUserTask: created tid 3
+    TestUserTask: myTid()=4, myParentTid()=0
+    TestUserTask: myTid()=4, myParentTid()=0
+    FirstUserTask: created tid 4
+    FirstUserTask: exiting
+    TestUserTask: myTid()=1, myParentTid()=0
+    TestUserTask: myTid()=2, myParentTid()=0
+    TestUserTask: myTid()=1, myParentTid()=0
+    TestUserTask: myTid()=2, myParentTid()=0
 
 
 ### Explanation
