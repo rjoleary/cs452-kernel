@@ -4,12 +4,16 @@ export PATH := /u/wbcowan/gnuarm-4.0.2/arm-elf/bin:$(PATH)
 XCC     = gcc
 AS	= as
 LD      = ld
-CFLAGS  = -c -fPIC -Wall -Werror -mcpu=arm920t -msoft-float --std=gnu99
+CFLAGS  := -c -fPIC -Wall -Werror -mcpu=arm920t -msoft-float --std=gnu99
 # -g: include hooks for gdb
 # -c: only compile
 # -mcpu=arm920t: generate code for the 920t architecture
 # -fPIC: emit position-independent code
 # -Wall: report all warnings
+
+ifeq ($(STRACE_ENABLED),1)
+CFLAGS := $(CFLAGS) -DSTRACE_ENABLED
+endif
 
 ASFLAGS	= -mcpu=arm920t -mapcs-32
 # -mapcs: always generate a complete stack frame

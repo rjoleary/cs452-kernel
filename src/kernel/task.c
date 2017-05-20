@@ -2,7 +2,6 @@
 #include <task.h>
 #include <panic.h>
 #include <user/bwio.h>
-#include <console.h>
 
 void initTds(struct Td *tds) {
     for (int i = 0; i < NUM_TD; i++) {

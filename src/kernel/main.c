@@ -1,10 +1,9 @@
-#include <console.h>
 #include <def.h>
 #include <panic.h>
 #include <scheduler.h>
+#include <strace.h>
 #include <syscall.h>
 #include <task.h>
-#include <user/bwio.h>
 #include <user/err.h>
 
 // Forward decls
@@ -28,7 +27,7 @@ int main() {
     // Print the build string (date + time).
     bwsetspeed(COM2, 115200);
     bwsetfifo(COM2, OFF);
-    bwprintf(COM2, BEGIN_SYS_CL "  [-] %s\r\n" END_CL, buildstr());
+    STRACE("  [-] %s", buildstr());
 
     unsigned used_tds = 1;
     struct Td tds[NUM_TD];
@@ -73,7 +72,7 @@ int main() {
                 }
                 reqSetReturn(active, ret);
                 readyProcess(&scheduler, active);
-                bwprintf(COM2, BEGIN_SYS_CL "  [%d] int create(priority=%d, code=%d) = %d\r\n" END_CL,
+                STRACE("  [%d] int create(priority=%d, code=%d) = %d",
                         active->tid, priority, code, ret);
                 break;
             }
@@ -82,7 +81,7 @@ int main() {
                 int ret = active->tid;
                 readyProcess(&scheduler, active);
                 reqSetReturn(active, ret);
-                bwprintf(COM2, BEGIN_SYS_CL "  [%d] int myTid() = %d\r\n" END_CL, active->tid, ret);
+                STRACE("  [%d] int myTid() = %d", active->tid, ret);
                 break;
             }
 
@@ -90,48 +89,46 @@ int main() {
                 int ret = active->ptid;
                 readyProcess(&scheduler, active);
                 reqSetReturn(active, ret);
-                bwprintf(COM2, BEGIN_SYS_CL "  [%d] int myParentTid() = %d\r\n" END_CL, active->tid, ret);
+                STRACE("  [%d] int myParentTid() = %d", active->tid, ret);
                 break;
             }
 
             case SYS_PASS: {
                 readyProcess(&scheduler, active);
-                bwprintf(COM2, BEGIN_SYS_CL "  [%d] void pass()\r\n" END_CL, active->tid);
+                STRACE("  [%d] void pass()", active->tid);
                 break;
             }
 
             case SYS_EXEUNT: {
                 active->state = ZOMBIE;
-                bwprintf(COM2, BEGIN_SYS_CL "  [%d] void exeunt()\r\n" END_CL, active->tid);
+                STRACE("  [%d] void exeunt()", active->tid);
                 break;
             }
             /* TODO: Implement in kernel 2.
             case SYS_DESTROY: {
-                bwprintf(COM2, "void destroy()\r\n");
+                STRACE("  [%d] void destroy()", active->tid);
                 // TODO
                 break;
             }
 
             case SYS_SEND: {
-                bwprintf(COM2, "int send(tid=, msg=, msglen=, reply=, rplen=) = \r\n"); // TODO: args
-                // TODO
+                STRACE("  [%d] int send(tid=, msg=, msglen=, reply=, rplen=) = ", active->tid); // TODO: args // TODO
                 break;
             }
 
             case SYS_RECEIVE: {
-                bwprintf(COM2, "int receive(tid=, msg=, msglen=) = \r\n"); // TODO: args
+                STRACE("  [%d] int receive(tid=, msg=, msglen=) = ", active->tid); // TODO: args
                 // TODO
                 break;
             }
 
             case SYS_REPLY: {
-                bwprintf(COM2, "int reply(tid=, reply=, rplen=) = \r\n"); // TODO: args
-                // TODO
+                STRACE("  [%d] int reply(tid=, reply=, rplen=) = ", active->tid); // TODO: args // TODO
                 break;
             }
 
             case SYS_AWAITEVENT: {
-                bwprintf(COM2, "int awaitEvent(eventid=) = \r\n"); // TODO: args
+                STRACE("  [%d] int awaitEvent(eventid=) = ", active->tid); // TODO: args
                 // TODO
                 break;
             }
@@ -143,6 +140,6 @@ int main() {
         }
     }
 
-    bwprintf(COM2, BEGIN_SYS_CL "  [-] No active tasks, returning\r\n" END_CL);
+    STRACE("  [-] No active tasks, returning");
     return 0;
 }
