@@ -8,6 +8,6 @@ void kernelEntry(void);
 
 // kernelExit pops a tasks state from the given task pointer and context
 // switches to it. The new stack pointer is returned.
-void * kernelExit(void *sp);
+unsigned * kernelExit(void *sp);
 
 #endif // SYCALL_H__INCLUDED
