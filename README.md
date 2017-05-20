@@ -118,7 +118,7 @@ task descriptor contains the following fields:
 - `struct Td *sendReady`: next TD in the send queue, or NULL. For the purposes
   of kernel 1, this field is unused.
 - `enum RunState state`: current run state
-- `void *sp`: current stack pointer
+- `unsigned *sp`: current stack pointer
 
 For kernel 1, only three states are needed for task creation. More states are
 required for future kernels. The three current states are:

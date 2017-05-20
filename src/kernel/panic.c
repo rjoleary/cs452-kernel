@@ -1,5 +1,5 @@
-#include <user/bwio.h>
 #include <panic.h>
+#include <user/bwio.h>
 
 void panic(unsigned *regs, const char *str, const char *file, int line) {
     bwputstr(COM2, "\r\n!!!!!!!! PANIC !!!!!!!!\r\n");

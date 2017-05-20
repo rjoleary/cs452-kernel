@@ -1,11 +1,13 @@
 #ifndef SYSCALL_H__INCLUDED
 #define SYSCALL_H__INCLUDED
 
-#include "user/syscall.h"
+#include <user/syscall.h>
 
-struct Request;
+// kernelEntry is registered as the interrupt handler.
+void kernelEntry(void);
 
-void kernel_entry(void);
-void * kernel_exit(void *sp);
+// kernelExit pops a tasks state from the given task pointer and context
+// switches to it. The new stack pointer is returned.
+void * kernelExit(void *sp);
 
 #endif // SYCALL_H__INCLUDED

@@ -1,3 +1,6 @@
+// Calling PANIC(str) will halt the system and dump all the registers and stack
+// to COM2. The first argument, str, can be an informational message.
+
 #ifndef PANIC_H__INCLUDED
 #define PANIC_H__INCLUDED
 
@@ -20,6 +23,8 @@
     panic(regs, str, __FILE__, __LINE__); \
     } while(0)
 
+// This function is used internally by the PANIC macro. The reason a macro is
+// needed at all is because function calls touch the registers.
 void panic(unsigned *regs, const char *str, const char *file, int line);
 
 #endif // PANIC_H__INCLUDED

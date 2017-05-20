@@ -1,25 +1,14 @@
 #include <def.h>
+#include <err.h>
 #include <panic.h>
 #include <scheduler.h>
 #include <strace.h>
 #include <syscall.h>
 #include <task.h>
-#include <user/err.h>
 
 // Forward decls
 const char* buildstr(void);
 void firstMain(void);
-
-// First task must be created by hand.
-void initFirstTask(struct Td *td, void *stack) {
-    td->tid = 0;
-    td->ptid = td->tid;
-    td->pri = 3;
-    td->nextReady = 0;
-    td->sendReady = 0;
-    td->state = READY;
-    td->sp = stack;
-}
 
 __attribute__((section("user_stacks"))) static unsigned userStacks[NUM_TD][STACK_SZ/4];
 
@@ -40,14 +29,14 @@ int main() {
     readyProcess(&scheduler, &tds[0]);
 
     volatile void **SVC_VECTOR = (void*)0x28;
-    *SVC_VECTOR = &kernel_entry;
+    *SVC_VECTOR = &kernelEntry;
 
     while (1) {
         struct Td* active = getNextProcess(&scheduler);
         if (!active) {
             break;
         }
-        active->sp = kernel_exit(active->sp);
+        active->sp = kernelExit(active->sp);
         switch (reqSyscall(active)) {
             case SYS_CREATE: {
                 Priority priority = reqArg(active, 0);
@@ -112,7 +101,8 @@ int main() {
             }
 
             case SYS_SEND: {
-                STRACE("  [%d] int send(tid=, msg=, msglen=, reply=, rplen=) = ", active->tid); // TODO: args // TODO
+                STRACE("  [%d] int send(tid=, msg=, msglen=, reply=, rplen=) = ", active->tid); // TODO: args
+                // TODO
                 break;
             }
 
@@ -123,7 +113,8 @@ int main() {
             }
 
             case SYS_REPLY: {
-                STRACE("  [%d] int reply(tid=, reply=, rplen=) = ", active->tid); // TODO: args // TODO
+                STRACE("  [%d] int reply(tid=, reply=, rplen=) = ", active->tid); // TODO: args
+                // TODO
                 break;
             }
 

@@ -8,7 +8,7 @@ void initScheduler(struct Scheduler *scheduler) {
 
 void readyProcess(struct Scheduler *scheduler, struct Td *td) {
     unsigned int priBit = 1 << td->pri;
-    // There are other ready processes for this priority
+    // There are other ready processes for this priority.
     if (scheduler->status & priBit) {
         scheduler->entries[td->pri].last->nextReady = td;
         scheduler->entries[td->pri].last = td;
@@ -24,7 +24,7 @@ struct Td* getNextProcess(struct Scheduler *scheduler) {
     if (scheduler->status == 0) return 0;
     unsigned int lowestPri = 31 - __builtin_clz(scheduler->status);
     struct Td* ready = scheduler->entries[lowestPri].first;
-    // More than just one entry for this pri
+    // More than just one entry for this priority.
     if (scheduler->entries[lowestPri].last != ready) {
         scheduler->entries[lowestPri].first = ready->nextReady;
     }

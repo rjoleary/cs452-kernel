@@ -1,11 +1,11 @@
 @ Arm syntax highlighting for vim (ARM9/arm-syntax-vim)
 @ vim:ft=armv5
 
-.global kernel_entry
-.global kernel_exit
+.global kernelEntry
+.global kernelExit
 
 .section .text
-kernel_entry:
+kernelEntry:
     @ Switch to system mode to push user registers.
     msr cpsr_c, #0x1f
     stmfd sp, {r0-r15}
@@ -22,7 +22,7 @@ kernel_entry:
     @ Restore kernel registers and return.
     ldmea sp, {r4-r12,sp,pc}
 
-kernel_exit:
+kernelExit:
     @ r0: holds the task's stack pointer (passed as arg 0)
     @ Store kernel's registers onto kernel's stack.
     stmfd sp, {r4-r12,sp,lr}

@@ -2,6 +2,9 @@
  * bwio.h
  */
 
+#ifndef USER_BWIO_H__INCLUDED
+#define USER_BWIO_H__INCLUDED
+
 typedef char *va_list;
 
 #define __va_argsiz(t)	\
@@ -37,3 +40,5 @@ int bwputr( int channel, unsigned int reg );
 void bwputw( int channel, int n, char fc, char *bf );
 
 void bwprintf( int channel, const char *format, ... );
+
+#endif // USER_BWIO_H__INCLUDED

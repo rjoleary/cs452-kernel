@@ -46,7 +46,7 @@ struct Td {
     struct Td *nextReady; // next TD in the ready queue, or NULL
     struct Td *sendReady; // next TD in the send queue, or NULL
     enum RunState state;  // current run state
-    void *sp;             // current stack pointer
+    unsigned *sp;         // current stack pointer
 };
 
 // Initialize task descriptors.
@@ -56,10 +56,22 @@ void initTds(struct Td *tds);
 // Runtime: O(n)
 struct Td* getTdByTid(struct Td *tds, Tid tid);
 
-void initStack(const void *entrypoint, void *sp);
+// The first task descriptor must be created by hand.
+void initFirstTask(struct Td *td, void *stack);
 
+// Set the initial state of a user's stack.
+void initStack(const void *entrypoint, unsigned *sp);
+
+// Return the syscall number for the given task descriptor. If the task is not
+// performing a syscall, garbage is returned.
 unsigned reqSyscall(struct Td *td);
+
+// Return the sycall's i-th argument for the given task descriptor. If the task
+// is not performing a syscall, garbage is returned.
 unsigned reqArg(struct Td *td, int i);
+
+// Set the syscall's return value for the given task descriptor. If the task is
+// not performing a syscall, its stack gets corrupted.
 void reqSetReturn(struct Td *td, unsigned v);
 
 #endif // TASK_H__INCLUDED
