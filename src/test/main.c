@@ -1,8 +1,5 @@
-#include <task.h>
-#include "../../include/panic.h"
-
-// TODO: don't use bwio.h
 #include <bwio.h>
+#include <task.h>
 
 // The test tasks are created by the first task and perform the following:
 void testMain() {

@@ -65,7 +65,7 @@ void pass(void);
 void exeunt(void);
 
 // destroy
-// TODO:  Please see the separate document for destroy. Re-using resources is complicated.
+// TODO: Please see the separate document for destroy. Re-using resources is complicated.
 void destroy(void);
 
 #endif // USER_TASK_H__INCLUDED

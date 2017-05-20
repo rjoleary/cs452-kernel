@@ -1,10 +1,11 @@
-#include <user/bwio.h>
+#include <console.h>
 #include <def.h>
 #include <panic.h>
-#include <task.h>
-#include <syscall.h>
 #include <scheduler.h>
-#include <console.h>
+#include <syscall.h>
+#include <task.h>
+#include <user/bwio.h>
+#include <user/err.h>
 
 // Forward decls
 const char* buildstr(void);
@@ -52,12 +53,11 @@ int main() {
             case SYS_CREATE: {
                 Priority priority = reqArg(active, 0);
                 void *code = (void*)reqArg(active, 1);
-                // TODO: Use proper error codes
                 int ret;
                 if (used_tds == NUM_TD) {
-                    ret = -2;
+                    ret = -ERR_NORES;
                 } else if (priority < 0 || 31 < priority) {
-                    ret = -1;
+                    ret = -ERR_BADARG;
                 } else {
                     tds[used_tds].tid       = used_tds;
                     tds[used_tds].ptid      = active->tid;
@@ -105,7 +105,7 @@ int main() {
                 bwprintf(COM2, BEGIN_SYS_CL "  [%d] void exeunt()\r\n" END_CL, active->tid);
                 break;
             }
-            /*
+            /* TODO: Implement in kernel 2.
             case SYS_DESTROY: {
                 bwprintf(COM2, "void destroy()\r\n");
                 // TODO
@@ -136,8 +136,10 @@ int main() {
                 break;
             }
             */
-            default:
+
+            default: {
                 PANIC("bad syscall number");
+            }
         }
     }
 

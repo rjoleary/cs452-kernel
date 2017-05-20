@@ -1,7 +1,5 @@
-#include <task.h>
-
-// TODO: don't use bwio.h
 #include <bwio.h>
+#include <task.h>
 
 // Forward declaration.
 void testMain(void);
