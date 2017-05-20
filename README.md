@@ -25,9 +25,9 @@ tasks have been included to demonstrate these functionalities.
 
 ## Running
 
-TODO: we have to upload a kernel we won't accidentally overwrite
+In RedBoot, run the following:
 
-    > load -b 0x00218000 -h 10.15.167.5 "ARM/rj2olear/coldwell.elf"
+    > load -b 0x00218000 -h 10.15.167.5 "ARM/rj2olear/k1.elf"
     > go
 
 
@@ -64,7 +64,7 @@ Source files are sorted as follows:
 This organization prevents user source files from including kernel header files
 and calling kernel functions. However, kernel sources can still include user
 headers. Specifically, this is accomplished with the following rules in the
-makefile:
+Makefile:
 
 - When the kernel is built, the compiler's source directory is set to
   `src/kernel` and the include directory is `include`.
@@ -106,9 +106,48 @@ The `const char *err2str(int err)` function converts these error codes to human
 readable strings.
 
 
-### Priorities
+### Task Descriptor and States
+
+The definition of the task descriptor can be found in `include/task.h`. Each
+task descriptor contains the following fields:
+
+- `Tid tid`: task id (-1 if td is unallocated)
+- `Tid ptid`: parent's task id
+- `Priority pri`: priority 0 to 31
+- `struct Td *nextReady`: next TD in the ready queue, or NULL
+- `struct Td *sendReady`: next TD in the send queue, or NULL. For the purposes
+  of kernel 1, this field is unused.
+- `enum RunState state`: current run state
+- `void *sp`: current stack pointer
+
+For kernel 1, only three states are needed for task creation. More states are
+required for future kernels. The three current states are:
+
+- `ACTIVE`: The task has just run, is running, or is about to run. Only one
+  task may be in the active state.
+- `READY`:  The task is ready to be scheduled and activated.
+- `ZOMBIE`: The task has exited and will never again run, but still retains its
+  memory resources.
+
+New tasks start in the `READY` state. The possible transitions are:
+
+- `READY -> ACTIVE`
+- `ACTIVE -> READY`
+- `ACTIVE -> ZOMBIE`
 
 
+### Scheduling
+
+Priorities are numbered 0 (lowest) through 31 (highest). Tasks with a higher
+value are scheduled first.
+
+The scheduler (found in `src/kernel/scheduler.c`) maintains 32 queues, one for
+each priority.
+
+If no tasks are available for scheduling, the kernel exits and returns to the
+RedBoot prompt.
+
+TODO: bit twiddling, constant time scheduling
 
 
 ### System Calls
@@ -131,9 +170,7 @@ The following are declared in `include/user/task.h` and can be included via
   does not return. Currently, task descriptors are not recycled.
 
 
-## Context Switching
-
-### Software Interrupt
+### Context Switching
 
 Page 58 of the ARM manual. The parts important to us:
 
@@ -165,6 +202,12 @@ Note that supervisor mode has distinct registers for the following:
 
 Page 45
 
+    http://www.arm.linux.org.uk/developer/patches/viewpatch.php?id=3105/4
+
+
+### Strace
+
+TODO
 
 ## Bugs
 
