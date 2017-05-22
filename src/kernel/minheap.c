@@ -49,9 +49,10 @@ static int compareEntry(struct MinheapEntry *lhs, struct MinheapEntry *rhs) {
 }
 
 static void swapEntry(struct MinheapEntry *lhs, struct MinheapEntry *rhs) {
-	swapInt(&lhs->data.id, &rhs->data.id);
-	swapInt(&lhs->data.priority, &rhs->data.priority);
-	swapInt(&lhs->entryTime, &rhs->entryTime);
+        // TODO
+	//swapInt(&lhs->data.id, &rhs->data.id);
+	//swapInt(&lhs->data.priority, &rhs->data.priority);
+	//swapInt(&lhs->entryTime, &rhs->entryTime);
 }
 
 static void bubbleUp(struct Minheap *heap, int place) {

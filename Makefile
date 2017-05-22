@@ -1,9 +1,8 @@
-export PATH := /u/wbcowan/gnuarm-4.0.2/libexec/gcc/arm-elf/4.0.2:$(PATH)
-export PATH := /u/wbcowan/gnuarm-4.0.2/arm-elf/bin:$(PATH)
+export PATH := /u3/rj2olear/gcc-arm-eabi-6/bin:$(PATH)
 
-XCC     = gcc
-AS	= as
-LD      = ld
+XCC     := arm-none-eabi-gcc
+AS      := arm-none-eabi-as
+LD      := arm-none-eabi-ld
 CFLAGS  := -c -fPIC -Wall -Werror -mcpu=arm920t -msoft-float --std=gnu99
 # -g: include hooks for gdb
 # -c: only compile
@@ -18,7 +17,7 @@ endif
 ASFLAGS	= -mcpu=arm920t -mapcs-32
 # -mapcs: always generate a complete stack frame
 
-LDFLAGS = -init main -Map build/kernel.map -N -T orex.ld -L/u/wbcowan/gnuarm-4.0.2/lib/gcc/arm-elf/4.0.2
+LDFLAGS = -init main -Map build/kernel.map -N -T orex.ld -L/u3/rj2olear/gcc-arm-eabi-6/lib/gcc/arm-none-eabi/6.3.1/
 
 SRC = $(wildcard src/*/*.c)
 ASM = $(wildcard src/*/*.s)
