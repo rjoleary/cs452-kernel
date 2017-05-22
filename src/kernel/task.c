@@ -19,7 +19,7 @@ struct Td* getTdByTid(struct Td *tds, Tid tid) {
     return 0;
 }
 
-void initFirstTask(struct Td *td, void *stack) {
+void initFirstTask(struct Td *td, unsigned *stack) {
     td->tid = 0;
     td->ptid = td->tid;
     td->pri = 3;

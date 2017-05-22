@@ -1,9 +1,9 @@
 export PATH := /u3/rj2olear/gcc-arm-eabi-6/bin:$(PATH)
 
-XCC     := arm-none-eabi-gcc
+XCC     := arm-none-eabi-g++
 AS      := arm-none-eabi-as
-LD      := arm-none-eabi-gcc
-CFLAGS  := -c -fPIC -Wall -Werror -mcpu=arm920t -msoft-float --std=gnu99 -nostdlib -nostartfiles -ffreestanding
+LD      := arm-none-eabi-g++
+CFLAGS  := -c -fPIC -Wall -Werror -mcpu=arm920t -msoft-float --std=gnu++11 -nostdlib -nostartfiles -ffreestanding
 # -g: include hooks for gdb
 # -c: only compile
 # -mcpu=arm920t: generate code for the 920t architecture
