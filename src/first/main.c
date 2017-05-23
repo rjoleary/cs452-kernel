@@ -2,7 +2,7 @@
 #include <task.h>
 
 // Forward declaration.
-void testMain(void);
+void testMain();
 
 // The first user task performs the following in order:
 //  1. Creates two test tasks of lower priority

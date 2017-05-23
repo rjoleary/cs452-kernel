@@ -7,8 +7,8 @@
 #include <task.h>
 
 // Forward declarations
-const char* buildstr(void);
-void firstMain(void);
+const char* buildstr();
+void firstMain();
 
 // The attribute allows us to specify the exact location of the user stacks in
 // the linker script. This will be useful when it comes to memory protection.

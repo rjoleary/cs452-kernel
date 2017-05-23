@@ -72,7 +72,7 @@ struct Td {
 
 // Return a Td or NULL if Td does not exist.
 // Runtime: O(n)
-struct Td* getTdByTid(Td *tds, Tid tid);
+Td* getTdByTid(Td *tds, Tid tid);
 
 // The first task descriptor must be created by hand.
 void initFirstTask(Td &td, unsigned *stack);

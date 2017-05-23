@@ -22,7 +22,7 @@
 //   task id.
 //   -ERR_BADARG: the priority is invalid.
 //   -ERR_NORES: the kernel is out of task decriptors.
-Tid create(Priority priority, void (*code)(void));
+Tid create(Priority priority, void (*code)());
 
 // myTid - return my task id.
 //
@@ -31,7 +31,7 @@ Tid create(Priority priority, void (*code)(void));
 //
 // Returns:
 //   tid: the positive integer task id of the task that calls it.
-Tid myTid(void);
+Tid myTid();
 
 // myParentTid - return the task id of the task that created the calling task.
 //
@@ -42,14 +42,14 @@ Tid myTid(void);
 //
 // Returns:
 //   tid: the task id of the task that created the calling task
-Tid myParentTid(void);
+Tid myParentTid();
 
 // pass - cease execution, remaining ready to run
 //
 // Description:
 //   pass causes a task to stop executing. The task is moved to the end of its
 //   priority queue, and will resume executing when next sheduled.
-void pass(void);
+void pass();
 
 // exeunt - terminate execution forever.
 //
@@ -62,10 +62,10 @@ void pass(void);
 // Returns:
 //   exeunt does not return. If a point occurs where all tasks have exited the
 //   kernel should return cleanly to RedBoot.
-void exeunt(void);
+void exeunt();
 
 // destroy
 // TODO: Please see the separate document for destroy. Re-using resources is complicated.
-void destroy(void);
+void destroy();
 
 #endif // USER_TASK_H__INCLUDED
