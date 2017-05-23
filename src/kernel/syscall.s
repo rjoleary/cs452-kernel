@@ -31,9 +31,8 @@ kernelExit:
     ldr r1, [r0, #-0x44]
     msr spsr, r1
     @ Load the task's pc into lr_svc.
-    ldr lr, [r0, #-4]
+    ldr lr, [r0, #-4]!
     @ Load the rest of the user registers.
-    sub r0, r0, #4
     ldmea r0, {r0-r14}^
     @ Return from the exception (copies SPSR to CPSR).
     movs pc, lr
