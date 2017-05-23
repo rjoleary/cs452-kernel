@@ -1,7 +1,7 @@
 #include <panic.h>
 #include <user/bwio.h>
 
-void panic(unsigned *regs, const char *str, const char *file, int line) {
+void kernel::detail::panic(unsigned *regs, const char *str, const char *file, int line) {
     bwputstr(COM2, "\r\n!!!!!!!! PANIC !!!!!!!!\r\n");
     bwprintf(COM2, "Error: %s\r\n", str);
     bwprintf(COM2, "Location: %s:%d\r\n", file, line);

@@ -3,15 +3,10 @@
 #include <task.h>
 #include <user/bwio.h>
 
-void initTds(struct Td *tds) {
-    for (int i = 0; i < NUM_TD; i++) {
-        tds[i].tid = -1;
-    }
-}
-
-struct Td* getTdByTid(struct Td *tds, Tid tid) {
+namespace kernel {
+Td* getTdByTid(Td *tds, Tid tid) {
     // TODO: may be inefficient
-    for (int i = 0; i < NUM_TD; i++) {
+    for (int i = 0; i < kernel::NUM_TD; i++) {
         if (tds[i].tid == tid) {
             return &tds[i];
         }
@@ -19,14 +14,11 @@ struct Td* getTdByTid(struct Td *tds, Tid tid) {
     return 0;
 }
 
-void initFirstTask(struct Td *td, unsigned *stack) {
-    td->tid = 0;
-    td->ptid = td->tid;
-    td->pri = 3;
-    td->nextReady = 0;
-    td->sendReady = 0;
-    td->state = READY;
-    td->sp = stack;
+void initFirstTask(Td &td, unsigned *stack) {
+    td.tid = td.ptid = 0;
+    td.pri = 3;
+    td.state = kernel::RunState::Ready;
+    td.sp = stack;
 }
 
 // All tasks start with this stub. It enforces calling exeunt when the task
@@ -36,7 +28,7 @@ void taskStub(void (*entrypoint)(void)) {
     exeunt();
 }
 
-void initStack(const void *entrypoint, unsigned *sp) {
+void Td::initStack(void (*entrypoint)()) {
     // Note that the task's state is stored above the stack, in the location
     // which will be written to next according the the ABI. However, we do not
     // bother decrementing the stack pointer.
@@ -61,15 +53,4 @@ void initStack(const void *entrypoint, unsigned *sp) {
     *(--next) = (unsigned)entrypoint; // r0
     *(--next) = 0x10; // cpsr
 }
-
-unsigned reqSyscall(struct Td *td) {
-    return ((unsigned*)td->sp)[-16 + 9];
-}
-
-unsigned reqArg(struct Td *td, int i) {
-    return ((unsigned*)td->sp)[-16 + i];
-}
-
-void reqSetReturn(struct Td *td, unsigned v) {
-    ((unsigned*)td->sp)[-16] = v;
 }

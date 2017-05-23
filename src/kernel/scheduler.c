@@ -2,34 +2,32 @@
 #include <task.h>
 #include <user/bwio.h>
 
-void initScheduler(struct Scheduler *scheduler) {
-    scheduler->status = 0;
-}
-
-void readyProcess(struct Scheduler *scheduler, struct Td *td) {
-    unsigned int priBit = 1 << td->pri;
+namespace kernel {
+void Scheduler::readyProcess(Td &td) {
+    unsigned int priBit = 1 << td.pri;
     // There are other ready processes for this priority.
-    if (scheduler->status & priBit) {
-        scheduler->entries[td->pri].last->nextReady = td;
-        scheduler->entries[td->pri].last = td;
+    if (status & priBit) {
+        entries[td.pri].last->nextReady = &td;
+        entries[td.pri].last = &td;
     }
     else {
-        scheduler->entries[td->pri].first =
-            scheduler->entries[td->pri].last = td;
-        scheduler->status |= priBit;
+        entries[td.pri].first =
+            entries[td.pri].last = &td;
+        status |= priBit;
     }
 }
 
-struct Td* getNextProcess(struct Scheduler *scheduler) {
-    if (scheduler->status == 0) return 0;
-    unsigned int lowestPri = 31 - __builtin_clz(scheduler->status);
-    struct Td* ready = scheduler->entries[lowestPri].first;
+Td* Scheduler::getNextProcess() {
+    if (status == 0) return 0;
+    unsigned int lowestPri = 31 - __builtin_clz(status);
+    auto ready = entries[lowestPri].first;
     // More than just one entry for this priority.
-    if (scheduler->entries[lowestPri].last != ready) {
-        scheduler->entries[lowestPri].first = ready->nextReady;
+    if (entries[lowestPri].last != ready) {
+        entries[lowestPri].first = ready->nextReady;
     }
     else {
-        scheduler->status &= ~(1 << lowestPri);
+        status &= ~(1 << lowestPri);
     }
     return ready;
+}
 }

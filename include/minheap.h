@@ -18,7 +18,7 @@ struct MinheapEntry {
 };
 
 struct Minheap {
-    struct MinheapEntry entries[NUM_TD];
+    struct MinheapEntry entries[kernel::NUM_TD];
     int time, size;
 };
 

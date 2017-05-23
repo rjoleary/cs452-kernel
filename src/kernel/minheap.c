@@ -49,10 +49,9 @@ static int compareEntry(struct MinheapEntry *lhs, struct MinheapEntry *rhs) {
 }
 
 static void swapEntry(struct MinheapEntry *lhs, struct MinheapEntry *rhs) {
-        // TODO
-	//swapInt(&lhs->data.id, &rhs->data.id);
-	//swapInt(&lhs->data.priority, &rhs->data.priority);
-	//swapInt(&lhs->entryTime, &rhs->entryTime);
+    ctl::swap(lhs->data.id, rhs->data.id);
+    ctl::swap(lhs->data.priority, rhs->data.priority);
+    ctl::swap(lhs->entryTime, rhs->entryTime);
 }
 
 static void bubbleUp(struct Minheap *heap, int place) {
@@ -66,7 +65,7 @@ static void bubbleUp(struct Minheap *heap, int place) {
 }
 
 int minheapPush(struct Minheap *heap, Tid id, Priority priority) {
-	if (heap->size == NUM_TD) return -1;
+	if (heap->size == kernel::NUM_TD) return -1;
 	int place = heap->size;
 	struct MinheapEntry *entry = &heap->entries[place];
 	entry->data.id = id;
