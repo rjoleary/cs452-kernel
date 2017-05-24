@@ -32,7 +32,7 @@ OBJ = $(patsubst src/%.cpp, build/%.o, $(SRC)) $(patsubst src/%.s, build/%.o, $(
 .PHONY: all builddir clean upload objdump
 
 # Prevent make from deleting intermediate files.
-.PRECIOUS: build/%.o build/%.s build/kernel/%.s
+.PRECIOUS: build/%.o
 
 all: build/kernel.elf
 
