@@ -3,6 +3,7 @@ export PATH := /u3/rj2olear/gcc-arm-eabi-6/bin:$(PATH)
 XCC     := arm-none-eabi-g++
 AS      := arm-none-eabi-as
 LD      := arm-none-eabi-g++
+OBJDUMP := arm-none-eabi-objdump
 CFLAGS  := -c -fPIC -Wall -Werror -mcpu=arm920t -msoft-float --std=gnu++14 -nostdlib -nostartfiles -ffreestanding -fno-exceptions -fno-unwind-tables -fno-rtti -fno-threadsafe-statics
 # -g: include hooks for gdb
 # -c: only compile
@@ -28,7 +29,7 @@ SRC = $(wildcard src/*/*.cpp)
 ASM = $(wildcard src/*/*.s)
 OBJ = $(patsubst src/%.cpp, build/%.o, $(SRC)) $(patsubst src/%.s, build/%.o, $(ASM))
 
-.PHONY: all builddir clean upload
+.PHONY: all builddir clean upload objdump
 
 # Prevent make from deleting intermediate files.
 .PRECIOUS: build/%.o build/%.s build/kernel/%.s
@@ -52,6 +53,9 @@ build/%.o: src/%.s
 build/kernel.elf: $(OBJ) orex.ld
 	$(XCC) $(CFLAGS) -o build/kernel/buildstr.o src/kernel/buildstr.cpp
 	$(LD) $(LDFLAGS) -o build/kernel.elf $(OBJ) -lgcc
+
+objdump: build/kernel.elf
+	$(OBJDUMP) -dC build/kernel.elf | less
 
 clean:
 	-rm -rf build/*
