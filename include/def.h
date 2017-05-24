@@ -3,6 +3,8 @@
 #ifndef DEF_H__INCLUDED
 #define DEF_H__INCLUDED
 
+#include <user/def.h>
+
 namespace kernel {
 // The total number of task descriptors. The number of task descriptors is
 // fixed so that lookup and creating new tasks is constant time.

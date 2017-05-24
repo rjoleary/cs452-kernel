@@ -1,8 +1,9 @@
 // Name server
 
-#ifndef USER_NS_H__INCLUEDED
-#ifndef USER_NS_H__INCLUEDED
+#ifndef USER_NS_H__INCLUDED
+#define USER_NS_H__INCLUDED
 
+namespace ctl{
 // registerAs - register a name with the name server.
 //
 // Description
@@ -23,7 +24,7 @@
 // Returns:
 //   -ERR_OK: Success.
 //   -ERR_INVID: The nameserver task id inside the wrapper is invalid.
-int registerAs(char *name);
+int registerAs(const char *name);
 
 // whoIs - query the nameserver.
 //
@@ -43,6 +44,9 @@ int registerAs(char *name);
 // Returns:
 //   tid: The task id of the registered task.
 //   -ERR_INVID: The nameserver task id inside the wrapper is invalid.
-int whoIs(char *name);
+int whoIs(const char *name);
 
-#endif // USER_NS_H__INCLUEDED
+void nsMain();
+}
+
+#endif // USER_NS_H__INCLUDED
