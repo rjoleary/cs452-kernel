@@ -38,7 +38,11 @@ namespace ctl {
 //   -ERR_TRUNC: The reply message was truncated.
 //   -ERR_INVID: The task id supplied is not the task id of an existing task.
 //   -ERR_BADITC: The send-receive-reply transaction could not be completed.
-int send(Tid tid, char *msg, int msglen, char *reply, int rplen);
+int send(Tid tid, const void *msg, int msglen, void *reply, int rplen);
+template <typename T, typename U>
+int send(Tid tid, const T &msg, U &reply) {
+    return send(tid, &msg, sizeof(T), &reply, sizeof(U));
+}
 
 // receive - receive a message from a task.
 //
@@ -61,7 +65,11 @@ int send(Tid tid, char *msg, int msglen, char *reply, int rplen);
 //   >-1: The size of the message received, which is less than or equal to the
 //        size of the message buffer supplied. Longer messages are truncated.
 //   -ERR_TRUNC: The message is truncated.
-int receive(Tid *tid, char *msg, int msglen);
+int receive(Tid *tid, void *msg, int msglen);
+template <typename T>
+int receive(Tid *tid, T &msg) {
+    return receive(tid, &msg, sizeof(T));
+}
 
 // reply - reply to a message.
 //
@@ -77,7 +85,7 @@ int receive(Tid *tid, char *msg, int msglen);
 //   -ERR_TRUNC: The message was truncated.
 //   -ERR_INVID: The task id is not the task id of an existing task.
 //   -ERR_BADITC: The task id is not the task id of a reply blocked task.
-int reply(Tid tid, char *reply, int rplen);
+int reply(Tid tid, const void *reply, int rplen);
 }
 
 #endif // USER_ITC_H__INCLUDED

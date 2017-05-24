@@ -5,6 +5,7 @@
 #include <strace.h>
 #include <syscall.h>
 #include <task.h>
+#include <user/math.h>
 
 // Forward declarations
 const char* buildstr();
@@ -12,6 +13,15 @@ const char* buildstr();
 // The attribute allows us to specify the exact location of the user stacks in
 // the linker script. This will be useful when it comes to memory protection.
 __attribute__((section("user_stacks"))) static unsigned userStacks[kernel::NUM_TD][kernel::STACK_SZ/4];
+
+int copyMsg(const void *src, int srcSize, void *dest, int destSize) {
+    int ret;
+    if (destSize < srcSize) ret = -static_cast<int>(ctl::Error::Trunc);
+    else ret = srcSize;
+
+    __builtin_memcpy(dest, src, ctl::min(srcSize, destSize));
+    return ret;
+}
 
 int main() {
     unsigned *kernelStack = (unsigned*)(&kernelStack + 1);
@@ -109,25 +119,94 @@ int main() {
             }*/
 
             case Syscall::Send: {
-                /*int tid = active->getArg(0);
-                char *msg = active->getArg(1);
+                int tid = active->getArg(0);
+                auto msg = (const void*)active->getArg(1);
                 int msglen = active->getArg(2);
-                char *reply = active->getArg(3);
+                auto reply = (void*)active->getArg(3);
+                (void)reply;
                 int rplen = active->getArg(4);
+                (void)rplen;
+                auto receiver = tdManager.getTd(tid);
                 STRACE("  [%d] int send(tid=%d, msg=%d, msglen=%d, reply=%d, rplen=%d)",
-                        active->tid, tid, msg, msglen, reply, rplen);*/
+                        active->tid, tid, msg, msglen, reply, rplen);
+                if (!receiver) {
+                    active->setReturn(-static_cast<int>(Error::InvId));
+                    scheduler.readyProcess(*active);
+                    STRACE("  [%d] Bad Receiver", active->tid);
+                }
+                else {
+                    if (receiver->state == kernel::RunState::ReceiveBlocked) {
+                        auto recTid = (int*)receiver->getArg(0);
+                        auto recMsg = (void*)receiver->getArg(1);
+                        int recMsglen = receiver->getArg(2);
+                        
+                        *recTid = active->tid;
+
+                        receiver->setReturn(copyMsg(msg, msglen, recMsg, recMsglen));
+
+                        scheduler.readyProcess(*receiver);
+                        active->state = kernel::RunState::ReplyBlocked;
+                        STRACE("  [%d] ReplyBlocked", active->tid);
+                    }
+                    else {
+                        receiver->pushSender(*active);
+                        STRACE("  [%d] SendBlocked", active->tid);
+                    }
+                }
                 break;
             }
 
             case Syscall::Receive: {
-                STRACE("  [%d] int receive(tid=, msg=, msglen=) = ", active->tid); // TODO: args
-                // TODO
+                auto tid = (int*)active->getArg(0);
+                auto msg = (void*)active->getArg(1);
+                int msglen = active->getArg(2);
+                STRACE("  [%d] int receive(tid=%d, msg=%d, msglen=%d)",
+                        active->tid, tid, msg, msglen);
+                auto sender = active->popSender();
+                if (sender) {
+                    auto senderMsg = (const void*)sender->getArg(1);
+                    int senderMsglen = sender->getArg(2);
+
+                    *tid = sender->tid;
+
+                    active->setReturn(copyMsg(senderMsg, senderMsglen, msg, msglen));
+
+                    scheduler.readyProcess(*active);
+                    STRACE("  [%d] Received", active->tid);
+                }
+                else {
+                    active->state = kernel::RunState::ReceiveBlocked;
+                    STRACE("  [%d] ReceiveBlocked", active->tid);
+                }
                 break;
             }
 
             case Syscall::Reply: {
-                STRACE("  [%d] int reply(tid=, reply=, rplen=) = ", active->tid); // TODO: args
-                // TODO
+                int ret;
+                int tid = active->getArg(0);
+                auto reply = (const void*)active->getArg(1);
+                int rplen = active->getArg(2);
+                STRACE("  [%d] int reply(tid=%d, reply=%d, rplen=%d)",
+                        active->tid, tid, reply, rplen);
+                auto receiver = tdManager.getTd(tid);
+                if (!receiver) {
+                    ret = -static_cast<int>(Error::InvId);
+                    STRACE("  [%d] Bad Receiver", active->tid);
+                }
+                else if (receiver->state != kernel::RunState::ReplyBlocked) {
+                    ret = -static_cast<int>(Error::BadItc);
+                    STRACE("  [%d] Receiver not ReplyBlocked", active->tid);
+                }
+                else {
+                    auto receiverMsg = (void*)receiver->getArg(3);
+                    int receiverMsglen = receiver->getArg(4);
+
+                    ret = copyMsg(reply, rplen, receiverMsg, receiverMsglen);
+                    scheduler.readyProcess(*receiver);
+                    scheduler.readyProcess(*active);
+                    STRACE("  [%d] Replied", active->tid);
+                }
+                active->setReturn(ret);
                 break;
             }
             /*

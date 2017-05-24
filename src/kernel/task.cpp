@@ -67,4 +67,25 @@ void Td::initStack(void (*entrypoint)()) {
     *(--next) = (unsigned)entrypoint; // r0
     *(--next) = 0x10; // cpsr
 }
+
+Td* Td::popSender() {
+    if (!sendBegin) return nullptr;
+    auto ret = sendBegin;
+    sendBegin = sendBegin->nextReady;
+    if (sendEnd == ret) sendBegin = nullptr;
+    ret->state = RunState::ReplyBlocked;
+    return ret;
+}
+
+void Td::pushSender(Td &sender) {
+    if (!sendBegin) {
+        sendBegin = 
+            sendEnd = &sender;
+    }
+    else {
+        sendEnd->nextReady = &sender;
+        sendEnd = &sender;
+    }
+    sender.state = RunState::SendBlocked;
+}
 }

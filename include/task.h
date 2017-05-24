@@ -44,13 +44,14 @@ enum class RunState {
 
 // Task descriptor
 struct Td {
-    Tid tid = -1;         // task id (-1 if td is unallocated)
-    Tid ptid;             // parent's task id
-    Priority pri;         // priority 0 to 31
-    Td *nextReady;        // next TD in the ready queue, or NULL
-    Td *sendReady;        // next TD in the send queue, or NULL
-    RunState state;  // current run state
-    unsigned *sp;         // current stack pointer
+    Tid tid = -1;            // task id (-1 if td is unallocated)
+    Tid ptid;                // parent's task id
+    Priority pri;            // priority 0 to 31
+    Td *nextReady;           // next TD in the ready queue, or NULL
+    Td *sendBegin = nullptr, // queue for senders
+       *sendEnd;
+    RunState state;          // current run state
+    unsigned *sp;            // current stack pointer
 
     // Return the syscall number for the given task descriptor. If the task is not
     // performing a syscall, garbage is returned.
@@ -71,6 +72,9 @@ struct Td {
     }
     // Set the initial state of a user's stack.
     void initStack(void (*entrypoint)());
+    
+    Td* popSender();
+    void pushSender(Td&);
 };
 
 class TdManager {
