@@ -25,7 +25,7 @@ tasks have been included to demonstrate these functionalities.
 
 ## Checksums
 
-Git hash: TODO
+Git hash: 1d39ce668d7ee1b22e2d01e25d11a1db13d80769
 
 
 ## Running
