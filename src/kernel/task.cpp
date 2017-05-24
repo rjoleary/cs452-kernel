@@ -4,6 +4,14 @@
 #include <user/bwio.h>
 
 namespace kernel {
+namespace {
+// All tasks start with this stub. It enforces calling exeunt when the task
+// returns. This function always runs in usermode.
+void taskStub(void (*entrypoint)(void)) {
+    entrypoint();
+    ctl::exeunt();
+}
+} // unnamed namespace
 Td* getTdByTid(Td *tds, Tid tid) {
     // TODO: may be inefficient
     for (int i = 0; i < kernel::NUM_TD; i++) {
@@ -19,13 +27,6 @@ void initFirstTask(Td &td, unsigned *stack) {
     td.pri = 3;
     td.state = kernel::RunState::Ready;
     td.sp = stack;
-}
-
-// All tasks start with this stub. It enforces calling exeunt when the task
-// returns. This function always runs in usermode.
-void taskStub(void (*entrypoint)(void)) {
-    entrypoint();
-    exeunt();
 }
 
 void Td::initStack(void (*entrypoint)()) {

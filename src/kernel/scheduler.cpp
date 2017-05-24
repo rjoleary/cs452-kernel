@@ -15,6 +15,7 @@ void Scheduler::readyProcess(Td &td) {
             entries[td.pri].last = &td;
         status |= priBit;
     }
+    td.state = RunState::Ready;
 }
 
 Td* Scheduler::getNextProcess() {
@@ -28,6 +29,7 @@ Td* Scheduler::getNextProcess() {
     else {
         status &= ~(1 << lowestPri);
     }
+    ready->state = RunState::Active;
     return ready;
 }
 }

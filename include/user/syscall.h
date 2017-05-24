@@ -1,18 +1,20 @@
 #ifndef USER_SYSCALL_H__INCLUDED
 #define USER_SYSCALL_H__INCLUDED
 
-enum Syscall {
-    SYS_CREATE = 0,
-    SYS_MYTID,
-    SYS_MYPARENTTID,
-    SYS_PASS,
-    SYS_EXEUNT,
-    SYS_DESTROY,
-    SYS_SEND,
-    SYS_RECEIVE,
-    SYS_REPLY,
-    SYS_AWAITEVENT,
+namespace kernel {
+enum class Syscall {
+    Create = 0,
+    MyTid,
+    MyParentTid,
+    Pass,
+    Exeunt,
+    Destroy,
+    Send,
+    Receive,
+    Reply,
+    AwaitEvent,
 };
+}
 
 // Body for a syscall taking 0 arguments.
 #define SYSCALL0(id) {          \

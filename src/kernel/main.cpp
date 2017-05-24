@@ -52,14 +52,16 @@ int main() {
         }
         active->sp = kernelExit(active->sp);
         switch (active->getSyscall()) {
-            case SYS_CREATE: {
+            using kernel::Syscall;
+            using ctl::Error;
+            case Syscall::Create: {
                 Priority priority = active->getArg(0);
                 auto code = (void(*)())active->getArg(1);
                 int ret;
                 if (used_tds == kernel::NUM_TD) {
-                    ret = -ERR_NORES;
+                    ret = -static_cast<int>(Error::NoRes);
                 } else if (priority < 0 || 31 < priority) {
-                    ret = -ERR_BADARG;
+                    ret = -static_cast<int>(Error::BadArg);
                 } else {
                     tds[used_tds].tid       = used_tds;
                     tds[used_tds].ptid      = active->tid;
@@ -78,7 +80,7 @@ int main() {
                 break;
             }
 
-            case SYS_MYTID: {
+            case Syscall::MyTid: {
                 int ret = active->tid;
                 scheduler.readyProcess(*active);
                 active->setReturn(ret);
@@ -86,7 +88,7 @@ int main() {
                 break;
             }
 
-            case SYS_MYPARENTTID: {
+            case Syscall::MyParentTid: {
                 int ret = active->ptid;
                 scheduler.readyProcess(*active);
                 active->setReturn(ret);
@@ -94,13 +96,13 @@ int main() {
                 break;
             }
 
-            case SYS_PASS: {
+            case Syscall::Pass: {
                 scheduler.readyProcess(*active);
                 STRACE("  [%d] void pass()", active->tid);
                 break;
             }
 
-            case SYS_EXEUNT: {
+            case Syscall::Exeunt: {
                 active->state = kernel::RunState::Zombie;
                 STRACE("  [%d] void exeunt()", active->tid);
                 break;

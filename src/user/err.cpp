@@ -1,19 +1,20 @@
 #include <err.h>
 
+namespace ctl {
 const char *err2str(int err) {
     if (err < 0) {
         err = -err;
     }
-
-    switch (err) {
-        case ERR_OK:      return "ok";
-        case ERR_BADARG:  return "bad argument";
-        case ERR_NORES:   return "no resource available";
-        case ERR_TRUNC:   return "truncated";
-        case ERR_INVID:   return "invalid id";
-        case ERR_BADITC:  return "could not complete inter-task communcation";
-        case ERR_CORRUPT: return "corrupted volatile data";
-        case ERR_UNKN:
-        default:          return "unknown error";
+    switch (static_cast<Error>(err)) {
+        case Error::Ok:      return "ok";
+        case Error::BadArg:  return "bad argument";
+        case Error::NoRes:   return "no resource available";
+        case Error::Trunc:   return "truncated";
+        case Error::InvId:   return "invalid id";
+        case Error::BadItc:  return "could not complete inter-task communcation";
+        case Error::Corrupt: return "corrupted volatile data";
+        case Error::Unkn:
+        default:      return "unknown error";
     }
+}
 }

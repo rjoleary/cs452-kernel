@@ -2,6 +2,6 @@
 
 void idleMain() {
     while (1) {
-        pass();
+        ctl::pass();
     }
 }

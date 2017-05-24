@@ -1,9 +1,11 @@
 #include <syscall.h>
 #include <task.h>
 
-Tid create(Priority a0, void (*a1)()) SYSCALL2R(SYS_CREATE)
-Tid myTid() SYSCALL0R(SYS_MYTID)
-Tid myParentTid() SYSCALL0R(SYS_MYPARENTTID)
-void pass() SYSCALL0(SYS_PASS)
-void exeunt() SYSCALL0(SYS_EXEUNT)
-void destroy() SYSCALL0(SYS_DESTROY)
+namespace ctl {
+Tid create(Priority a0, void (*a1)()) SYSCALL2R(kernel::Syscall::Create)
+Tid myTid() SYSCALL0R(kernel::Syscall::MyTid)
+Tid myParentTid() SYSCALL0R(kernel::Syscall::MyParentTid)
+void pass() SYSCALL0(kernel::Syscall::Pass)
+void exeunt() SYSCALL0(kernel::Syscall::Exeunt)
+void destroy() SYSCALL0(kernel::Syscall::Destroy)
+}

@@ -5,6 +5,7 @@
 
 #include "types.h"
 #include "user/task.h"
+#include "user/syscall.h"
 
 namespace kernel {
 // The first three of these states are needed for task creation; the next three
@@ -46,13 +47,13 @@ struct Td {
     Priority pri;         // priority 0 to 31
     Td *nextReady;        // next TD in the ready queue, or NULL
     Td *sendReady;        // next TD in the send queue, or NULL
-    enum RunState state;  // current run state
+    RunState state;  // current run state
     unsigned *sp;         // current stack pointer
 
     // Return the syscall number for the given task descriptor. If the task is not
     // performing a syscall, garbage is returned.
-    unsigned getSyscall() const {
-        return sp[-16 + 9];
+    Syscall getSyscall() const {
+        return static_cast<Syscall>(sp[-16 + 9]);
     }
 
     // Return the sycall's i-th argument for the given task descriptor. If the task

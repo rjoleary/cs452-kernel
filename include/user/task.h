@@ -5,6 +5,7 @@
 
 #include "types.h"
 
+namespace ctl {
 // create - instantiate a task.
 //
 // Description:
@@ -67,5 +68,6 @@ void exeunt();
 // destroy
 // TODO: Please see the separate document for destroy. Re-using resources is complicated.
 void destroy();
+}
 
 #endif // USER_TASK_H__INCLUDED

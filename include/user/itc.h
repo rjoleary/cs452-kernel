@@ -6,6 +6,7 @@
 #include "syscall.h"
 #include "types.h"
 
+namespace ctl {
 // send - send a message to a specific task and obtain the corresponding response.
 //
 // Description:
@@ -77,5 +78,6 @@ int receive(Tid *tid, char *msg, int msglen);
 //   -ERR_INVID: The task id is not the task id of an existing task.
 //   -ERR_BADITC: The task id is not the task id of a reply blocked task.
 int reply(Tid tid, char *reply, int rplen);
+}
 
 #endif // USER_ITC_H__INCLUDED
