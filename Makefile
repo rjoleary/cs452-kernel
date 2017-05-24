@@ -24,9 +24,9 @@ CFLAGS := $(CFLAGS) -O2 -flto
 LDFLAGS := $(LDFLAGS) -O2 -flto
 endif
 
-SRC = $(wildcard src/*/*.c)
+SRC = $(wildcard src/*/*.cpp)
 ASM = $(wildcard src/*/*.s)
-OBJ = $(patsubst src/%.c, build/%.o, $(SRC)) $(patsubst src/%.s, build/%.o, $(ASM))
+OBJ = $(patsubst src/%.cpp, build/%.o, $(SRC)) $(patsubst src/%.s, build/%.o, $(ASM))
 
 .PHONY: all builddir clean upload
 
@@ -36,12 +36,12 @@ OBJ = $(patsubst src/%.c, build/%.o, $(SRC)) $(patsubst src/%.s, build/%.o, $(AS
 all: build/kernel.elf
 
 # Kernel code includes headers from ./include
-build/kernel/%.o: src/kernel/%.c
+build/kernel/%.o: src/kernel/%.cpp
 	@mkdir -p $(dir $@)
 	$(XCC) $(CFLAGS) -I./include -o $@ $<
 
 # User code includes headers from ./include/user
-build/%.o: src/%.c
+build/%.o: src/%.cpp
 	@mkdir -p $(dir $@)
 	$(XCC) $(CFLAGS) -I./include/user -o $@ $<
 
@@ -50,7 +50,7 @@ build/%.o: src/%.s
 	$(AS) $(ASFLAGS) -o $@ $<
 
 build/kernel.elf: $(OBJ) orex.ld
-	$(XCC) $(CFLAGS) -o build/kernel/buildstr.o src/kernel/buildstr.c
+	$(XCC) $(CFLAGS) -o build/kernel/buildstr.o src/kernel/buildstr.cpp
 	$(LD) $(LDFLAGS) -o build/kernel.elf $(OBJ) -lgcc
 
 clean:
