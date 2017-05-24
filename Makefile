@@ -3,7 +3,7 @@ export PATH := /u3/rj2olear/gcc-arm-eabi-6/bin:$(PATH)
 XCC     := arm-none-eabi-gcc
 AS      := arm-none-eabi-as
 LD      := arm-none-eabi-gcc
-CFLAGS  := -c -fPIC -Wall -Werror -mcpu=arm920t -msoft-float --std=gnu99 -O2 -nostdlib -nostartfiles -flto
+CFLAGS  := -c -fPIC -Wall -Werror -mcpu=arm920t -msoft-float --std=gnu99 -nostdlib -nostartfiles -ffreestanding
 # -g: include hooks for gdb
 # -c: only compile
 # -mcpu=arm920t: generate code for the 920t architecture
@@ -17,7 +17,12 @@ endif
 ASFLAGS	= -mcpu=arm920t -mapcs-32
 # -mapcs: always generate a complete stack frame
 
-LDFLAGS = -Wl,-init,main,-Map=build/kernel.map,-N -T orex.ld -nostdlib -nostartfiles -L/u3/rj2olear/gcc-arm-eabi-6/lib/gcc/arm-none-eabi/6.3.1/ -O2 -flto
+LDFLAGS = -Wl,-init,main,-Map=build/kernel.map,-N -T orex.ld -nostdlib -nostartfiles -ffreestanding -L/u3/rj2olear/gcc-arm-eabi-6/lib/gcc/arm-none-eabi/6.3.1/
+
+ifeq ($(OPT_ENABLED),1)
+CFLAGS := $(CFLAGS) -O2 -flto
+LDFLAGS := $(LDFLAGS) -O2 -flto
+endif
 
 SRC = $(wildcard src/*/*.c)
 ASM = $(wildcard src/*/*.s)
@@ -39,9 +44,6 @@ build/kernel/%.o: src/kernel/%.c
 build/%.o: src/%.c
 	@mkdir -p $(dir $@)
 	$(XCC) $(CFLAGS) -I./include/user -o $@ $<
-
-#build/%.o: build/%.s
-#$(AS) $(ASFLAGS) -o $@ $<
 
 build/%.o: src/%.s
 	@mkdir -p $(dir $@)
