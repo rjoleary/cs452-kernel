@@ -7,7 +7,7 @@ namespace kernel {
 // Forward declaration
 struct Td;
 
-struct Scheduler {
+class Scheduler {
     // A bitset indicating which queues are non-empty.
     unsigned status = 0;
 
@@ -15,7 +15,7 @@ struct Scheduler {
     struct {
         Td *first, *last;
     } entries[NUM_PRI];
-
+public:
     // Enqueue a process onto the ready queue.
     void readyProcess(Td &td);
 

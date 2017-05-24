@@ -19,7 +19,7 @@ void Scheduler::readyProcess(Td &td) {
 }
 
 Td* Scheduler::getNextProcess() {
-    if (status == 0) return 0;
+    if (status == 0) return nullptr;
     unsigned int lowestPri = 31 - __builtin_clz(status);
     auto ready = entries[lowestPri].first;
     // More than just one entry for this priority.

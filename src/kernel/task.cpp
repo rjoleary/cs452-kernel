@@ -2,6 +2,10 @@
 #include <panic.h>
 #include <task.h>
 #include <user/bwio.h>
+#include <scheduler.h>
+
+// Forward declerations
+void firstMain();
 
 namespace kernel {
 namespace {
@@ -12,21 +16,30 @@ void taskStub(void (*entrypoint)(void)) {
     ctl::exeunt();
 }
 } // unnamed namespace
-Td* getTdByTid(Td *tds, Tid tid) {
+
+TdManager::TdManager(Scheduler &scheduler, unsigned *stack) {
+    tds[0].tid = tds[0].ptid = 0;
+    tds[0].pri = 3;
+    tds[0].state = kernel::RunState::Ready;
+    tds[0].sp = stack;
+    tds[0].initStack(firstMain);
+    scheduler.readyProcess(tds[0]);
+}
+
+Td* TdManager::createTd() {
+    if (usedTds == kernel::NUM_TD) return nullptr;
+    tds[usedTds].tid = usedTds;
+    return &tds[usedTds++];
+}
+
+Td* TdManager::getTd(Tid tid) {
     // TODO: may be inefficient
     for (int i = 0; i < kernel::NUM_TD; i++) {
         if (tds[i].tid == tid) {
             return &tds[i];
         }
     }
-    return 0;
-}
-
-void initFirstTask(Td &td, unsigned *stack) {
-    td.tid = td.ptid = 0;
-    td.pri = 3;
-    td.state = kernel::RunState::Ready;
-    td.sp = stack;
+    return nullptr;
 }
 
 void Td::initStack(void (*entrypoint)()) {

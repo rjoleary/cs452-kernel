@@ -8,6 +8,8 @@
 #include "user/syscall.h"
 
 namespace kernel {
+class Scheduler;
+
 // The first three of these states are needed for task creation; the next three
 // are needed for message passing; and the seventh is needed for hardware
 // interrupts.
@@ -71,12 +73,18 @@ struct Td {
     void initStack(void (*entrypoint)());
 };
 
-// Return a Td or NULL if Td does not exist.
-// Runtime: O(n)
-Td* getTdByTid(Td *tds, Tid tid);
+class TdManager {
+    unsigned usedTds = 1;
+    Td tds[kernel::NUM_TD];
+public:
+    TdManager(Scheduler &scheduler, unsigned *stack);
+    // Create a Td, or return nullptr if impossible
+    Td* createTd();
 
-// The first task descriptor must be created by hand.
-void initFirstTask(Td &td, unsigned *stack);
+    // Return a Td or nullptr if Td does not exist.
+    // Runtime: O(n)
+    Td* getTd(Tid tid);
+};
 }
 
 #endif // TASK_H__INCLUDED

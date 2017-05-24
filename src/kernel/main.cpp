@@ -8,7 +8,6 @@
 
 // Forward declarations
 const char* buildstr();
-void firstMain();
 
 // The attribute allows us to specify the exact location of the user stacks in
 // the linker script. This will be useful when it comes to memory protection.
@@ -34,13 +33,8 @@ int main() {
     STRACE("  [-] 0x%08x - 0x%08x: kernel stack", &textEnd, kernelStack);
 #endif
 
-    unsigned used_tds = 1;
-    kernel::Td tds[kernel::NUM_TD];
     kernel::Scheduler scheduler;
-
-    kernel::initFirstTask(tds[0], userStacks[0] + kernel::STACK_SZ/4);
-    tds[0].initStack(firstMain);
-    scheduler.readyProcess(tds[0]);
+    kernel::TdManager tdManager(scheduler, userStacks[0] + kernel::STACK_SZ/4);
 
     auto SVC_VECTOR = (void (*volatile*)())0x28;
     *SVC_VECTOR = &kernelEntry;
@@ -58,20 +52,20 @@ int main() {
                 Priority priority = active->getArg(0);
                 auto code = (void(*)())active->getArg(1);
                 int ret;
-                if (used_tds == kernel::NUM_TD) {
-                    ret = -static_cast<int>(Error::NoRes);
-                } else if (priority < 0 || 31 < priority) {
+                kernel::Td* td;
+                if (priority < 0 || 31 < priority) {
                     ret = -static_cast<int>(Error::BadArg);
-                } else {
-                    tds[used_tds].tid       = used_tds;
-                    tds[used_tds].ptid      = active->tid;
-                    tds[used_tds].pri       = priority;
-                    tds[used_tds].state     = kernel::RunState::Ready;
-                    tds[used_tds].sp        = userStacks[used_tds] + kernel::STACK_SZ/4;
-                    tds[used_tds].initStack(code);
-                    scheduler.readyProcess(tds[used_tds]);
-                    ret = used_tds;
-                    used_tds++;
+                }
+                else if (!(td = tdManager.createTd())) {
+                    ret = -static_cast<int>(Error::NoRes);
+                } 
+                else {
+                    td->ptid      = active->tid;
+                    td->pri       = priority;
+                    td->sp        = userStacks[td->tid] + kernel::STACK_SZ/4;
+                    td->initStack(code);
+                    scheduler.readyProcess(*td);
+                    ret = td->tid;
                 }
                 active->setReturn(ret);
                 scheduler.readyProcess(*active);
@@ -112,26 +106,31 @@ int main() {
                 STRACE("  [%d] void destroy()", active->tid);
                 // TODO
                 break;
-            }
+            }*/
 
-            case SYS_SEND: {
-                STRACE("  [%d] int send(tid=, msg=, msglen=, reply=, rplen=) = ", active->tid); // TODO: args
-                // TODO
+            case Syscall::Send: {
+                /*int tid = active->getArg(0);
+                char *msg = active->getArg(1);
+                int msglen = active->getArg(2);
+                char *reply = active->getArg(3);
+                int rplen = active->getArg(4);
+                STRACE("  [%d] int send(tid=%d, msg=%d, msglen=%d, reply=%d, rplen=%d)",
+                        active->tid, tid, msg, msglen, reply, rplen);*/
                 break;
             }
 
-            case SYS_RECEIVE: {
+            case Syscall::Receive: {
                 STRACE("  [%d] int receive(tid=, msg=, msglen=) = ", active->tid); // TODO: args
                 // TODO
                 break;
             }
 
-            case SYS_REPLY: {
+            case Syscall::Reply: {
                 STRACE("  [%d] int reply(tid=, reply=, rplen=) = ", active->tid); // TODO: args
                 // TODO
                 break;
             }
-
+            /*
             case SYS_AWAITEVENT: {
                 STRACE("  [%d] int awaitEvent(eventid=) = ", active->tid); // TODO: args
                 // TODO
