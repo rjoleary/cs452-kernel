@@ -2,7 +2,7 @@
 
 Name: The Coldwell Kernel
 
-Students: Ryan O'Leary (rj2oleary) and Elnar Dakeshov (edakesho)
+Students: Ryan O'Leary (rj2olear) and Elnar Dakeshov (edakesho)
 
 Student Ids: 20509502 and 20577578
 
@@ -21,6 +21,11 @@ tasks have been included to demonstrate these functionalities.
 ## Download Path
 
     git clone https://git.uwaterloo.ca/coldwell/kernel.git
+
+
+## Checksums
+
+Git hash: TODO
 
 
 ## Running
@@ -60,27 +65,37 @@ In RedBoot, run the following:
 
 ### Explanation
 
-The first two lines of output are the first task, since it is the only ready
-task. Next, it creates two tasks, however since they have a lower priority the
-first task takes precedence over them. Next, the first task creates another user
-task, but since it has a higher priority it starts running before the first task
-gets a chance to print. The higher priority task prints then passes. However, 
-it is the only high priority task and so it gets to run again and prints again.
-The high priority task exits and the first task gets to run again. Since it was
-in the middle of printing, it finishes doing that. Again, it creates a higher
-priority task that gets to run before it, with identical results. The first user
-task then exits. Now there are 2 lower priority tasks. The first of the two
-prints and then calls pass. Since both tasks have the same priority, the second
-low priority task gets to run. It prints and passes to the first task, which
-prints and exits. Lastly, the second task prints and exits also.
-
+1. The first two lines are printed by the first task. The first task's id is
+  always 0 and its priority is 3.
+2. The first task creates two tasks in succession. However, since they have a
+  lower priority (1), the first task takes precedence over them. The two
+  created tasks (tid 1 and  remain in the ready state.
+3. Next, the first task creates another user task (tid=3), but since it has a
+  priority of 5, higher than the first task's priority, it preempts the first
+  task. The first task must wait until task 3 exits before being able to print
+  its task id.
+4. The higher priority task prints its task id and parent task id then passes.
+  However, it is the only high priority task and so it gets to run again and
+  prints again. The high priority task exits and the first task gets to run
+  again.
+5. Since the first priority task was in the middle of printing, it finishes and
+  prints the "created tid 3".
+6. The first task creates another task with priority 5. The tid for this new
+  task is 4. Steps 4 and 5 are repeated for this task.
+7. The first task finishes by printing "exiting" and calling the `exeunt` syscall.
+8. Now there are still 2 lower priority tasks in the ready state.
+9. The first of the two prints and then calls pass. Since both tasks have the
+  same priority, the second low priority task gets to run. It prints and
+  passes to the first task, which prints and exits. Lastly, the second task
+  prints and exits also.
+10. Once all the tasks exits, the system returns to RedBoot.
 
 
 ## Description
 
 ### Directory structure
 
-Source files are sorted as follows:
+Source files are organized as follows:
 
 - `include/*.h`         : kernel header files
 - `include/user/*.h`    : user API and header files
@@ -208,38 +223,85 @@ The following are declared in `include/user/task.h` and can be included via
 
 ### Context Switching
 
-Page 58 of the ARM manual. The parts important to us:
+Context switching is implement by two assembly functions: `kernelEntry` and
+`kernelyExit` which can be found in `src/kernel/syscall.s`.
 
-    R14_svc   = address of next instruction after the SWI instruction
-    SPSR_svc  = CPSR
-    CPSR[4:0] = 0b10011  /* Enter Supervisor mode */
-    CPSR[7] = 1          /* Disable normal interrupts */
+`kernelExit` exits kernel mode and enters user mode. It performs the following:
 
-To return afterwards:
+1. Push the kernel registers to the kernel stack (r4-r12, sp, lr).
+2. Load the task's CPSR into SPSR.
+3. Pop the task's registers from the user's stack (r0-r14).
+4. `movs pc, lr` which restores the program counter and copies SPSR to CPSR.
 
-    MOVS pc, R14
+`kernelEntry` exits user mode and enters kernel mode. It performs the following:
 
+1. Push the task's registers to the user's stack (r0-r15).
+2. Save `lr` as `pc` in the user's stack.
+3. Save the task's CPSR.
+4. Pop the kernel registers from the kernel stack (r4-r12, sp, lr).
+5. Update the task's stack pointer in the task descriptor.
 
-The following 4 steps are performed atomically:
+The task's arguments are read directly off the stack from the pushed registers
+(r0-r4 in the diagram below). The return value is written to the location of r0
+in the stack.
 
-    lr_svc <- pc + 4        % like a bl instruction
-    pc <- #0x08             % instruction in interrupt vector
-    spsr <- cpsr            % store original value of cpsr
-    cpsr_svc <- cpsr | 0x3  % put processor into supervisor mode
+The syscall number is written to `r9` by the user task before performing the
+SWI. This is somewhat more efficient than using the immediate value (see
+discussions in the [ARM EABI](
+http://www.arm.linux.org.uk/developer/patches/viewpatch.php?id=3105/4)).
 
-The instruction in address 0x08 is a branch to the address in 0x28:
+User Stack Layout: (note that `sp_usr` remains unmodified)
 
-    pc <- [#0x28]
+        0 +------+
+        ↑ |      |
+          |      |
+          |      |
+          |      |
+    -0x44 | cpsr |
+    -0x40 |  r0  | <- argument 0 / return value
+    -0x3c |  r1  | <- argument 1
+    -0x38 |  r2  | <- argument 2
+          |  .   |
+          |  .   |
+          |  .   |
+    -0x1c |  r9  | <- syscall number
+          |  .   |
+    -0x10 | r12  |
+    -0x0c |  sp  |
+    -0x08 |  lr  |
+    -0x04 |  pc  |
+          |  X   | <- sp_usr
+          |  X   |
+          |  X   |
+          |      |
+          |      |
+          |      |
+        ↓ |      |
+        ∞ +------+
 
-Note that supervisor mode has distinct registers for the following:
+Kernel stack layout: (note that `sp_svc` remains unmodified)
 
-- 
-
-
-Page 45
-
-    http://www.arm.linux.org.uk/developer/patches/viewpatch.php?id=3105/4
-
+        0 +-----+
+        ↑ |     |
+          |     |
+          |     |
+          |     |
+    -0x30 |  r4 |
+    -0x2c |  r5 |
+          |  .  |
+          |  .  |
+          |  .  |
+    -0x0c | r12 |
+    -0x08 |  sp |
+    -0x04 |  pc |
+          |  X  | <- sp_svc
+          |  X  |
+          |  X  |
+          |     |
+          |     |
+          |     |
+        ↓ |     |
+        ∞ +-----+
 
 ### Strace
 
@@ -252,7 +314,3 @@ from normal output.
 ## Bugs
 
 - No known bugs.
-
-## Checksums
-
-Git hash: TODO
