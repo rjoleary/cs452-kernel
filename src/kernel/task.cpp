@@ -20,7 +20,7 @@ void taskStub(void (*entrypoint)(void)) {
 } // unnamed namespace
 
 TdManager::TdManager(Scheduler &scheduler, unsigned *stack) {
-    tds[0].tid.underlying() = tds[0].ptid.underlying() = 0;
+    tds[0].tid = tds[0].ptid = ctl::FIRST_TID;
     tds[0].pri = ctl::FIRST_PRI;
     tds[0].state = kernel::RunState::Ready;
     tds[0].sp = stack;
