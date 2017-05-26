@@ -4,8 +4,8 @@
 
 namespace kernel {
 void Scheduler::readyProcess(Td &td) {
-    int pri = td.pri.underlying();
-    auto priBit = 1 << pri;
+    auto pri = td.pri.underlying();
+    auto priBit = 1u << pri;
     // There are other ready processes for this priority.
     if (status & priBit) {
         entries[pri].last->nextReady = &td;
