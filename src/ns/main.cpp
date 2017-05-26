@@ -5,6 +5,7 @@
 #include <ns.h>
 #include <std.h>
 #include <task.h>
+#include <bwio.h>
 
 namespace {
 enum class MsgType {
@@ -25,10 +26,12 @@ struct Reply {
 namespace ctl {
 int registerAs(const char *name) {
     Message msg;
+    msg.type = MsgType::Register;
     // Names longer than name STR_SIZE-1 are truncated.
     __builtin_strncpy(msg.name, name, sizeof(msg.name) - 1);
     Reply rply;
-    if (int err = send(NS_TID, msg, rply)) {
+    int err = send(NS_TID, msg, rply);
+    if (err < 0) {
         return err;
     }
     return rply.tid;
@@ -36,10 +39,12 @@ int registerAs(const char *name) {
 
 int whoIs(const char *name) {
     Message msg;
+    msg.type = MsgType::WhoIs;
     // Names longer than name STR_SIZE-1 are truncated.
     __builtin_strncpy(msg.name, name, sizeof(msg.name) - 1);
     Reply rply;
-    if (int err = send(NS_TID, msg, rply)) {
+    int err = send(NS_TID, msg, rply);
+    if (err < 0) {
         return err;
     }
     return rply.tid;
@@ -66,29 +71,32 @@ void nsMain() {
                     if (kv.tid == -1) {
                         __builtin_memcpy(kv.name, msg.name, sizeof(kv.name));
                         kv.tid = tid;
-                        goto break2;
+                        goto doReply;
                     }
                 }
                 rply.tid = -static_cast<int>(Error::NoRes);
+                break;
             }
 
             case MsgType::WhoIs: {
                 for (const auto &kv : map) {
-                    if (kv.name == msg.name) {
-                        rply.tid = tid;
-                        goto break2;
+                    if (memcmp(kv.name, msg.name, sizeof(kv.name)) == 0) {
+                        rply.tid = kv.tid;
+                        goto doReply;
                     }
                 }
                 rply.tid = -static_cast<int>(Error::BadArg);
+                break;
             }
 
             default: {
-                PANIC("unknown message size");
+                PANIC("unknown message type");
             }
         }
 
-        break2:
-        if (reply(tid, &rply, sizeof(rply))) {
+        doReply:
+        if (int err = reply(tid, &rply, sizeof(rply))) {
+            bwprintf(COM2, "%d\r\n", err);
             PANIC("ns reply returned error");
         }
     }

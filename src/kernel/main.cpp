@@ -6,6 +6,7 @@
 #include <syscall.h>
 #include <task.h>
 #include <user/math.h>
+#include <user/std.h>
 
 // Forward declarations
 const char* buildstr();
@@ -19,7 +20,7 @@ int copyMsg(const void *src, int srcSize, void *dest, int destSize) {
     if (destSize < srcSize) ret = -static_cast<int>(ctl::Error::Trunc);
     else ret = srcSize;
 
-    __builtin_memcpy(dest, src, ctl::min(srcSize, destSize));
+    memcpy(dest, src, ctl::min(srcSize, destSize));
     return ret;
 }
 
@@ -127,7 +128,7 @@ int main() {
                 int rplen = active->getArg(4);
                 (void)rplen;
                 auto receiver = tdManager.getTd(tid);
-                STRACE("  [%d] int send(tid=%d, msg=%d, msglen=%d, reply=%d, rplen=%d)",
+                STRACE("  [%d] int send(tid=%d, msg=0x%08x, msglen=%d, reply=0x%08x, rplen=%d)",
                         active->tid, tid, msg, msglen, reply, rplen);
                 if (!receiver) {
                     active->setReturn(-static_cast<int>(Error::InvId));
@@ -160,7 +161,7 @@ int main() {
                 auto tid = (int*)active->getArg(0);
                 auto msg = (void*)active->getArg(1);
                 int msglen = active->getArg(2);
-                STRACE("  [%d] int receive(tid=%d, msg=%d, msglen=%d)",
+                STRACE("  [%d] int receive(tid=0x%08d, msg=0x%08x, msglen=%d)",
                         active->tid, tid, msg, msglen);
                 auto sender = active->popSender();
                 if (sender) {
@@ -182,11 +183,11 @@ int main() {
             }
 
             case Syscall::Reply: {
-                int ret;
+                int ret = 0;
                 int tid = active->getArg(0);
                 auto reply = (const void*)active->getArg(1);
                 int rplen = active->getArg(2);
-                STRACE("  [%d] int reply(tid=%d, reply=%d, rplen=%d)",
+                STRACE("  [%d] int reply(tid=%d, reply=0x%08x, rplen=%d)",
                         active->tid, tid, reply, rplen);
                 auto receiver = tdManager.getTd(tid);
                 if (!receiver) {
@@ -201,12 +202,13 @@ int main() {
                     auto receiverMsg = (void*)receiver->getArg(3);
                     int receiverMsglen = receiver->getArg(4);
 
-                    ret = copyMsg(reply, rplen, receiverMsg, receiverMsglen);
+                    auto size = copyMsg(reply, rplen, receiverMsg, receiverMsglen);
+                    receiver->setReturn(size);
                     scheduler.readyProcess(*receiver);
-                    scheduler.readyProcess(*active);
-                    STRACE("  [%d] Replied", active->tid);
+                    STRACE("  [%d] Replied to %d", active->tid, receiver->tid);
                 }
                 active->setReturn(ret);
+                scheduler.readyProcess(*active);
                 break;
             }
             /*
