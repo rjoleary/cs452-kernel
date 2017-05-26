@@ -5,6 +5,7 @@
 
 #include "types.h"
 
+namespace ctl {
 // delay - wait for a given amount of time.
 //
 // Description:
@@ -63,5 +64,6 @@ int time(Tid tid);
 //   -ERR_INVID: The clock server task id is invalid.
 //   -ERR_BADARG: The delay was zero or negative.
 int delayUntil(Tid tid, int ticks);
+}
 
 #endif // USER_CLOCK_H__INCLUDED

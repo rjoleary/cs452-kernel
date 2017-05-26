@@ -2,16 +2,18 @@
 #include <task.h>
 
 // Forward declaration.
-namespace ctl {
-void nsMain();
-}
 void rpsServerMain();
 void rpsClientMain();
 
+namespace ctl {
+void nsMain();
+
 void firstMain() {
-    bwprintf(COM2, "FirstUserTask: myTid()=%d\r\n", ctl::myTid());
-    bwprintf(COM2, "FirstUserTask: created nameserver, tid %d\r\n", ctl::create(1, ctl::nsMain));
-    ctl::create(5, rpsServerMain);
-    ctl::create(2, rpsClientMain);
-    ctl::create(2, rpsClientMain);
+    bwprintf(COM2, "FirstUserTask: myTid()=%d\r\n", myTid());
+    bwprintf(COM2, "FirstUserTask: created nameserver, tid %d\r\n",
+            create(PRIORITY_MAX, nsMain));
+    create(Priority(5), rpsServerMain);
+    create(Priority(2), rpsClientMain);
+    create(Priority(2), rpsClientMain);
+}
 }

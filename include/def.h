@@ -14,7 +14,7 @@ constexpr auto NUM_TD = 32;
 constexpr auto STACK_SZ = 4096;
 
 // The number of available priorities.
-constexpr auto NUM_PRI = 32;
+constexpr auto NUM_PRI = ctl::PRIORITY_MAX.underlying() - ctl::PRIORITY_MIN.underlying() + 1;
 }
 
 #endif // DEF_H__INCLUDED

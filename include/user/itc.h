@@ -86,6 +86,10 @@ int receive(Tid *tid, T &msg) {
 //   -ERR_INVID: The task id is not the task id of an existing task.
 //   -ERR_BADITC: The task id is not the task id of a reply blocked task.
 int reply(Tid tid, const void *reply, int rplen);
+template <typename T>
+int reply(Tid tid, T &msg) {
+    return reply(tid, &msg, sizeof(T));
+}
 }
 
 #endif // USER_ITC_H__INCLUDED

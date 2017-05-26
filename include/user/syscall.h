@@ -17,18 +17,18 @@ enum class Syscall {
 }
 
 // Body for a syscall taking 0 arguments.
-#define SYSCALL0(id) {          \
+#define SYSCALL0(id)            \
     asm volatile (              \
         "mov r9, %0\n\t"        \
         "swi #0"                \
         :                       \
         : "i" (id)              \
         : "r9"                  \
-    );                          \
-}
+        , "memory"              \
+    );
 
 // Body for a syscall taking 1 argument.
-#define SYSCALL1(id) {              \
+#define SYSCALL1(id)                \
     register int r0 asm("r0") = a0; \
     asm volatile (                  \
         "mov r9, %0\n\t"            \
@@ -38,11 +38,10 @@ enum class Syscall {
         , "r" (r0)                  \
         : "r9"                      \
         , "memory"                  \
-    );                              \
-}
+    );
 
 // Body for a syscall taking 0 arguments and returning an int.
-#define SYSCALL0R(id) {         \
+#define SYSCALL0R(id)           \
     register int ret asm("r0"); \
     asm volatile (              \
         "mov r9, %1\n\t"        \
@@ -51,12 +50,10 @@ enum class Syscall {
         : "i" (id)              \
         : "r9"                  \
         , "memory"              \
-    );                          \
-    return ret;                 \
-}
+    );
 
 // Body for a syscall taking 1 argument and returning an int.
-#define SYSCALL1R(id) {                            \
+#define SYSCALL1R(id)                              \
     register int ret asm("r0");                    \
     register unsigned r0 asm("r0") = (unsigned)a0; \
     asm volatile (                                 \
@@ -67,12 +64,10 @@ enum class Syscall {
         , "r" (r0)                                 \
         : "r9"                                     \
         , "memory"                                 \
-    );                                             \
-    return ret;                                    \
-}
+    );
 
 // Body for a syscall taking 2 arguments and returning an int.
-#define SYSCALL2R(id) {                            \
+#define SYSCALL2R(id)                              \
     register int ret asm("r0");                    \
     register unsigned r0 asm("r0") = (unsigned)a0; \
     register unsigned r1 asm("r1") = (unsigned)a1; \
@@ -85,12 +80,10 @@ enum class Syscall {
         , "r" (r1)                                 \
         : "r9"                                     \
         , "memory"                                 \
-    );                                             \
-    return ret;                                    \
-}
+    );
 
 // Body for a syscall taking 3 arguments and retuning an int.
-#define SYSCALL3R(id) { \
+#define SYSCALL3R(id)                              \
     register int ret asm("r0");                    \
     register unsigned r0 asm("r0") = (unsigned)a0; \
     register unsigned r1 asm("r1") = (unsigned)a1; \
@@ -105,12 +98,10 @@ enum class Syscall {
         , "r" (r2)                                 \
         : "r9"                                     \
         , "memory"                                 \
-    );                                             \
-    return ret;                                    \
-}
+    );
 
 // Body for a syscall taking 5 arguments and retuning an int.
-#define SYSCALL5R(id) {                            \
+#define SYSCALL5R(id)                              \
     register int ret asm("r0");                    \
     register unsigned r0 asm("r0") = (unsigned)a0; \
     register unsigned r1 asm("r1") = (unsigned)a1; \
@@ -129,8 +120,6 @@ enum class Syscall {
         , "r" (r4)                                 \
         : "r9"                                     \
         , "memory"                                 \
-    );                                             \
-    return ret;                                    \
-}
+    );
 
 #endif // USER_SYSCALL_H__INCLUDED

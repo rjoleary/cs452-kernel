@@ -13,7 +13,8 @@ const char* buildstr();
 
 // The attribute allows us to specify the exact location of the user stacks in
 // the linker script. This will be useful when it comes to memory protection.
-__attribute__((section("user_stacks"))) static unsigned userStacks[kernel::NUM_TD][kernel::STACK_SZ/4];
+__attribute__((section("user_stacks"))) 
+static unsigned userStacks[kernel::NUM_TD][kernel::STACK_SZ/4];
 
 int copyMsg(const void *src, int srcSize, void *dest, int destSize) {
     int ret;
@@ -60,11 +61,11 @@ int main() {
             using kernel::Syscall;
             using ctl::Error;
             case Syscall::Create: {
-                Priority priority = active->getArg(0);
+                auto priority = ctl::Priority(active->getArg(0));
                 auto code = (void(*)())active->getArg(1);
                 int ret;
                 kernel::Td* td;
-                if (priority < 0 || 31 < priority) {
+                if (priority < ctl::PRIORITY_MIN || ctl::PRIORITY_MAX < priority) {
                     ret = -static_cast<int>(Error::BadArg);
                 }
                 else if (!(td = tdManager.createTd())) {
@@ -73,10 +74,10 @@ int main() {
                 else {
                     td->ptid      = active->tid;
                     td->pri       = priority;
-                    td->sp        = userStacks[td->tid] + kernel::STACK_SZ/4;
+                    td->sp        = userStacks[td->tid.underlying()] + kernel::STACK_SZ/4;
                     td->initStack(code);
                     scheduler.readyProcess(*td);
-                    ret = td->tid;
+                    ret = td->tid.underlying();
                 }
                 active->setReturn(ret);
                 scheduler.readyProcess(*active);
@@ -86,7 +87,7 @@ int main() {
             }
 
             case Syscall::MyTid: {
-                int ret = active->tid;
+                int ret = active->tid.underlying();
                 scheduler.readyProcess(*active);
                 active->setReturn(ret);
                 STRACE("  [%d] int myTid() = %d", active->tid, ret);
@@ -94,7 +95,7 @@ int main() {
             }
 
             case Syscall::MyParentTid: {
-                int ret = active->ptid;
+                int ret = active->ptid.underlying();
                 scheduler.readyProcess(*active);
                 active->setReturn(ret);
                 STRACE("  [%d] int myParentTid() = %d", active->tid, ret);
@@ -120,7 +121,7 @@ int main() {
             }*/
 
             case Syscall::Send: {
-                int tid = active->getArg(0);
+                auto tid = ctl::Tid(active->getArg(0));
                 auto msg = (const void*)active->getArg(1);
                 int msglen = active->getArg(2);
                 auto reply = (void*)active->getArg(3);
@@ -137,7 +138,7 @@ int main() {
                 }
                 else {
                     if (receiver->state == kernel::RunState::ReceiveBlocked) {
-                        auto recTid = (int*)receiver->getArg(0);
+                        auto recTid = (ctl::Tid*)receiver->getArg(0);
                         auto recMsg = (void*)receiver->getArg(1);
                         int recMsglen = receiver->getArg(2);
                         
@@ -158,7 +159,7 @@ int main() {
             }
 
             case Syscall::Receive: {
-                auto tid = (int*)active->getArg(0);
+                auto tid = (ctl::Tid*)active->getArg(0);
                 auto msg = (void*)active->getArg(1);
                 int msglen = active->getArg(2);
                 STRACE("  [%d] int receive(tid=0x%08d, msg=0x%08x, msglen=%d)",
@@ -184,7 +185,7 @@ int main() {
 
             case Syscall::Reply: {
                 int ret = 0;
-                int tid = active->getArg(0);
+                auto tid = ctl::Tid(active->getArg(0));
                 auto reply = (const void*)active->getArg(1);
                 int rplen = active->getArg(2);
                 STRACE("  [%d] int reply(tid=%d, reply=0x%08x, rplen=%d)",

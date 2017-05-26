@@ -3,8 +3,8 @@
 #ifndef USER_EVENT_H__INCLUDED
 #define USER_EVENT_H__INCLUDED
 
-#include "syscall.h"
 
+namespace ctl {
 // awaitEvent - wait for an external event.
 //
 // Description:
@@ -16,5 +16,6 @@
 //   -ERR_INVID: invalid event.
 //   -ERR_CORRUPT: corrupted volatile data.
 int awaitEvent(int eventid);
+}
 
 #endif // USER_EVENT_H__INCLUDED

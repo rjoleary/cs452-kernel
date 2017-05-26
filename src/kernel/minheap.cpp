@@ -1,3 +1,4 @@
+/*
 #include <minheap.h>
 #include <swap.h>
 
@@ -65,7 +66,7 @@ static void bubbleUp(struct Minheap *heap, int place) {
 }
 
 int minheapPush(struct Minheap *heap, Tid id, Priority priority) {
-	if (heap->size == kernel::NUM_TD) return -1;
+	if (heap->size == kernel::NUM_TD.underlying()) return -1;
 	int place = heap->size;
 	struct MinheapEntry *entry = &heap->entries[place];
 	entry->data.id = id;
@@ -123,4 +124,4 @@ int minheapPop(struct Minheap *heap, struct MinheapData *data) {
 	bubbleDown(heap, 0);
 
 	return 0;
-}
+}*/

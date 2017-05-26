@@ -4,15 +4,16 @@
 
 namespace kernel {
 void Scheduler::readyProcess(Td &td) {
-    unsigned int priBit = 1 << td.pri;
+    int pri = td.pri.underlying();
+    auto priBit = 1 << pri;
     // There are other ready processes for this priority.
     if (status & priBit) {
-        entries[td.pri].last->nextReady = &td;
-        entries[td.pri].last = &td;
+        entries[pri].last->nextReady = &td;
+        entries[pri].last = &td;
     }
     else {
-        entries[td.pri].first =
-            entries[td.pri].last = &td;
+        entries[pri].first =
+            entries[pri].last = &td;
         status |= priBit;
     }
     td.state = RunState::Ready;

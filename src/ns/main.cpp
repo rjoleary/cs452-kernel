@@ -7,6 +7,7 @@
 #include <task.h>
 #include <bwio.h>
 
+namespace ctl {
 namespace {
 enum class MsgType {
     Register,
@@ -15,77 +16,66 @@ enum class MsgType {
 
 struct Message {
     MsgType type;
-    char name[STR_SIZE] = {};
+    Names name;
 };
 
 struct Reply {
+    Error error;
     Tid tid;
 };
 }
 
-namespace ctl {
-int registerAs(const char *name) {
+int registerAs(Names name) {
     Message msg;
     msg.type = MsgType::Register;
-    // Names longer than name STR_SIZE-1 are truncated.
-    __builtin_strncpy(msg.name, name, sizeof(msg.name) - 1);
+    msg.name = name;
+
     Reply rply;
-    int err = send(NS_TID, msg, rply);
-    if (err < 0) {
-        return err;
-    }
-    return rply.tid;
+    if (send(NS_TID, msg, rply) < 0)
+        PANIC("registerAs send failed");
+    return -static_cast<int>(rply.error);
 }
 
-int whoIs(const char *name) {
+int whoIs(Names name) {
     Message msg;
     msg.type = MsgType::WhoIs;
-    // Names longer than name STR_SIZE-1 are truncated.
-    __builtin_strncpy(msg.name, name, sizeof(msg.name) - 1);
+    msg.name = name;
     Reply rply;
-    int err = send(NS_TID, msg, rply);
-    if (err < 0) {
-        return err;
-    }
-    return rply.tid;
+    if (send(NS_TID, msg, rply) < 0)
+        PANIC("whoIs send failed");
+    if (rply.error != Error::Ok)
+        return -static_cast<int>(rply.error);
+    return rply.tid.underlying();
 }
 
 void nsMain() {
-    // Mapping of strings to tids.
-    struct {
-        char name[STR_SIZE];
-        Tid tid = -1;
-    } map[NS_MAX];
+    Tid map[static_cast<unsigned>(Names::LastName)];
+    for (int i = 0; i < static_cast<int>(Names::LastName); ++i)
+        map[i] = INVALID_TID;
 
     while (1) {
         Tid tid;
         Message msg;
-        Reply rply = {static_cast<int>(Error::Ok)};
-        if (receive(&tid, &msg, sizeof(msg)) != sizeof(msg)) {
+        Reply rply = {Error::Ok};
+        if (receive(&tid, msg) != sizeof(msg)) {
             PANIC("message with wrong size");
         }
 
+        auto idx = static_cast<unsigned>(msg.name);
         switch (msg.type) {
             case MsgType::Register: {
-                for (auto &kv : map) {
-                    if (kv.tid == -1) {
-                        __builtin_memcpy(kv.name, msg.name, sizeof(kv.name));
-                        kv.tid = tid;
-                        goto doReply;
-                    }
-                }
-                rply.tid = -static_cast<int>(Error::NoRes);
+                if (map[idx] == INVALID_TID)
+                    map[idx] = tid;
+                else
+                    rply.error = Error::NoRes;
                 break;
             }
 
             case MsgType::WhoIs: {
-                for (const auto &kv : map) {
-                    if (memcmp(kv.name, msg.name, sizeof(kv.name)) == 0) {
-                        rply.tid = kv.tid;
-                        goto doReply;
-                    }
-                }
-                rply.tid = -static_cast<int>(Error::BadArg);
+                if (map[idx] == INVALID_TID) 
+                    rply.error = Error::BadArg;
+                else 
+                    rply.tid = map[idx];
                 break;
             }
 
@@ -94,8 +84,7 @@ void nsMain() {
             }
         }
 
-        doReply:
-        if (int err = reply(tid, &rply, sizeof(rply))) {
+        if (int err = reply(tid, rply)) {
             bwprintf(COM2, "%d\r\n", err);
             PANIC("ns reply returned error");
         }

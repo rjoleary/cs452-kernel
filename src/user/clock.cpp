@@ -1,5 +1,6 @@
-#include <user/clock.h>
+#include <clock.h>
 
+namespace ctl {
 int delay(Tid tid, int ticks) {
     // TODO: implement
     return -1;
@@ -13,4 +14,5 @@ int time(Tid tid) {
 int delayUntil(Tid tid, int ticks) {
     // TODO: implement
     return -1;
+}
 }

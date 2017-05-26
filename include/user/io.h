@@ -5,6 +5,7 @@
 
 #include "types.h"
 
+namespace ctl {
 // getc - get a character from a UART.
 //
 // Description:
@@ -31,5 +32,6 @@ int getc(Tid tid, int uart);
 //   -ERR_OK: Success.
 //   -ERR_INVID: The server task id is not the task id of an existing task.
 int putc(Tid tid, int uart, char ch);
+}
 
 #endif // USER_IO_H__INCLUDED

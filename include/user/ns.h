@@ -4,6 +4,11 @@
 #define USER_NS_H__INCLUDED
 
 namespace ctl{
+enum class Names {
+    RpsServer, 
+    LastName // Special name to count
+};
+
 // registerAs - register a name with the name server.
 //
 // Description
@@ -24,7 +29,7 @@ namespace ctl{
 // Returns:
 //   -ERR_OK: Success.
 //   -ERR_INVID: The nameserver task id inside the wrapper is invalid.
-int registerAs(const char *name);
+int registerAs(Names name);
 
 // whoIs - query the nameserver.
 //
@@ -44,7 +49,7 @@ int registerAs(const char *name);
 // Returns:
 //   tid: The task id of the registered task.
 //   -ERR_INVID: The nameserver task id inside the wrapper is invalid.
-int whoIs(const char *name);
+int whoIs(Names name);
 
 void nsMain();
 }

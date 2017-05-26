@@ -4,6 +4,7 @@
 #define TASK_H__INCLUDED
 
 #include "types.h"
+#include "def.h"
 #include "user/task.h"
 #include "user/syscall.h"
 
@@ -44,14 +45,14 @@ enum class RunState {
 
 // Task descriptor
 struct Td {
-    Tid tid = -1;            // task id (-1 if td is unallocated)
-    Tid ptid;                // parent's task id
-    Priority pri;            // priority 0 to 31
-    Td *nextReady;           // next TD in the ready queue, or NULL
-    Td *sendBegin = nullptr, // queue for senders
+    ctl::Tid tid = ctl::INVALID_TID; // task id
+    ctl::Tid ptid;                   // parent's task id
+    ctl::Priority pri;               // priority
+    Td *nextReady;                   // next TD in the ready queue, or NULL
+    Td *sendBegin = nullptr,         // queue for senders
        *sendEnd;
-    RunState state;          // current run state
-    unsigned *sp;            // current stack pointer
+    RunState state;                  // current run state
+    unsigned *sp;                    // current stack pointer
 
     // Return the syscall number for the given task descriptor. If the task is not
     // performing a syscall, garbage is returned.
@@ -78,7 +79,7 @@ struct Td {
 };
 
 class TdManager {
-    unsigned usedTds = 1;
+    typename ctl::Tid::underlying_type usedTds{1};
     Td tds[kernel::NUM_TD];
 public:
     TdManager(Scheduler &scheduler, unsigned *stack);
@@ -87,7 +88,7 @@ public:
 
     // Return a Td or nullptr if Td does not exist.
     // Runtime: O(n)
-    Td* getTd(Tid tid);
+    Td* getTd(ctl::Tid tid);
 };
 }
 

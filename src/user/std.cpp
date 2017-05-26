@@ -1,4 +1,4 @@
-typedef decltype(sizeof(0)) size_t;
+using size_t = decltype(sizeof(0));
 
 extern "C" {
 void *memcpy(void *dest, const void *src, size_t n) {

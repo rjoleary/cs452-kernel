@@ -5,7 +5,9 @@
 #include <scheduler.h>
 
 // Forward declerations
+namespace ctl {
 void firstMain();
+}
 
 namespace kernel {
 namespace {
@@ -18,21 +20,21 @@ void taskStub(void (*entrypoint)(void)) {
 } // unnamed namespace
 
 TdManager::TdManager(Scheduler &scheduler, unsigned *stack) {
-    tds[0].tid = tds[0].ptid = 0;
-    tds[0].pri = 3;
+    tds[0].tid.underlying() = tds[0].ptid.underlying() = 0;
+    tds[0].pri = ctl::FIRST_PRI;
     tds[0].state = kernel::RunState::Ready;
     tds[0].sp = stack;
-    tds[0].initStack(firstMain);
+    tds[0].initStack(ctl::firstMain);
     scheduler.readyProcess(tds[0]);
 }
 
 Td* TdManager::createTd() {
     if (usedTds == kernel::NUM_TD) return nullptr;
-    tds[usedTds].tid = usedTds;
+    tds[usedTds].tid.underlying() = usedTds;
     return &tds[usedTds++];
 }
 
-Td* TdManager::getTd(Tid tid) {
+Td* TdManager::getTd(ctl::Tid tid) {
     // TODO: may be inefficient
     for (int i = 0; i < kernel::NUM_TD; i++) {
         if (tds[i].tid == tid) {
