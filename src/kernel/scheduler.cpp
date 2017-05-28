@@ -4,7 +4,7 @@
 
 namespace kernel {
 void Scheduler::readyProcess(Td &td) {
-    auto pri = td.pri.underlying();
+    unsigned pri = td.pri.underlying();
     auto priBit = 1u << pri;
     // There are other ready processes for this priority.
     if (status & priBit) {

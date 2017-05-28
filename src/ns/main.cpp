@@ -53,7 +53,7 @@ void nsMain() {
     for (int i = 0; i < static_cast<int>(Names::LastName); ++i)
         map[i] = INVALID_TID;
 
-    while (1) {
+    for (;;) {
         Tid tid;
         Message msg;
         Reply rply = {Error::Ok};
@@ -84,8 +84,7 @@ void nsMain() {
             }
         }
 
-        if (int err = reply(tid, rply)) {
-            bwprintf(COM2, "%d\r\n", err);
+        if (reply(tid, rply)) {
             PANIC("ns reply returned error");
         }
     }

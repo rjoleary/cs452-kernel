@@ -29,14 +29,14 @@ TdManager::TdManager(Scheduler &scheduler, unsigned *stack) {
 }
 
 Td* TdManager::createTd() {
-    if (usedTds == kernel::NUM_TD) return nullptr;
+    if (usedTds == NUM_TD) return nullptr;
     tds[usedTds].tid.underlying() = usedTds;
     return &tds[usedTds++];
 }
 
 Td* TdManager::getTd(ctl::Tid tid) {
     // TODO: may be inefficient
-    for (int i = 0; i < kernel::NUM_TD; i++) {
+    for (int i = 0; i < NUM_TD; i++) {
         if (tds[i].tid == tid) {
             return &tds[i];
         }

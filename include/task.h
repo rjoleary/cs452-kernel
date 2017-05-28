@@ -80,7 +80,7 @@ struct Td {
 
 class TdManager {
     typename ctl::Tid::underlying_type usedTds{1};
-    Td tds[kernel::NUM_TD];
+    Td tds[NUM_TD];
 public:
     TdManager(Scheduler &scheduler, unsigned *stack);
     // Create a Td, or return nullptr if impossible

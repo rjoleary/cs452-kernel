@@ -14,7 +14,7 @@ const char* buildstr();
 // The attribute allows us to specify the exact location of the user stacks in
 // the linker script. This will be useful when it comes to memory protection.
 __attribute__((section("user_stacks"))) 
-static unsigned userStacks[kernel::NUM_TD][kernel::STACK_SZ/4];
+static unsigned userStacks[NUM_TD][kernel::STACK_SZ/4];
 
 int copyMsg(const void *src, int srcSize, void *dest, int destSize) {
     int ret;
@@ -40,7 +40,7 @@ int main() {
     STRACE("  [-] Memory layout:");
     STRACE("  [-] 0x%08x - 0x%08x: data", &_DataStart, &_DataEnd);
     STRACE("  [-] 0x%08x - 0x%08x: bss", &_BssStart, &_BssEnd);
-    STRACE("  [-]   0x%08x - 0x%08x: user stacks (%d)", &userStart, &userEnd, kernel::NUM_TD);
+    STRACE("  [-]   0x%08x - 0x%08x: user stacks (%d)", &userStart, &userEnd, NUM_TD);
     STRACE("  [-] 0x%08x - 0x%08x: text", &textStart, &textEnd);
     STRACE("  [-] 0x%08x - 0x%08x: kernel stack", &textEnd, kernelStack);
 #endif
