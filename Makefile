@@ -15,6 +15,14 @@ ifeq ($(STRACE_ENABLED),1)
 CFLAGS := $(CFLAGS) -DSTRACE_ENABLED
 endif
 
+ifeq ($(PERF_TEST),1)
+CFLAGS := $(CFLAGS) -DPERF_TEST
+endif
+
+ifeq ($(CACHE_ENABLED),1)
+CFLAGS := $(CFLAGS) -DCACHE_ENABLED
+endif
+
 ASFLAGS	= -mcpu=arm920t -mapcs-32
 # -mapcs: always generate a complete stack frame
 

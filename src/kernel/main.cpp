@@ -26,6 +26,17 @@ int copyMsg(const void *src, int srcSize, void *dest, int destSize) {
 }
 
 int main() {
+
+#ifdef CACHE_ENABLED
+    asm volatile (
+        "mrc p15, 0, r0, c1, c0, 0\n\t"
+        "orr r0, r0, #1<<12\n\t"
+        "orr r0, r0, #1<<2\n\t"
+        "mcr p15, 0, r0, c1, c0, 0"
+    );
+#endif // CACHE_ENABLED
+
+
     unsigned *kernelStack = (unsigned*)(&kernelStack + 1);
 
     // Print the build string (date + time).
@@ -43,7 +54,7 @@ int main() {
     STRACE("  [-]   0x%08x - 0x%08x: user stacks (%d)", &userStart, &userEnd, NUM_TD);
     STRACE("  [-] 0x%08x - 0x%08x: text", &textStart, &textEnd);
     STRACE("  [-] 0x%08x - 0x%08x: kernel stack", &textEnd, kernelStack);
-#endif
+#endif // STRACE_ENABLED
 
     kernel::Scheduler scheduler;
     kernel::TdManager tdManager(scheduler, userStacks[0] + kernel::STACK_SZ/4);
