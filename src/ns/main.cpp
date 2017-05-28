@@ -82,6 +82,7 @@ void nsMain() {
             }
 
             default: {
+                bwprintf(COM2, "msgtype: %d", msg.type);
                 PANIC("unknown message type");
             }
         }

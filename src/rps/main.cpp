@@ -40,7 +40,7 @@ enum class Choice {
     Quit,
 };
 
-struct Message {
+struct alignas(4) Message {
     MsgType type;
     Choice choice;
 };
@@ -116,7 +116,7 @@ void rpsServerMain() {
 
         // Take at most two players off of the queue and wakeup.
         while (numPlayers != 2) {
-            reply(queue[begin], nullptr, 0);
+            reply(queue[begin], EmptyMessage);
             players[numPlayers] = queue[begin];
             begin = (begin + 1) % NUM_RPS_CLIENTS;
             size--;
@@ -197,7 +197,7 @@ void rpsServerMain() {
         // Send out standings.
         for (int i = 0; i < 2; i++) {
             if (choices[i] == Choice::Quit) {
-                reply(players[i], nullptr, 0);
+                reply(players[i], EmptyMessage);
             } else {
                 reply(players[i], standings[i]);
             }
@@ -211,7 +211,7 @@ void rpsClientMain() {
 
     // 2. Perform a set of requests that adequately test the RPS server.
     Message msg{MsgType::Signup};
-    ctl::send(server, &msg, sizeof(msg), nullptr, 0);
+    ctl::send(server, msg, EmptyMessage);
     const unsigned n = rand() % 5;
     for (unsigned i = 0; i < n; i++) {
         msg = {MsgType::Play, static_cast<Choice>(rand() % 3)};
@@ -222,7 +222,7 @@ void rpsClientMain() {
 
     // 3. Send a quit request.
     msg = Message{MsgType::Quit};
-    ctl::send(server, &msg, sizeof(msg), nullptr, 0);
+    ctl::send(server, msg, EmptyMessage);
 
     // 4. Exit gracefully.
 }

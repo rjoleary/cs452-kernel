@@ -16,12 +16,12 @@ const char* buildstr();
 __attribute__((section("user_stacks"))) 
 static unsigned userStacks[NUM_TD][kernel::STACK_SZ/4];
 
-static int copyMsg(const void *src, int srcSize, void *dest, int destSize) {
+static int copyMsg(const unsigned *src, int srcSize, unsigned *dest, int destSize) {
     int ret;
     if (destSize < srcSize) ret = -static_cast<int>(ctl::Error::Trunc);
     else ret = srcSize;
 
-    memcpy(dest, src, ctl::min(srcSize, destSize));
+    ctl::fast_memcpy(dest, src, ctl::min(srcSize, destSize));
     return ret;
 }
 
@@ -133,9 +133,9 @@ int main() {
 
             case Syscall::Send: {
                 auto tid = ctl::Tid(active->getArg(0));
-                auto msg = (const void*)active->getArg(1);
+                auto msg = (const unsigned*)active->getArg(1);
                 int msglen = active->getArg(2);
-                auto reply = (void*)active->getArg(3);
+                auto reply = (unsigned*)active->getArg(3);
                 (void)reply;
                 int rplen = active->getArg(4);
                 (void)rplen;
@@ -149,7 +149,7 @@ int main() {
                 }
                 else if (receiver->state == kernel::RunState::ReceiveBlocked) {
                     auto recTid = (ctl::Tid*)receiver->getArg(0);
-                    auto recMsg = (void*)receiver->getArg(1);
+                    auto recMsg = (unsigned*)receiver->getArg(1);
                     int recMsglen = receiver->getArg(2);
 
                     *recTid = active->tid;
@@ -171,13 +171,13 @@ int main() {
 
             case Syscall::Receive: {
                 auto tid = (ctl::Tid*)active->getArg(0);
-                auto msg = (void*)active->getArg(1);
+                auto msg = (unsigned*)active->getArg(1);
                 int msglen = active->getArg(2);
                 STRACE("  [%d] int receive(tid=0x%08d, msg=0x%08x, msglen=%d)",
                         active->tid, tid, msg, msglen);
                 auto sender = active->popSender();
                 if (sender) {
-                    auto senderMsg = (const void*)sender->getArg(1);
+                    auto senderMsg = (const unsigned*)sender->getArg(1);
                     int senderMsglen = sender->getArg(2);
 
                     *tid = sender->tid;
@@ -199,7 +199,7 @@ int main() {
             case Syscall::Reply: {
                 int ret = 0;
                 auto tid = ctl::Tid(active->getArg(0));
-                auto reply = (const void*)active->getArg(1);
+                auto reply = (const unsigned*)active->getArg(1);
                 int rplen = active->getArg(2);
                 STRACE("  [%d] int reply(tid=%d, reply=0x%08x, rplen=%d)",
                         active->tid, tid, reply, rplen);
@@ -213,7 +213,7 @@ int main() {
                     STRACE("  [%d] Receiver not ReplyBlocked", active->tid);
                 }
                 else {
-                    auto receiverMsg = (void*)receiver->getArg(3);
+                    auto receiverMsg = (unsigned*)receiver->getArg(3);
                     int receiverMsglen = receiver->getArg(4);
 
                     auto size = copyMsg(reply, rplen, receiverMsg, receiverMsglen);

@@ -33,7 +33,7 @@ void firstMain() {
 namespace ctl {
 
 template <size_t I>
-struct Message {
+struct alignas(4) Message {
     char data[I];
 };
 
@@ -55,7 +55,7 @@ void testThing() {
     bwprintf(COM2, "Size %d Pri %d...\r\n", I, P);
     Tid tid = create(Priority(P), perfMain<I>);
 
-    Message<I> msg ;
+    Message<I> msg;
     for (unsigned i = 0; i < AmountToSend; i++) {
         send(tid, msg, msg);
     }

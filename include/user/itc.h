@@ -7,6 +7,43 @@
 #include "types.h"
 
 namespace ctl {
+
+struct EmptyMessage_t{};
+extern EmptyMessage_t EmptyMessage;
+namespace detail {
+    template <typename T, typename U>
+    struct is_same {
+        constexpr static auto value = false;
+    };
+    template <typename T>
+    struct is_same<T, T> {
+        constexpr static auto value = true;
+    };
+    template <typename T, typename U>
+    constexpr static auto is_same_v = is_same<T,U>::value;
+
+    template <typename T> struct remove_reference      {using type = T;};
+    template <typename T> struct remove_reference<T&>  {using type = T;};
+    template <typename T> struct remove_reference<T&&> {using type = T;};
+
+    template <typename T> struct remove_const          {using type = T;};
+    template <typename T> struct remove_const<const T> {using type = T;};
+     
+    template <typename T> struct remove_volatile             {using type = T;};
+    template <typename T> struct remove_volatile<volatile T> {using type = T;};
+
+    template <typename T>
+    struct remove_cv {
+        using type = typename remove_volatile<typename remove_const<T>::type>::type;
+    };
+     
+    template <typename T>
+    struct decay {
+        using type = typename remove_cv<typename remove_reference<T>::type>::type;
+    };
+    template <typename T>
+    using decay_t = typename decay<T>::type;
+}
 // send - send a message to a specific task and obtain the corresponding response.
 //
 // Description:
@@ -38,10 +75,27 @@ namespace ctl {
 //   -ERR_TRUNC: The reply message was truncated.
 //   -ERR_INVID: The task id supplied is not the task id of an existing task.
 //   -ERR_BADITC: The send-receive-reply transaction could not be completed.
-int send(Tid tid, const void *msg, int msglen, void *reply, int rplen);
+
+namespace detail {
+inline int send (int a0, const void *a1, int a2, void *a3, int a4) {
+    SYSCALL5R(kernel::Syscall::Send);
+    return ret;
+}
+}
+template <typename T, typename U>
+int send(Tid tid, const T &msg, const U &reply) = delete;
 template <typename T, typename U>
 int send(Tid tid, const T &msg, U &reply) {
-    return send(tid, &msg, sizeof(T), &reply, sizeof(U));
+    constexpr bool isEmptyMsg = detail::is_same_v<detail::decay_t<T>, EmptyMessage_t>;
+    constexpr bool isEmptyRpl = detail::is_same_v<detail::decay_t<U>, EmptyMessage_t>;
+    static_assert(alignof(T) >= alignof(unsigned) || isEmptyMsg, "Unaligned send msg");
+    static_assert(alignof(U) >= alignof(unsigned) || isEmptyRpl, "Unaligned send reply");
+    int a0 = tid.underlying();
+    const void *a1 = isEmptyMsg ? nullptr : &msg;
+    int a2 = isEmptyMsg ? 0 : sizeof(T);
+    void *a3 = isEmptyRpl ? nullptr : &reply;
+    int a4 = isEmptyRpl ? 0 : sizeof(U);
+    return detail::send(a0, a1, a2, a3, a4);
 }
 
 // receive - receive a message from a task.
@@ -65,10 +119,20 @@ int send(Tid tid, const T &msg, U &reply) {
 //   >-1: The size of the message received, which is less than or equal to the
 //        size of the message buffer supplied. Longer messages are truncated.
 //   -ERR_TRUNC: The message is truncated.
-int receive(Tid *tid, void *msg, int msglen);
+
+namespace detail {
+inline int receive(Tid *a0, void *a1, int a2) {
+    SYSCALL3R(kernel::Syscall::Receive);
+    return ret;
+}
+}
 template <typename T>
-int receive(Tid *tid, T &msg) {
-    return receive(tid, &msg, sizeof(T));
+int receive(Tid *a0, T &msg) {
+    constexpr bool isEmpty = detail::is_same_v<detail::decay_t<T>, EmptyMessage_t>;
+    static_assert(alignof(T) >= alignof(unsigned) || isEmpty, "Unaligned receive");
+    void *a1 = isEmpty ? nullptr : &msg;
+    int a2 = isEmpty ? 0 : sizeof(T);
+    return detail::receive(a0, a1, a2);
 }
 
 // reply - reply to a message.
@@ -85,10 +149,21 @@ int receive(Tid *tid, T &msg) {
 //   -ERR_TRUNC: The message was truncated.
 //   -ERR_INVID: The task id is not the task id of an existing task.
 //   -ERR_BADITC: The task id is not the task id of a reply blocked task.
-int reply(Tid tid, const void *reply, int rplen);
+namespace detail {
+inline int reply(int a0, const void *a1, int a2) {
+    SYSCALL3R(kernel::Syscall::Reply)
+    return ret;
+}
+}
+
 template <typename T>
 int reply(Tid tid, T &msg) {
-    return reply(tid, &msg, sizeof(T));
+    constexpr bool isEmpty = detail::is_same_v<detail::decay_t<T>, EmptyMessage_t>;
+    static_assert(alignof(T) >= alignof(unsigned) || isEmpty, "Unaligned reply");
+    int a0 = tid.underlying();
+    const void *a1 = isEmpty ? nullptr : &msg;
+    int a2 = isEmpty ? 0 : sizeof(T);
+    return detail::reply(a0, a1, a2);
 }
 }
 
