@@ -57,7 +57,9 @@ void nsMain() {
         Tid tid;
         Message msg;
         Reply rply = {Error::Ok};
-        if (receive(&tid, msg) != sizeof(msg)) {
+        auto recv = receive(&tid, msg);
+        if (recv != sizeof(msg)) {
+            bwprintf(COM2, "recv: %u size: %u", recv, sizeof(msg));
             PANIC("message with wrong size");
         }
 

@@ -16,7 +16,7 @@ const char* buildstr();
 __attribute__((section("user_stacks"))) 
 static unsigned userStacks[NUM_TD][kernel::STACK_SZ/4];
 
-int copyMsg(const void *src, int srcSize, void *dest, int destSize) {
+static int copyMsg(const void *src, int srcSize, void *dest, int destSize) {
     int ret;
     if (destSize < srcSize) ret = -static_cast<int>(ctl::Error::Trunc);
     else ret = srcSize;
@@ -147,24 +147,24 @@ int main() {
                     scheduler.readyProcess(*active);
                     STRACE("  [%d] Bad Receiver", active->tid);
                 }
+                else if (receiver->state == kernel::RunState::ReceiveBlocked) {
+                    auto recTid = (ctl::Tid*)receiver->getArg(0);
+                    auto recMsg = (void*)receiver->getArg(1);
+                    int recMsglen = receiver->getArg(2);
+
+                    *recTid = active->tid;
+
+                    receiver->setReturn(copyMsg(msg, msglen, recMsg, recMsglen));
+
+                    scheduler.readyProcess(*receiver);
+                    active->state = kernel::RunState::ReplyBlocked;
+                    STRACE("  [%d] SendMsg: %x %d ReceiveMsg %x %d",
+                            active->tid, msg, msglen, recMsg, recMsglen);
+                    STRACE("  [%d] ReplyBlocked", active->tid);
+                }
                 else {
-                    if (receiver->state == kernel::RunState::ReceiveBlocked) {
-                        auto recTid = (ctl::Tid*)receiver->getArg(0);
-                        auto recMsg = (void*)receiver->getArg(1);
-                        int recMsglen = receiver->getArg(2);
-                        
-                        *recTid = active->tid;
-
-                        receiver->setReturn(copyMsg(msg, msglen, recMsg, recMsglen));
-
-                        scheduler.readyProcess(*receiver);
-                        active->state = kernel::RunState::ReplyBlocked;
-                        STRACE("  [%d] ReplyBlocked", active->tid);
-                    }
-                    else {
-                        receiver->pushSender(*active);
-                        STRACE("  [%d] SendBlocked", active->tid);
-                    }
+                    receiver->pushSender(*active);
+                    STRACE("  [%d] SendBlocked", active->tid);
                 }
                 break;
             }
@@ -185,7 +185,9 @@ int main() {
                     active->setReturn(copyMsg(senderMsg, senderMsglen, msg, msglen));
 
                     scheduler.readyProcess(*active);
-                    STRACE("  [%d] Received", active->tid);
+                    STRACE("  [%d] SendMsg: %x %d ReceiveMsg %x %d",
+                            active->tid, senderMsg, senderMsglen, msg, msglen);
+                    STRACE("  [%d] Received from %d", active->tid, *tid);
                 }
                 else {
                     active->state = kernel::RunState::ReceiveBlocked;
@@ -217,6 +219,8 @@ int main() {
                     auto size = copyMsg(reply, rplen, receiverMsg, receiverMsglen);
                     receiver->setReturn(size);
                     scheduler.readyProcess(*receiver);
+                    STRACE("  [%d] SendMsg: %x %d ReceiveMsg %x %d",
+                            active->tid, reply, rplen, receiverMsg, receiverMsglen);
                     STRACE("  [%d] Replied to %d", active->tid, receiver->tid);
                 }
                 active->setReturn(ret);
