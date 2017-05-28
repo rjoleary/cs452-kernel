@@ -33,8 +33,8 @@ void firstMain() {
 namespace ctl {
 
 template <size_t I>
-struct alignas(4) Message {
-    char data[I];
+struct Message {
+    unsigned data[I];
 };
 
 template <size_t I>

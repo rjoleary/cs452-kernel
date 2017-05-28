@@ -25,16 +25,20 @@ tasks have been included to demonstrate these functionalities.
 
 ## Checksums
 
-Git hash: 1d39ce668d7ee1b22e2d01e25d11a1db13d80769
+Git hash: TODO
 
 
 ## Running
 
 In RedBoot, run the following:
 
-    > load -b 0x00218000 -h 10.15.167.5 "ARM/rj2olear/k1.elf"
+    > load -b 0x00218000 -h 10.15.167.5 "ARM/edakesho/k2.elf"
     > go
 
+For the fastest benchmarks:
+
+    > load -b 0x00218000 -h 10.15.167.5 "ARM/edakesho/k2_bench.elf"
+    > go
 
 ## Building
 
@@ -42,274 +46,151 @@ In RedBoot, run the following:
     $ stat build/kernel.elf
 
 
-## Demo
-
-### Output
-
-    FirstUserTask: entering
-    FirstUserTask: myTid()=0
-    FirstUserTask: created tid 1
-    FirstUserTask: created tid 2
-    TestUserTask: myTid()=3, myParentTid()=0
-    TestUserTask: myTid()=3, myParentTid()=0
-    FirstUserTask: created tid 3
-    TestUserTask: myTid()=4, myParentTid()=0
-    TestUserTask: myTid()=4, myParentTid()=0
-    FirstUserTask: created tid 4
-    FirstUserTask: exiting
-    TestUserTask: myTid()=1, myParentTid()=0
-    TestUserTask: myTid()=2, myParentTid()=0
-    TestUserTask: myTid()=1, myParentTid()=0
-    TestUserTask: myTid()=2, myParentTid()=0
-
-
-### Explanation
-
-1. The first two lines are printed by the first task. The first task's id is
-  always 0 and its priority is 3.
-2. The first task creates two tasks in succession. However, since they have a
-  lower priority (1), the first task takes precedence over them. The two
-  created tasks (tid 1 and  remain in the ready state.
-3. Next, the first task creates another user task (tid=3), but since it has a
-  priority of 5, higher than the first task's priority, it preempts the first
-  task. The first task must wait until task 3 exits before being able to print
-  its task id.
-4. The higher priority task prints its task id and parent task id then passes.
-  However, it is the only high priority task and so it gets to run again and
-  prints again. The high priority task exits and the first task gets to run
-  again.
-5. Since the first priority task was in the middle of printing, it finishes and
-  prints the "created tid 3".
-6. The first task creates another task with priority 5. The tid for this new
-  task is 4. Steps 4 and 5 are repeated for this task.
-7. The first task finishes by printing "exiting" and calling the `exeunt` syscall.
-8. Now there are still 2 lower priority tasks in the ready state.
-9. The first of the two prints and then calls pass. Since both tasks have the
-  same priority, the second low priority task gets to run. It prints and
-  passes to the first task, which prints and exits. Lastly, the second task
-  prints and exits also.
-10. Once all the tasks exits, the system returns to RedBoot.
-
-
 ## Description
 
-### Directory structure
+### Language
+The largest change between K1 and K2 is that we changed languages from C to C++,
+as well as upgraded our compiler to GCC 6. We are disabling all unnecessary
+features and instead using the richer type system as well as other safety
+guarantees. This means we have no RTTI, exceptions, or STL, as well as other
+things such as unwind tables and threadsafe statics. We are also using C++14 for
+various language features.
 
-Source files are organized as follows:
+### Intertask communication
+The other change to the kernel structure is the addition of `send`, `receive`,
+and `reply`. All of these are implemented quite simply. Each task has a state
+that is modified whenever it calls a syscall. In the usage of the ITC functions,
+the states that are used specifically are `(Send/Receive/Reply)Blocked`. This
+lets us know what state a task is in, so that task which is not anticipating a
+reply doesn't receive one and other such things. The only new data structure used
+is the send queue, which is created using a two intrusive pointers in the task
+descriptor. This way, when a task is send blocked it is put into the receiving
+task's queue. This adds very little memory overhead and has constant time
+complexity for insertion at the end and removing from the start.
 
-- `include/*.h`         : kernel header files
-- `include/user/*.h`    : user API and header files
-- `src/kernel/*{.c,.s}` : kernel source code
-- `src/user/*.c`        : shared user source code
-- `src/*/*{.c}`         : source code for various tasks
+The three ITC functions are also written using C++ templates to ensure that there
+are no issues with size misalignment. This way, any structure can be passed and
+the size will be computed at compile time.
 
-This organization prevents user source files from including kernel header files
-and calling kernel functions. However, kernel sources can still include user
-headers. Specifically, this is accomplished with the following rules in the
-Makefile:
+The nameserver uses an array to internally hold all registered names. This is
+sort of a lie however, because there are no registered names at all. Instead, an
+enum holds all the symbolic names for the registered program. This way, we know
+at compile time the size of the array needed to hold all program registrations
+and it makes lookup and insertion constant time.
 
-- When the kernel is built, the compiler's source directory is set to
-  `src/kernel` and the include directory is `include`.
-- When a user task is built, for example `first`, the source directory is
-  `src/first` and the include directory is `include/user`.
+### Priorities
+The first user task that bootstraps all others starts with a priority of 15,
+which is in the middle of all priorities (0 being lowest, 31 being highest).
+Then, the nameserver is created with a priority of 31. The reason the nameserver
+has such a high priority is because we don't anticipate that it will be used too
+often, so having it respond quickly is not an issue. On top of this, we didn't
+want to have a high priority task being blocked by a lower one just because the
+nameserver is taking a long time to respond. Therefore, we went to the logical
+extreme of setting it to the highest priority, so that no task will have to wait
+on the nameserver.
 
+The RPS server has a priority of 5. This number is chosen basically arbitrarily,
+as it should just be lower than the first user task but higher than the clients.
+Similarly, the clients have a priority of 2.
 
-### Style Guide
+### memcpy
+To minimize time copying data we implemented a custom memcpy function. The main
+difference is that it tries to copy as many bytes in a signle instruction as
+possible. For this to work properly, we first assume all copied data is 4 byte
+aligned. This is possible through the templated `send/receive/reply` functions,
+as now the compiler can enforce proper alignment of the datatypes used. Next,
+we use a custom memcpy that copies up to 32 bytes at a time through `ldm` and
+`stm` commands. This way, there is barely and differences between the 4 byte
+and 64 byte tests.
 
-Naming conventions:
+## Measurements
 
-- Defines / macros: `UPPER_SNAKE_CASE`
-- Enum values: `UPPER_SNAKE_CASE`
-- Enums: `UpperCamelCase`
-- Functions: `lowerCamelCase`
-- Types: `UpperCamelCase`
-- Variables: `lowerCamelCase`
+TODO
 
-Consequentially, the `exit` syscall interferes with the GCC `exit` builtin. For
-this reason, the exit syscall has been renamed to `exeunt`.
+## Demo
+    FirstUserTask: myTid()=0
+    FirstUserTask: created nameserver, tid 1
+    
+    ROCK PAPER SCISSORS ROUND 1
+       Tid 3 played P
+       Tid 4 played S
+       Tid 3 standing L
+       Tid 4 standing W
+    Press any key to continue...
+    Tid 3 received standing L
+    Tid 4 received standing W
+    
+    ROCK PAPER SCISSORS ROUND 2
+       Tid 3 played P
+       Tid 4 played P
+       Tid 3 standing T
+       Tid 4 standing T
+    Press any key to continue...
+    Tid 3 received standing T
+    Tid 4 received standing T
+    
+    ROCK PAPER SCISSORS ROUND 3
+       Tid 3 played Q
+       Tid 4 played Q
+       Tid 3 standing Q
+       Tid 4 standing Q
+    Press any key to continue...
+    
+    ROCK PAPER SCISSORS ROUND 4
+       Tid 5 played R
+       Tid 6 played Q
+       Tid 5 standing O
+       Tid 6 standing Q
+    Press any key to continue...
+    Tid 5 received standing O
+    
+    ROCK PAPER SCISSORS ROUND 5
+       Tid 5 played S
+       Tid 7 played P
+       Tid 5 standing W
+       Tid 7 standing L
+    Press any key to continue...
+    Tid 5 received standing W
+    Tid 7 received standing L
+    
+    ROCK PAPER SCISSORS ROUND 6
+       Tid 5 played R
+       Tid 7 played R
+       Tid 5 standing T
+       Tid 7 standing T
+    Press any key to continue...
+    Tid 5 received standing T
+    Tid 7 received standing T
+    
+    ROCK PAPER SCISSORS ROUND 7
+       Tid 5 played P
+       Tid 7 played Q
+       Tid 5 standing O
+       Tid 7 standing Q
+    Press any key to continue...
+    Tid 5 received standing O
+    
+    Program completed with status 0
 
+R = Rock
+P = Paper
+S = Scissors
+O = Opponent Quit
+Q = Quit
+Round 1 shows a typical RPS game where someone wins and someone loses.
+Round 2 is a tie.
+Round 3 has both clients quitting instead of throwing, and so they both leave
+the queue.
+Round 4 has a rock being thrown by TID 5, but TID 6 decides to quit right away.
+TID 5 is informed of this.
+Round 5 is a normal round again. TID 5 is still playing because it hasn't quit.
+Round 6 is a tie.
+Round 7 has TID 7 quit. Now both TID 5 and the server are waiting. TID 5 sent a
+play request to the server, which the server acknowledges but needs another
+client to start a game. Since there are no more clients, the scheduler does not
+have anything to schedule and we return to redboot.
 
-### Error Codes
-
-All error codes are specified by the `Error` enumeration. By convention,
-syscalls return a non-negative value for success, and a negative error code to
-indicate failure. The error codes are:
-
-- (0) `ERR_OK`: no error
-- (1) `ERR_BADARG`: bad argument
-- (2) `ERR_NORES`: no resource available
-- (3) `ERR_TRUNC`: truncated
-- (4) `ERR_INVID`: invalid id
-- (5) `ERR_BADITC`: could not complete inter-task communication
-- (6) `ERR_CORRUPT`: corrupted volatile data
-- (7) `ERR_UNKN`: unknown error
-
-The `const char *err2str(int err)` function converts these error codes to human
-readable strings.
-
-
-### Task Descriptor and States
-
-The definition of the task descriptor can be found in `include/task.h`. Each
-task descriptor contains the following fields:
-
-- `Tid tid`: task id (-1 if td is unallocated)
-- `Tid ptid`: parent's task id
-- `Priority pri`: priority 0 to 31
-- `struct Td *nextReady`: next TD in the ready queue, or NULL
-- `struct Td *sendReady`: next TD in the send queue, or NULL. For the purposes
-  of kernel 1, this field is unused.
-- `enum RunState state`: current run state
-- `unsigned *sp`: current stack pointer
-
-For kernel 1, only three states are needed for task creation. More states are
-required for future kernels. The three current states are:
-
-- `ACTIVE`: The task has just run, is running, or is about to run. Only one
-  task may be in the active state.
-- `READY`:  The task is ready to be scheduled and activated.
-- `ZOMBIE`: The task has exited and will never again run, but still retains its
-  memory resources.
-
-New tasks start in the `READY` state. The possible transitions are:
-
-- `READY -> ACTIVE`
-- `ACTIVE -> READY`
-- `ACTIVE -> ZOMBIE`
-
-
-### Scheduling
-
-Priorities are numbered 0 (lowest) through 31 (highest). Tasks with a higher
-value are scheduled first.
-
-The scheduler (found in `src/kernel/scheduler.c`) maintains 32 queues, one for
-each priority.
-
-If no tasks are available for scheduling, the kernel exits and returns to the
-RedBoot prompt.
-
-Since there are 32 priorities, each priority queue's state can be represented
-with a single bit in a 32 bit integer. Additionally, querying the first bit that
-is toggled can be done in constant time. We use `__builtin_clz` for this
-purpose. If the bit is toggled on, that means there are ready tasks for the
-given priority. Otherwise, the bit is toggled off.
-
-The queues are represented using an intrusive singly linked list. This way,
-insertion to the end and removal from the front are constant time operations.
-Additionally, there is little size overhead as we only need to store an extra
-pointer per task.
-
-
-### System Calls
-
-The following are declared in `include/user/task.h` and can be included via
-`#include <task.h>`:
-
-- `Tid Create(Priority priority, void (*code)(void));` instantiates a task with
-  the given priority and entry point. If the priority is higher than the active
-  task's priority, the new task will begin execution immediately. If the
-  priority is outside of the valid range, `-ERR_BADARG` is returned. If the
-  kernel runs out of task descriptors, `-ERR_NORES` is returned. Currently,
-  task descriptors are not recycled, so a maximum of 32 tasks may be created
-  ever including the idle and first tasks.
-- `Tid MyTid(void);` returns the task id of the calling task.
-- `Tid myParentTid(void);` returns the task if of the calling task's parent.
-- `void pass(void);` ceases execution of the calling task, but leaves it in the
-  ready state. This syscall enables cooperative multitasking.
-- `void exeunt(void);` terminates execution of the task forever. This syscall
-  does not return. Currently, task descriptors are not recycled.
-
-
-### Context Switching
-
-Context switching is implement by two assembly functions: `kernelEntry` and
-`kernelyExit` which can be found in `src/kernel/syscall.s`.
-
-`kernelExit` exits kernel mode and enters user mode. It performs the following:
-
-1. Push the kernel registers to the kernel stack (r4-r12, sp, lr).
-2. Load the task's CPSR into SPSR.
-3. Pop the task's registers from the user's stack (r0-r14).
-4. `movs pc, lr` which restores the program counter and copies SPSR to CPSR.
-
-`kernelEntry` exits user mode and enters kernel mode. It performs the following:
-
-1. Push the task's registers to the user's stack (r0-r15).
-2. Save `lr` as `pc` in the user's stack.
-3. Save the task's CPSR.
-4. Pop the kernel registers from the kernel stack (r4-r12, sp, lr).
-5. Update the task's stack pointer in the task descriptor.
-
-The task's arguments are read directly off the stack from the pushed registers
-(r0-r4 in the diagram below). The return value is written to the location of r0
-in the stack.
-
-The syscall number is written to `r9` by the user task before performing the
-SWI. This is somewhat more efficient than using the immediate value (see
-discussions in the [ARM EABI](
-http://www.arm.linux.org.uk/developer/patches/viewpatch.php?id=3105/4)).
-
-User Stack Layout: (note that `sp_usr` remains unmodified)
-
-        0 +------+
-        ↑ |      |
-          |      |
-          |      |
-          |      |
-    -0x44 | cpsr |
-    -0x40 |  r0  | <- argument 0 / return value
-    -0x3c |  r1  | <- argument 1
-    -0x38 |  r2  | <- argument 2
-          |  .   |
-          |  .   |
-          |  .   |
-    -0x1c |  r9  | <- syscall number
-          |  .   |
-    -0x10 | r12  |
-    -0x0c |  sp  |
-    -0x08 |  lr  |
-    -0x04 |  pc  |
-          |  X   | <- sp_usr
-          |  X   |
-          |  X   |
-          |      |
-          |      |
-          |      |
-        ↓ |      |
-        ∞ +------+
-
-Kernel stack layout: (note that `sp_svc` remains unmodified)
-
-        0 +-----+
-        ↑ |     |
-          |     |
-          |     |
-          |     |
-    -0x30 |  r4 |
-    -0x2c |  r5 |
-          |  .  |
-          |  .  |
-          |  .  |
-    -0x0c | r12 |
-    -0x08 |  sp |
-    -0x04 |  pc |
-          |  X  | <- sp_svc
-          |  X  |
-          |  X  |
-          |     |
-          |     |
-          |     |
-        ↓ |     |
-        ∞ +-----+
-
-### Strace
-
-Additional debug information can be enabled by using `make STRACE_ENABLED=1`
-when building. This will enable a printout of some useful information such as
-the program's memory layout, a build time, as well as additional trace output
-for all system calls. The output is also in a darker color to distinguish it
-from normal output.
+The reason why previous clients get to keep playing until they quit is TODO
 
 ## Bugs
 

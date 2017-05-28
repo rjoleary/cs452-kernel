@@ -1,26 +1,5 @@
 #include "std.h"
 
-namespace ctl {
-void fast_memcpy(unsigned *dest, const unsigned *src, size_t n) {
-    /*if (count == 0) return;
-    auto n = (count+7)/8;
-    switch (count % 8) {
-        case 0: do { *dest++ = *src++;
-        case 7:      *dest++ = *src++;
-        case 6:      *dest++ = *src++;
-        case 5:      *dest++ = *src++;
-        case 4:      *dest++ = *src++;
-        case 3:      *dest++ = *src++;
-        case 2:      *dest++ = *src++;
-        case 1:      *dest++ = *src++;
-                } while (--n > 0);
-    }*/
-    for (size_t i = 0; i < n/4; i++) {
-        static_cast<unsigned*>(dest)[i] = static_cast<const unsigned*>(src)[i];
-    }
-}
-}
-
 using size_t = ctl::size_t;
 
 extern "C" {

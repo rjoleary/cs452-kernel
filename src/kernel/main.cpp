@@ -21,7 +21,7 @@ static int copyMsg(const unsigned *src, int srcSize, unsigned *dest, int destSiz
     if (destSize < srcSize) ret = -static_cast<int>(ctl::Error::Trunc);
     else ret = srcSize;
 
-    ctl::fast_memcpy(dest, src, ctl::min(srcSize, destSize));
+    fast_memcpy(dest, src, ctl::min(srcSize, destSize));
     return ret;
 }
 
