@@ -48,7 +48,7 @@ struct Td {
     ctl::Tid tid = ctl::INVALID_TID; // task id
     ctl::Tid ptid;                   // parent's task id
     ctl::Priority pri;               // priority
-    Td *nextReady;                   // next TD in the ready queue, or NULL
+    Td *nextReady = nullptr;         // next TD in the ready queue, or NULL
     Td *sendBegin = nullptr,         // queue for senders
        *sendEnd;
     RunState state;                  // current run state

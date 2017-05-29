@@ -21,7 +21,7 @@ using Tid = NamedType<int, struct Tid_t>;
 // There are 32 valid priorities: [0,31]
 // 0: low priority
 // 31: high priority
-using Priority = NamedType<char, struct Priority_t>;
+using Priority = NamedType<unsigned, struct Priority_t>;
 
 constexpr Priority PRIORITY_MIN{0}, PRIORITY_MAX{31};
 }

@@ -35,6 +35,7 @@ Td* TdManager::createTd() {
 }
 
 Td* TdManager::getTd(ctl::Tid tid) {
+    return &tds[tid.underlying()];
     // TODO: may be inefficient
     for (int i = 0; i < NUM_TD; i++) {
         if (tds[i].tid == tid) {
@@ -74,13 +75,12 @@ Td* Td::popSender() {
     if (!sendBegin) return nullptr;
     auto ret = sendBegin;
     sendBegin = sendBegin->nextReady;
-    if (sendEnd == ret) sendBegin = nullptr;
     ret->state = RunState::ReplyBlocked;
     return ret;
 }
 
 void Td::pushSender(Td &sender) {
-    if (!sendBegin) {
+    if (__builtin_expect(!sendBegin, 1)) {
         sendBegin = 
             sendEnd = &sender;
     }
@@ -88,6 +88,7 @@ void Td::pushSender(Td &sender) {
         sendEnd->nextReady = &sender;
         sendEnd = &sender;
     }
+    sender.nextReady = nullptr;
     sender.state = RunState::SendBlocked;
 }
 }

@@ -7,6 +7,7 @@
 #include <task.h>
 #include <user/math.h>
 #include <user/std.h>
+#include <user/ts7200.h>
 
 // Forward declarations
 const char* buildstr();
@@ -69,9 +70,23 @@ int main() {
 
     auto SVC_VECTOR = (void (*volatile*)())0x28;
     *SVC_VECTOR = &kernelEntry;
+#ifdef PERF_TEST
+    // Setup TIMER1:
+    // - 32-bit precision
+    // - 508 kHz clock
+    // - each 1ms is 508 ticks
+    // - timer starts at 0xffffffff and counts down
+    *(volatile unsigned*)(TIMER3_BASE + CRTL_OFFSET) = 0;
+    *(volatile unsigned*)(TIMER3_BASE + LDR_OFFSET) = 0xffffffffU;
+    *(volatile unsigned*)(TIMER3_BASE + CRTL_OFFSET) = ENABLE_MASK | CLKSEL_MASK;
+    //auto timerVal = (volatile unsigned*)(TIMER3_BASE + VAL_OFFSET);
+    //auto elapsed = 0, elapsedGet = 0, elapsedSend = 0, elapsedReceive = 0, elapsedReply = 0;
+#endif
 
     while (1) {
+        //auto start = *timerVal;
         auto active = scheduler.getNextProcess();
+        //elapsedGet += start - *timerVal;
         if (!active) {
             break;
         }
@@ -79,6 +94,109 @@ int main() {
         switch (active->getSyscall()) {
             using kernel::Syscall;
             using ctl::Error;
+            case Syscall::Send: {
+                //auto start = *timerVal;
+                auto tid = ctl::Tid(active->getArg(0));
+                auto msg = (const unsigned*)active->getArg(1);
+                int msglen = active->getArg(2);
+                auto reply = (unsigned*)active->getArg(3);
+                (void)reply;
+                int rplen = active->getArg(4);
+                (void)rplen;
+                auto receiver = tdManager.getTd(tid);
+                STRACE("  [%d] int send(tid=%d, msg=0x%08x, msglen=%d, reply=0x%08x, rplen=%d)",
+                        active->tid, tid, msg, msglen, reply, rplen);
+                if (__builtin_expect(!receiver, 0)) {
+                    active->setReturn(-static_cast<int>(Error::InvId));
+                    scheduler.readyProcess(*active);
+                    STRACE("  [%d] Bad Receiver", active->tid);
+                }
+                else if (receiver->state == kernel::RunState::ReceiveBlocked) {
+                    auto recTid = (ctl::Tid*)receiver->getArg(0);
+                    auto recMsg = (unsigned*)receiver->getArg(1);
+                    int recMsglen = receiver->getArg(2);
+
+                    *recTid = active->tid;
+
+                    receiver->setReturn(copyMsg(msg, msglen, recMsg, recMsglen));
+
+                    scheduler.readyProcess(*receiver);
+                    active->state = kernel::RunState::ReplyBlocked;
+                    STRACE("  [%d] SendMsg: %x %d ReceiveMsg %x %d",
+                            active->tid, msg, msglen, recMsg, recMsglen);
+                    STRACE("  [%d] ReplyBlocked", active->tid);
+                }
+                else {
+                    receiver->pushSender(*active);
+                    STRACE("  [%d] SendBlocked", active->tid);
+                }
+                //elapsedSend += start - *timerVal;
+                break;
+            }
+
+            case Syscall::Receive: {
+                //auto start = *timerVal;
+                auto tid = (ctl::Tid*)active->getArg(0);
+                auto msg = (unsigned*)active->getArg(1);
+                int msglen = active->getArg(2);
+                STRACE("  [%d] int receive(tid=0x%08d, msg=0x%08x, msglen=%d)",
+                        active->tid, tid, msg, msglen);
+                auto sender = active->popSender();
+                if (sender) {
+                    auto senderMsg = (const unsigned*)sender->getArg(1);
+                    int senderMsglen = sender->getArg(2);
+
+                    *tid = sender->tid;
+
+                    active->setReturn(copyMsg(senderMsg, senderMsglen, msg, msglen));
+
+                    scheduler.readyProcess(*active);
+                    STRACE("  [%d] SendMsg: %x %d ReceiveMsg %x %d",
+                            active->tid, senderMsg, senderMsglen, msg, msglen);
+                    STRACE("  [%d] Received from %d", active->tid, *tid);
+                }
+                else {
+                    active->state = kernel::RunState::ReceiveBlocked;
+                    STRACE("  [%d] ReceiveBlocked", active->tid);
+                }
+                //elapsedReceive += start - *timerVal;
+                break;
+            }
+
+            case Syscall::Reply: {
+                //auto start = *timerVal;
+                int ret = 0;
+                auto tid = ctl::Tid(active->getArg(0));
+                auto reply = (const unsigned*)active->getArg(1);
+                int rplen = active->getArg(2);
+                STRACE("  [%d] int reply(tid=%d, reply=0x%08x, rplen=%d)",
+                        active->tid, tid, reply, rplen);
+                auto receiver = tdManager.getTd(tid);
+                if (__builtin_expect(!receiver, 0)) {
+                    ret = -static_cast<int>(Error::InvId);
+                    STRACE("  [%d] Bad Receiver", active->tid);
+                }
+                else if (__builtin_expect(receiver->state != kernel::RunState::ReplyBlocked, 0)) {
+                    ret = -static_cast<int>(Error::BadItc);
+                    STRACE("  [%d] Receiver not ReplyBlocked", active->tid);
+                }
+                else {
+                    auto receiverMsg = (unsigned*)receiver->getArg(3);
+                    int receiverMsglen = receiver->getArg(4);
+
+                    auto size = copyMsg(reply, rplen, receiverMsg, receiverMsglen);
+                    receiver->setReturn(size);
+                    scheduler.readyProcess(*receiver);
+                    STRACE("  [%d] SendMsg: %x %d ReceiveMsg %x %d",
+                            active->tid, reply, rplen, receiverMsg, receiverMsglen);
+                    STRACE("  [%d] Replied to %d", active->tid, receiver->tid);
+                }
+                active->setReturn(ret);
+                scheduler.readyProcess(*active);
+                //elapsedReply += start - *timerVal;
+                break;
+            }
+
             case Syscall::Create: {
                 auto priority = ctl::Priority(active->getArg(0));
                 auto code = (void(*)())active->getArg(1);
@@ -132,110 +250,14 @@ int main() {
                 STRACE("  [%d] void exeunt()", active->tid);
                 break;
             }
+
             /* TODO: Implement in kernel 2.
             case SYS_DESTROY: {
                 STRACE("  [%d] void destroy()", active->tid);
                 // TODO
                 break;
-            }*/
-
-            case Syscall::Send: {
-                auto tid = ctl::Tid(active->getArg(0));
-                auto msg = (const unsigned*)active->getArg(1);
-                int msglen = active->getArg(2);
-                auto reply = (unsigned*)active->getArg(3);
-                (void)reply;
-                int rplen = active->getArg(4);
-                (void)rplen;
-                auto receiver = tdManager.getTd(tid);
-                STRACE("  [%d] int send(tid=%d, msg=0x%08x, msglen=%d, reply=0x%08x, rplen=%d)",
-                        active->tid, tid, msg, msglen, reply, rplen);
-                if (!receiver) {
-                    active->setReturn(-static_cast<int>(Error::InvId));
-                    scheduler.readyProcess(*active);
-                    STRACE("  [%d] Bad Receiver", active->tid);
-                }
-                else if (receiver->state == kernel::RunState::ReceiveBlocked) {
-                    auto recTid = (ctl::Tid*)receiver->getArg(0);
-                    auto recMsg = (unsigned*)receiver->getArg(1);
-                    int recMsglen = receiver->getArg(2);
-
-                    *recTid = active->tid;
-
-                    receiver->setReturn(copyMsg(msg, msglen, recMsg, recMsglen));
-
-                    scheduler.readyProcess(*receiver);
-                    active->state = kernel::RunState::ReplyBlocked;
-                    STRACE("  [%d] SendMsg: %x %d ReceiveMsg %x %d",
-                            active->tid, msg, msglen, recMsg, recMsglen);
-                    STRACE("  [%d] ReplyBlocked", active->tid);
-                }
-                else {
-                    receiver->pushSender(*active);
-                    STRACE("  [%d] SendBlocked", active->tid);
-                }
-                break;
             }
 
-            case Syscall::Receive: {
-                auto tid = (ctl::Tid*)active->getArg(0);
-                auto msg = (unsigned*)active->getArg(1);
-                int msglen = active->getArg(2);
-                STRACE("  [%d] int receive(tid=0x%08d, msg=0x%08x, msglen=%d)",
-                        active->tid, tid, msg, msglen);
-                auto sender = active->popSender();
-                if (sender) {
-                    auto senderMsg = (const unsigned*)sender->getArg(1);
-                    int senderMsglen = sender->getArg(2);
-
-                    *tid = sender->tid;
-
-                    active->setReturn(copyMsg(senderMsg, senderMsglen, msg, msglen));
-
-                    scheduler.readyProcess(*active);
-                    STRACE("  [%d] SendMsg: %x %d ReceiveMsg %x %d",
-                            active->tid, senderMsg, senderMsglen, msg, msglen);
-                    STRACE("  [%d] Received from %d", active->tid, *tid);
-                }
-                else {
-                    active->state = kernel::RunState::ReceiveBlocked;
-                    STRACE("  [%d] ReceiveBlocked", active->tid);
-                }
-                break;
-            }
-
-            case Syscall::Reply: {
-                int ret = 0;
-                auto tid = ctl::Tid(active->getArg(0));
-                auto reply = (const unsigned*)active->getArg(1);
-                int rplen = active->getArg(2);
-                STRACE("  [%d] int reply(tid=%d, reply=0x%08x, rplen=%d)",
-                        active->tid, tid, reply, rplen);
-                auto receiver = tdManager.getTd(tid);
-                if (!receiver) {
-                    ret = -static_cast<int>(Error::InvId);
-                    STRACE("  [%d] Bad Receiver", active->tid);
-                }
-                else if (receiver->state != kernel::RunState::ReplyBlocked) {
-                    ret = -static_cast<int>(Error::BadItc);
-                    STRACE("  [%d] Receiver not ReplyBlocked", active->tid);
-                }
-                else {
-                    auto receiverMsg = (unsigned*)receiver->getArg(3);
-                    int receiverMsglen = receiver->getArg(4);
-
-                    auto size = copyMsg(reply, rplen, receiverMsg, receiverMsglen);
-                    receiver->setReturn(size);
-                    scheduler.readyProcess(*receiver);
-                    STRACE("  [%d] SendMsg: %x %d ReceiveMsg %x %d",
-                            active->tid, reply, rplen, receiverMsg, receiverMsglen);
-                    STRACE("  [%d] Replied to %d", active->tid, receiver->tid);
-                }
-                active->setReturn(ret);
-                scheduler.readyProcess(*active);
-                break;
-            }
-            /*
             case SYS_AWAITEVENT: {
                 STRACE("  [%d] int awaitEvent(eventid=) = ", active->tid); // TODO: args
                 // TODO
@@ -247,8 +269,15 @@ int main() {
                 PANIC("bad syscall number");
             }
         }
+        //auto end = *timerVal;
+        //elapsed += start-end;
     }
 
+    /*bwprintf(COM2, "in thing: %d\n\r", elapsed);
+    bwprintf(COM2, "in get: %d\n\r", elapsedGet);
+    bwprintf(COM2, "in send: %d\n\r", elapsedSend);
+    bwprintf(COM2, "in recv: %d\n\r", elapsedReceive);
+    bwprintf(COM2, "in reply: %d\n\r", elapsedReply);*/
     STRACE("  [-] No active tasks, returning");
     return 0;
 }
