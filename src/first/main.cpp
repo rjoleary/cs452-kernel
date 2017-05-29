@@ -51,8 +51,9 @@ template <size_t I, int P>
 void testThing() {
     constexpr auto AmountToSend = 10'000, ClockTicks = 508'000, Microseconds = 1'000'000;
     auto timerVal = (volatile unsigned*)(TIMER3_BASE + VAL_OFFSET);
-    auto start = *timerVal;
     bwprintf(COM2, "Size %d Pri %d...\r\n", I, P);
+    asm volatile ("":::"memory"); // memory barrier
+    auto start = *timerVal;
     Tid tid = create(Priority(P), perfMain<I>);
 
     Message<I> msg;
@@ -61,6 +62,7 @@ void testThing() {
     }
 
     unsigned elapsed = start - *timerVal; 
+    asm volatile ("":::"memory"); // memory barrier
     bwprintf(COM2, "Done! Elapsed: %u\r\n", elapsed);
     unsigned averageTrunc = elapsed/double(ClockTicks)*Microseconds/AmountToSend;
     bwprintf(COM2, "Average time: %u\r\n", averageTrunc);
