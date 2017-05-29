@@ -33,7 +33,7 @@ readme.
 
 ## Checksums
 
-Git hash: TODO
+Git hash: 26bd6995ae299d3314360365331d4acb1c2cc6d5
 
 
 ## Running
