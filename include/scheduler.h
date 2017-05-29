@@ -11,7 +11,7 @@ class Scheduler {
     // A bitset indicating which queues are non-empty.
     unsigned status = 0;
 
-    Td* lowestTask = nullptr;
+    int lowestTask = -1;
 
     // One singly linked list for each priority.
     struct {

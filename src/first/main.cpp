@@ -49,7 +49,7 @@ void perfMain() {
 
 template <size_t I, int P, bool silent>
 void testThing() {
-    constexpr auto AmountToSend = 10'000, ClockTicks = 508'000, Microseconds = 1'000'000;
+    constexpr auto AmountToSend = 10'000;//, ClockTicks = 508'000, Microseconds = 1'000'000;
     auto timerVal = (volatile unsigned*)(TIMER3_BASE + VAL_OFFSET);
     auto start = *timerVal;
     if (!silent)
@@ -64,8 +64,6 @@ void testThing() {
     if (!silent) {
         unsigned elapsed = start - *timerVal; 
         bwprintf(COM2, "Done! Elapsed: %u\r\n", elapsed);
-        unsigned averageTrunc = elapsed/double(ClockTicks)*Microseconds/AmountToSend;
-        bwprintf(COM2, "Average time: %u\r\n", averageTrunc);
     }
 }
 
