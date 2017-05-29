@@ -34,7 +34,7 @@ namespace ctl {
 
 template <size_t I>
 struct Message {
-    unsigned data[I];
+    unsigned data[I/4];
 };
 
 template <size_t I>
