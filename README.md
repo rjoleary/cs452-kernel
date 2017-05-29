@@ -139,9 +139,26 @@ way, there is barely any differences between the 4 byte and 64 byte performance
 tests.
 
 
-## Measurements
+## Performance Results
 
-TODO
+		Message     Caches  Send before     Optimization    Time        Group
+		length              Reply
+		4 bytes     off     yes             off             388.863     Coldwell Group
+		64 bytes    off     yes             off             404.531     Elnar Dakeshov
+		4 bytes     on      yes             off             25.2        and Ryan O'Leary
+		64 bytes    on      yes             off             26.459
+		4 bytes     off     no              off             375.835
+		64 bytes    off     no              off             391.497
+		4 bytes     on      no              off             24.361
+		64 bytes    on      no              off             25.638
+		4 bytes     off     yes             on              92.501
+		64 bytes    off     yes             on              96.033
+		4 bytes     on      yes             on              7.414
+		64 bytes    on      yes             on              7.723
+		4 bytes     off     no              on              91.142
+		64 bytes    off     no              on              94.520
+		4 bytes     on      no              on              7.314
+		64 bytes    on      no              on              7.612
 
 
 ## Demo
