@@ -59,6 +59,14 @@ int main() {
     kernel::Scheduler scheduler;
     kernel::TdManager tdManager(scheduler, userStacks[0] + kernel::STACK_SZ/4);
 
+
+    /*constexpr auto siz = 12;
+    unsigned src[siz], dest[siz];
+    for (int i = 0; i < siz; ++i) src[i] = i;
+    fast_memcpy(dest,src,siz*4);
+    for (int i = 0; i < siz; ++i)
+        bwprintf(COM2, "mem %d %d\r\n", src[i], dest[i]);*/
+
     auto SVC_VECTOR = (void (*volatile*)())0x28;
     *SVC_VECTOR = &kernelEntry;
 
