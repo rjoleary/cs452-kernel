@@ -26,7 +26,6 @@ static int copyMsg(const unsigned *src, int srcSize, unsigned *dest, int destSiz
 }
 
 int main() {
-
 #ifdef CACHE_ENABLED
     asm volatile (
         "mrc p15, 0, r0, c1, c0, 0\n\t"
@@ -35,7 +34,6 @@ int main() {
         "mcr p15, 0, r0, c1, c0, 0"
     );
 #endif // CACHE_ENABLED
-
 
     unsigned *kernelStack = (unsigned*)(&kernelStack + 1);
 

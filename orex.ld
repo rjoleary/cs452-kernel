@@ -29,6 +29,7 @@ text : /* The actual instructions. */
 {
 textStart = . ;
 *(.text)
+*(.text.*)
 *(.got)
 *(.got.plt)
 *(.rodata)

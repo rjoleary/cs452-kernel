@@ -29,6 +29,7 @@ void firstMain() {
 #include <ts7200.h>
 #include <itc.h>
 #include <std.h>
+#include <../profiler.h>
 
 namespace ctl {
 
@@ -56,16 +57,26 @@ void testThing() {
     auto start = *timerVal;
     Tid tid = create(Priority(P), perfMain<I>);
 
+    // Start profiler.
+    profilerStart(1000);
+
+    // Actual test.
     Message<I> msg;
     for (unsigned i = 0; i < AmountToSend; i++) {
         send(tid, msg, msg);
     }
+
+    profilerStop();
 
     unsigned elapsed = start - *timerVal; 
     asm volatile ("":::"memory"); // memory barrier
     bwprintf(COM2, "Done! Elapsed: %u\r\n", elapsed);
     unsigned averageTrunc = elapsed/double(ClockTicks)*Microseconds/AmountToSend;
     bwprintf(COM2, "Average time: %u\r\n", averageTrunc);
+
+    // Dump profiler.
+    profilerDump();
+    bwputstr(COM2, "\r\n");
 }
 
 void firstMain() {

@@ -63,7 +63,7 @@ build/kernel.elf: $(OBJ) orex.ld
 	$(LD) $(LDFLAGS) -o build/kernel.elf $(OBJ) -lgcc
 
 objdump: build/kernel.elf
-	$(OBJDUMP) -dC build/kernel.elf | vim -
+	$(OBJDUMP) -dC build/kernel.elf | less
 
 clean:
 	-rm -rf build/*
