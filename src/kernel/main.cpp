@@ -1,5 +1,6 @@
 #include <def.h>
 #include <err.h>
+#include <interrupt.h>
 #include <panic.h>
 #include <scheduler.h>
 #include <strace.h>
@@ -57,6 +58,7 @@ int main() {
     kernel::Scheduler scheduler;
     kernel::TdManager tdManager(scheduler, userStacks[0] + kernel::STACK_SZ/4);
 
+    initInterrupts();
 
     /*constexpr auto siz = 12;
     unsigned src[siz], dest[siz];

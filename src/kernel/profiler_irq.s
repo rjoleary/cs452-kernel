@@ -1,7 +1,6 @@
 @ vim:ft=armv5
 
 .global timer2Irq
-.global irqTrampoline
 
 .section .bss
 .align 4
@@ -10,11 +9,6 @@ irqStack:
 irqStackEnd:
 
 .section .text
-irqTrampoline:
-    ldr sp, =0x800b0030
-    ldr sp, [sp]
-    bx sp
-
 timer2Irq:
     @ Push r1.
     ldr sp, =irqStackEnd
