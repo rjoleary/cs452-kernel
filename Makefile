@@ -70,3 +70,6 @@ clean:
 
 upload: build/kernel.elf
 	cp build/kernel.elf /u/cs452/tftp/ARM/$(USER)/coldwell.elf
+
+cupload: clean build/kernel.elf
+	cp build/kernel.elf /u/cs452/tftp/ARM/$(USER)/coldwell.elf

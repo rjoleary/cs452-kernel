@@ -92,10 +92,9 @@ int main() {
                 Td *notifier = (Td*)vic1addr;
                 *(volatile unsigned*)(TIMER1_BASE + CLR_OFFSET) = 0;
                 *(volatile unsigned*)(0x800b0030) = 0;
-                if (notifier != nullptr) {
+                if (notifier->state == RunState::EventBlocked) {
                     scheduler.readyTask(*notifier);
                 }
-                disableInterrupt(InterruptSource(InterruptSource::TC1UI));
                 active->interruptLinkReg();
                 scheduler.readyTask(*active);
                 continue;
@@ -205,11 +204,17 @@ int main() {
         }
         else if (active->getSyscall() == Syscall::AwaitEvent) {
             int eventId = active->getArg(0);
-            // TODO: this is a total hack
-            // TODO: ensure no two tasks bind to the same event
-            // TODO: disable interrupts when?
-            bindInterrupt(InterruptSource(eventId), 0, (void(*)())active);
-            enableInterrupt(InterruptSource(eventId));
+            // TODO: hack
+            static bool alreadyEnabled = false;
+            if (!alreadyEnabled) {
+                alreadyEnabled = true;
+                // TODO: this is a total hack
+                // TODO: ensure no two tasks bind to the same event
+                // TODO: disable interrupts when?
+                bindInterrupt(InterruptSource(eventId), 0, (void(*)())active);
+                enableInterrupt(InterruptSource(eventId));
+            }
+            active->state = RunState::EventBlocked;
             STRACE("  [%d] int awaitEvent(eventid=%d) = <BLOCKED>", active->tid, eventId);
         }
         else if (active->getSyscall() == Syscall::Create) {
