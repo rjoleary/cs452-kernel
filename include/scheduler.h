@@ -16,12 +16,13 @@ class Scheduler {
         Td *first, *last;
     } entries[NUM_PRI];
 public:
-    // Enqueue a process onto the ready queue.
-    void readyProcess(Td &td);
+    // Enqueue a task onto the ready queue.
+    void readyTask(Td &td);
 
-    // Get next ready process, or NULL if there is none. The process is removed
-    // from the ready queue and must be reinserted with `readyProcess`.
-    Td* getNextProcess();
+    // Get next ready task. The task is removed from the ready queue and must
+    // be reinserted with `readyTask`. Because the idle task is always ready,
+    // this function always returns a valid id.
+    Td* getNextTask();
 };
 }
 

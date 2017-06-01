@@ -71,10 +71,7 @@ int main() {
     *SVC_VECTOR = &kernelEntry;
 
     while (1) {
-        auto active = scheduler.getNextProcess();
-        if (!active) {
-            break;
-        }
+        auto active = scheduler.getNextTask();
         active->sp = kernelExit(active->sp);
         switch (active->getSyscall()) {
             using kernel::Syscall;
@@ -95,11 +92,11 @@ int main() {
                     td->pri       = priority;
                     td->sp        = userStacks[td->tid.underlying()] + kernel::STACK_SZ/4;
                     td->initStack(code);
-                    scheduler.readyProcess(*td);
+                    scheduler.readyTask(*td);
                     ret = td->tid.underlying();
                 }
                 active->setReturn(ret);
-                scheduler.readyProcess(*active);
+                scheduler.readyTask(*active);
                 STRACE("  [%d] int create(priority=%d, code=%d) = %d",
                         active->tid, priority, code, ret);
                 break;
@@ -107,7 +104,7 @@ int main() {
 
             case Syscall::MyTid: {
                 int ret = active->tid.underlying();
-                scheduler.readyProcess(*active);
+                scheduler.readyTask(*active);
                 active->setReturn(ret);
                 STRACE("  [%d] int myTid() = %d", active->tid, ret);
                 break;
@@ -115,14 +112,14 @@ int main() {
 
             case Syscall::MyParentTid: {
                 int ret = active->ptid.underlying();
-                scheduler.readyProcess(*active);
+                scheduler.readyTask(*active);
                 active->setReturn(ret);
                 STRACE("  [%d] int myParentTid() = %d", active->tid, ret);
                 break;
             }
 
             case Syscall::Pass: {
-                scheduler.readyProcess(*active);
+                scheduler.readyTask(*active);
                 STRACE("  [%d] void pass()", active->tid);
                 break;
             }
@@ -152,7 +149,7 @@ int main() {
                         active->tid, tid, msg, msglen, reply, rplen);
                 if (!receiver) {
                     active->setReturn(-static_cast<int>(Error::InvId));
-                    scheduler.readyProcess(*active);
+                    scheduler.readyTask(*active);
                     STRACE("  [%d] Bad Receiver", active->tid);
                 }
                 else if (receiver->state == kernel::RunState::ReceiveBlocked) {
@@ -164,7 +161,7 @@ int main() {
 
                     receiver->setReturn(copyMsg(msg, msglen, recMsg, recMsglen));
 
-                    scheduler.readyProcess(*receiver);
+                    scheduler.readyTask(*receiver);
                     active->state = kernel::RunState::ReplyBlocked;
                     STRACE("  [%d] SendMsg: %x %d ReceiveMsg %x %d",
                             active->tid, msg, msglen, recMsg, recMsglen);
@@ -192,7 +189,7 @@ int main() {
 
                     active->setReturn(copyMsg(senderMsg, senderMsglen, msg, msglen));
 
-                    scheduler.readyProcess(*active);
+                    scheduler.readyTask(*active);
                     STRACE("  [%d] SendMsg: %x %d ReceiveMsg %x %d",
                             active->tid, senderMsg, senderMsglen, msg, msglen);
                     STRACE("  [%d] Received from %d", active->tid, *tid);
@@ -226,13 +223,13 @@ int main() {
 
                     auto size = copyMsg(reply, rplen, receiverMsg, receiverMsglen);
                     receiver->setReturn(size);
-                    scheduler.readyProcess(*receiver);
+                    scheduler.readyTask(*receiver);
                     STRACE("  [%d] SendMsg: %x %d ReceiveMsg %x %d",
                             active->tid, reply, rplen, receiverMsg, receiverMsglen);
                     STRACE("  [%d] Replied to %d", active->tid, receiver->tid);
                 }
                 active->setReturn(ret);
-                scheduler.readyProcess(*active);
+                scheduler.readyTask(*active);
                 break;
             }
             /*
@@ -248,7 +245,4 @@ int main() {
             }
         }
     }
-
-    STRACE("  [-] No active tasks, returning");
-    return 0;
 }

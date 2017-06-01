@@ -25,7 +25,7 @@ TdManager::TdManager(Scheduler &scheduler, unsigned *stack) {
     tds[0].state = kernel::RunState::Ready;
     tds[0].sp = stack;
     tds[0].initStack(ctl::firstMain);
-    scheduler.readyProcess(tds[0]);
+    scheduler.readyTask(tds[0]);
 }
 
 Td* TdManager::createTd() {
