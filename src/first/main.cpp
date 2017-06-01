@@ -1,10 +1,12 @@
 #include <bwio.h>
 #include <def.h>
+#include <std.h>
 #include <task.h>
 
 #ifndef PERF_TEST
 
 // Forward declaration.
+void idleMain();
 void rpsServerMain();
 void rpsClientMain();
 
@@ -12,9 +14,8 @@ namespace ctl {
 void nsMain();
 
 void firstMain() {
-    bwprintf(COM2, "FirstUserTask: myTid()=%d\r\n", myTid());
-    bwprintf(COM2, "FirstUserTask: created nameserver, tid %d\r\n",
-            create(PRIORITY_MAX, nsMain));
+    ASSERT(create(PRIORITY_MIN, idleMain) == IDLE_TID);
+    ASSERT(create(PRIORITY_MAX, nsMain) == NS_TID);
 
     // Create rock paper scissors server and clients.
     create(Priority(5), rpsServerMain);
@@ -28,7 +29,6 @@ void firstMain() {
 
 #include <ts7200.h>
 #include <itc.h>
-#include <std.h>
 #include <../profiler.h>
 
 namespace ctl {

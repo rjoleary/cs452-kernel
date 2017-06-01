@@ -13,4 +13,12 @@ using size_t = decltype(sizeof(0));
 extern "C"
 void fast_memcpy(unsigned *dest, const unsigned *source, int num);
 
+#define ASSERT(pred) do {               \
+    if (__builtin_expect(!(pred), 0)) { \
+        assert(__FILE__, __LINE__);     \
+    }                                   \
+} while (false)
+
+void assert(const char *file, int line);
+
 #endif // USER_STD_H__INCLUDED

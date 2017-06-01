@@ -13,7 +13,8 @@ static_assert(NUM_TD > NUM_RPS_CLIENTS, "Too many RPS clients");
 
 namespace ctl {
 constexpr Tid FIRST_TID{0},
-          NS_TID{1},
+          IDLE_TID{1},
+          NS_TID{2},
           INVALID_TID{-1};
 constexpr Priority FIRST_PRI{15};
 };

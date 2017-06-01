@@ -1,7 +1,6 @@
-#include "std.h"
+typedef decltype(sizeof(0)) size_t;
 
-using size_t = ctl::size_t;
-
+// Cannot include std.h for these functions to work.
 extern "C" {
 void *memset(void *s, int c, size_t n) {
     for (size_t i = 0; i < n; i++) {
@@ -30,4 +29,12 @@ char *strncpy(char *dest, const char *src, size_t n) {
     }
     return dest;
 }
+}
+
+#include <bwio.h>
+#include <task.h>
+
+void assert(const char *file, int line) {
+    bwprintf(COM2, "Assertion failed in Tid %d, %s:%d\r\n", ctl::myTid(), file, line);
+    ctl::exeunt();
 }
