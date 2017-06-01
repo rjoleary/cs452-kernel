@@ -1,5 +1,6 @@
 #include <bwio.h>
 #include <def.h>
+#include <event.h>
 #include <std.h>
 #include <task.h>
 
@@ -17,10 +18,10 @@ void firstMain() {
     ASSERT(create(PRIORITY_MIN, idleMain) == IDLE_TID);
     ASSERT(create(PRIORITY_MAX, nsMain) == NS_TID);
 
-    // Create rock paper scissors server and clients.
-    create(Priority(5), rpsServerMain);
-    for (unsigned i = 0; i < NUM_RPS_CLIENTS; i++) {
-        create(Priority(2), rpsClientMain);
+    // Clock.
+    for (int i = 0; ; i++) {
+        bwprintf(COM2, "\r%d", i);
+        awaitEvent(static_cast<int>(InterruptSource::TC1UI));
     }
 }
 }

@@ -8,6 +8,9 @@
 #include <task.h>
 #include <user/math.h>
 #include <user/std.h>
+#include <user/ts7200.h>
+
+using namespace kernel;
 
 // Forward declarations
 const char* buildstr();
@@ -58,21 +61,54 @@ int main() {
     kernel::Scheduler scheduler;
     kernel::TdManager tdManager(scheduler, userStacks[0] + kernel::STACK_SZ/4);
 
+    // Software Interrupt (SWI)
+    auto SVC_ADDR = (void (*volatile*)())0x28;
+    *SVC_ADDR = &kernelEntry;
+
+    // Setup TIMER1:
+    // - 16-bit precision
+    // - 2 kHz clock
+    // - timer starts at 1999 and counts down
+    // - interrupt occurs every 10ms
+    *(volatile unsigned*)(TIMER1_BASE + CRTL_OFFSET) = 0;
+    *(volatile unsigned*)(TIMER1_BASE + LDR_OFFSET) = 19;
+    *(volatile unsigned*)(TIMER1_BASE + CRTL_OFFSET) = ENABLE_MASK | MODE_MASK;
+
     initInterrupts();
-
-    /*constexpr auto siz = 12;
-    unsigned src[siz], dest[siz];
-    for (int i = 0; i < siz; ++i) src[i] = i;
-    fast_memcpy(dest,src,siz*4);
-    for (int i = 0; i < siz; ++i)
-        bwprintf(COM2, "mem %d %d\r\n", src[i], dest[i]);*/
-
-    auto SVC_VECTOR = (void (*volatile*)())0x28;
-    *SVC_VECTOR = &kernelEntry;
+    auto IRQ_ADDR = (void (*volatile*)())0x38;
+    *IRQ_ADDR = &kernelEntry; // TODO: this is a bit stange b/c overwrites initInterrupts()
 
     while (1) {
         auto active = scheduler.getNextTask();
         active->sp = kernelExit(active->sp);
+
+        // Handle interrupt. (TODO: a bit hacky)
+        unsigned vic1addr = *(volatile unsigned*)(0x800b0030);
+        if (vic1addr != 0xdeadbeef) {
+            STRACE("RECEIVED INTERRUPT");
+            // TODO: only timer support for now
+            Td *notifier = (Td*)vic1addr;
+            *(volatile unsigned*)(TIMER1_BASE + CLR_OFFSET) = 0;
+            *(volatile unsigned*)(0x800b0030) = 0;
+            active->interruptLinkReg();
+            scheduler.readyTask(*notifier);
+            scheduler.readyTask(*active);
+            continue;
+        }
+        unsigned vic2addr = *(volatile unsigned*)(0x800c0030);
+        if (vic2addr != 0xdeadbeef) {
+            STRACE("RECEIVED INTERRUPT");
+            // TODO: only timer support for now
+            Td *notifier = (Td*)vic2addr;
+            *(volatile unsigned*)(TIMER1_BASE + CLR_OFFSET) = 0;
+            *(volatile unsigned*)(0x800b0030) = 0;
+            active->interruptLinkReg();
+            scheduler.readyTask(*notifier);
+            scheduler.readyTask(*active);
+            continue;
+        }
+
+        // Handle syscall.
         switch (active->getSyscall()) {
             using kernel::Syscall;
             using ctl::Error;
@@ -120,7 +156,9 @@ int main() {
 
             case Syscall::Pass: {
                 scheduler.readyTask(*active);
-                STRACE("  [%d] void pass()", active->tid);
+                if (!(active->tid == ctl::IDLE_TID)) {
+                    STRACE("  [%d] void pass()", active->tid);
+                }
                 break;
             }
 
@@ -129,7 +167,8 @@ int main() {
                 STRACE("  [%d] void exeunt()", active->tid);
                 break;
             }
-            /* TODO: Implement in kernel 2.
+
+            /* TODO: Implement in kernel 4?
             case SYS_DESTROY: {
                 STRACE("  [%d] void destroy()", active->tid);
                 // TODO
@@ -232,13 +271,17 @@ int main() {
                 scheduler.readyTask(*active);
                 break;
             }
-            /*
-            case SYS_AWAITEVENT: {
-                STRACE("  [%d] int awaitEvent(eventid=) = ", active->tid); // TODO: args
-                // TODO
+
+            case Syscall::AwaitEvent: {
+                int eventId = active->getArg(0);
+                // TODO: this is a total hack
+                // TODO: ensure no two tasks bind to the same event
+                // TODO: disable interrupts when?
+                bindInterrupt(InterruptSource(eventId), 0, (void(*)())active);
+                enableInterrupt(InterruptSource(eventId));
+                STRACE("  [%d] int awaitEvent(eventid=%d) = <BLOCKED>", active->tid, eventId);
                 break;
             }
-            */
 
             default: {
                 PANIC("bad syscall number");

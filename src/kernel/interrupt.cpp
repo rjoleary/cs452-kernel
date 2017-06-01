@@ -30,6 +30,7 @@ void initInterrupts() {
     // irqTrampoline reads vector address into pc.
     *(volatile unsigned*)(0x38) = (unsigned)irqTrampoline;
     *(volatile unsigned*)(VIC1Base + VICxDefVectAddr) = 0xdeadbeef;
+    *(volatile unsigned*)(VIC2Base + VICxDefVectAddr) = 0xdeadbeef;
 }
 
 void bindInterrupt(InterruptSource src, unsigned vector, void (*isr)()) {
