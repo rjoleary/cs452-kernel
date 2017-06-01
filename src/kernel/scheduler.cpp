@@ -25,7 +25,7 @@ void Scheduler::readyProcess(Td &td) {
 Td* Scheduler::getNextProcess() {
     if (__builtin_expect(status == 0, 0)) return nullptr;
     unsigned int lowestPri;
-    if (__builtin_expect(lowestTask != -1, 1)) {
+    if (lowestTask != -1) {
         lowestPri = lowestTask;
     }
     else {
@@ -33,7 +33,7 @@ Td* Scheduler::getNextProcess() {
     }
     auto ready = entries[lowestPri].first;
     // More than just one entry for this priority.
-    if (ready->nextReady) {
+    if (__builtin_expect(ready->nextReady != nullptr, 0)) {
         entries[lowestPri].first = ready->nextReady;
     }
     else {

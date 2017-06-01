@@ -19,11 +19,11 @@ enum class Syscall {
 // Body for a syscall taking 0 arguments.
 #define SYSCALL0(id)            \
     asm volatile (              \
-        "mov r9, %0\n\t"        \
+        "mov r5, %0\n\t"        \
         "swi #0"                \
         :                       \
         : "i" (id)              \
-        : "r9"                  \
+        : "r5"                  \
         , "memory"              \
     );
 
@@ -31,12 +31,12 @@ enum class Syscall {
 #define SYSCALL1(id)                \
     register int r0 asm("r0") = a0; \
     asm volatile (                  \
-        "mov r9, %0\n\t"            \
+        "mov r5, %0\n\t"            \
         "swi #0"                    \
         :                           \
         : "i" (id)                  \
         , "r" (r0)                  \
-        : "r9"                      \
+        : "r5"                      \
         , "memory"                  \
     );
 
@@ -44,11 +44,11 @@ enum class Syscall {
 #define SYSCALL0R(id)           \
     register int ret asm("r0"); \
     asm volatile (              \
-        "mov r9, %1\n\t"        \
+        "mov r5, %1\n\t"        \
         "swi #0"                \
         : "=r" (ret)            \
         : "i" (id)              \
-        : "r9"                  \
+        : "r5"                  \
         , "memory"              \
     );
 
@@ -57,12 +57,12 @@ enum class Syscall {
     register int ret asm("r0");                    \
     register unsigned r0 asm("r0") = (unsigned)a0; \
     asm volatile (                                 \
-        "mov r9, %1\n\t"                           \
+        "mov r5, %1\n\t"                           \
         "swi #0"                                   \
         : "=r" (ret)                               \
         : "i" (id)                                 \
         , "r" (r0)                                 \
-        : "r9"                                     \
+        : "r5"                                     \
         , "memory"                                 \
     );
 
@@ -72,13 +72,13 @@ enum class Syscall {
     register unsigned r0 asm("r0") = (unsigned)a0; \
     register unsigned r1 asm("r1") = (unsigned)a1; \
     asm volatile (                                 \
-        "mov r9, %1\n\t"                           \
+        "mov r5, %1\n\t"                           \
         "swi #0"                                   \
         : "=r" (ret)                               \
         : "i" (id)                                 \
         , "r" (r0)                                 \
         , "r" (r1)                                 \
-        : "r9"                                     \
+        : "r5"                                     \
         , "memory"                                 \
     );
 
@@ -89,14 +89,14 @@ enum class Syscall {
     register unsigned r1 asm("r1") = (unsigned)a1; \
     register unsigned r2 asm("r2") = (unsigned)a2; \
     asm volatile (                                 \
-        "mov r9, %1\n\t"                           \
+        "mov r5, %1\n\t"                           \
         "swi #0"                                   \
         : "=r" (ret)                               \
         : "i" (id)                                 \
         , "r" (r0)                                 \
         , "r" (r1)                                 \
         , "r" (r2)                                 \
-        : "r9"                                     \
+        : "r5"                                     \
         , "memory"                                 \
     );
 
@@ -109,7 +109,7 @@ enum class Syscall {
     register unsigned r3 asm("r3") = (unsigned)a3; \
     register unsigned r4 asm("r4") = (unsigned)a4; \
     asm volatile (                                 \
-        "mov r9, %1\n\t"                           \
+        "mov r5, %1\n\t"                           \
         "swi #0"                                   \
         : "=r" (ret)                               \
         : "i" (id)                                 \
@@ -118,7 +118,7 @@ enum class Syscall {
         , "r" (r2)                                 \
         , "r" (r3)                                 \
         , "r" (r4)                                 \
-        : "r9"                                     \
+        : "r5"                                     \
         , "memory"                                 \
     );
 

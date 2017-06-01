@@ -51,10 +51,10 @@ template <size_t I, int P, bool silent>
 void testThing() {
     constexpr auto AmountToSend = 10'000;//, ClockTicks = 508'000, Microseconds = 1'000'000;
     auto timerVal = (volatile unsigned*)(TIMER3_BASE + VAL_OFFSET);
-    auto start = *timerVal;
     if (!silent)
         bwprintf(COM2, "Size %d Pri %d...\r\n", I, P);
-    Tid tid = create(Priority(P), perfMain<I>);
+    Tid tid = Tid(create(Priority(P), perfMain<I>));
+    auto start = *timerVal;
 
     Message<I> msg;
     for (unsigned i = 0; i < AmountToSend; i++) {

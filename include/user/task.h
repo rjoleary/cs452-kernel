@@ -23,7 +23,7 @@ namespace ctl {
 //   task id.
 //   -ERR_BADARG: the priority is invalid.
 //   -ERR_NORES: the kernel is out of task decriptors.
-Tid create(Priority priority, void (*code)());
+int create(Priority priority, void (*code)());
 
 // myTid - return my task id.
 //

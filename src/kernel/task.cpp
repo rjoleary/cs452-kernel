@@ -72,10 +72,11 @@ void Td::initStack(void (*entrypoint)()) {
 }
 
 Td* Td::popSender() {
-    if (!sendBegin) return nullptr;
     auto ret = sendBegin;
-    sendBegin = sendBegin->nextReady;
-    ret->state = RunState::ReplyBlocked;
+    if (sendBegin) {
+        sendBegin = sendBegin->nextReady;
+        ret->state = RunState::ReplyBlocked;
+    }
     return ret;
 }
 
