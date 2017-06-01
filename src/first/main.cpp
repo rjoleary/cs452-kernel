@@ -15,8 +15,8 @@ namespace ctl {
 void nsMain();
 
 void firstMain() {
-    ASSERT(create(PRIORITY_MIN, idleMain) == IDLE_TID);
-    ASSERT(create(PRIORITY_MAX, nsMain) == NS_TID);
+    ASSERT(Tid(create(PRIORITY_MIN, idleMain)) == IDLE_TID);
+    ASSERT(Tid(create(PRIORITY_MAX, nsMain)) == NS_TID);
 
     // Clock.
     for (int i = 0; ; i++) {

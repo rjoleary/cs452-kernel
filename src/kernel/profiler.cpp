@@ -27,8 +27,6 @@ void profilerStart(unsigned ticks) {
         return;
     }
 
-    memset(buffer, 0, sizeof(buffer));
-
     // Setup TIMER2:
     // - 16-bit precision
     // - 508 kHz clock

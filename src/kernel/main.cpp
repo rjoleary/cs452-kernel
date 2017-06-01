@@ -75,34 +75,32 @@ int main() {
     *(volatile unsigned*)(TIMER1_BASE + CRTL_OFFSET) = ENABLE_MASK | MODE_MASK;
 
     initInterrupts();
-    auto IRQ_ADDR = (void (*volatile*)())0x38;
-    *IRQ_ADDR = &kernelEntry; // TODO: this is a bit stange b/c overwrites initInterrupts()
 
     while (1) {
         auto active = scheduler.getNextTask();
         active->sp = kernelExit(active->sp);
 
         // Handle interrupt. (TODO: a bit hacky)
-        unsigned vic1addr = *(volatile unsigned*)(0x800b0030);
+        auto vic1addr = *(volatile unsigned*)(0x800b0030);
         if (vic1addr != 0xdeadbeef) {
             STRACE("RECEIVED INTERRUPT");
             // TODO: only timer support for now
             Td *notifier = (Td*)vic1addr;
             *(volatile unsigned*)(TIMER1_BASE + CLR_OFFSET) = 0;
             *(volatile unsigned*)(0x800b0030) = 0;
-            active->interruptLinkReg();
+            //active->interruptLinkReg();
             scheduler.readyTask(*notifier);
             scheduler.readyTask(*active);
             continue;
         }
-        unsigned vic2addr = *(volatile unsigned*)(0x800c0030);
+        auto vic2addr = *(volatile unsigned*)(0x800c0030);
         if (vic2addr != 0xdeadbeef) {
             STRACE("RECEIVED INTERRUPT");
             // TODO: only timer support for now
             Td *notifier = (Td*)vic2addr;
             *(volatile unsigned*)(TIMER1_BASE + CLR_OFFSET) = 0;
-            *(volatile unsigned*)(0x800b0030) = 0;
-            active->interruptLinkReg();
+            *(volatile unsigned*)(0x800c0030) = 0;
+            //active->interruptLinkReg();
             scheduler.readyTask(*notifier);
             scheduler.readyTask(*active);
             continue;

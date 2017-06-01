@@ -75,7 +75,7 @@ struct Td {
 
     // Decrement the link register to the previous instruction. Required in
     // the cases of an interrupt.
-    void interruptLinkReg() {
+    inline void interruptLinkReg() {
         sp[-2] -= 4;
     }
 

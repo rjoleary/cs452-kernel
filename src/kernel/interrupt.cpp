@@ -20,25 +20,25 @@ const unsigned
     VICxVectAddr0    = 0x100,
     VICxVectCntl0    = 0x200;
 
-void deduceDaisyChain(unsigned &iSrc, volatile char *&base) {
-    base = iSrc < 32 ? VIC1Base : VIC2Base;
+volatile char * deduceDaisyChain(unsigned &iSrc) {
+    auto base = iSrc < 32 ? VIC1Base : VIC2Base;
     iSrc %= 32;
+    return base;
 }
 }
 
-extern "C" void irqTrampoline();
+extern "C" void irqEntry();
 
 void initInterrupts() {
     // irqTrampoline reads vector address into pc.
-    *(volatile unsigned*)(0x38) = (unsigned)irqTrampoline;
+    *(volatile unsigned*)(0x38) = (unsigned)irqEntry;
     *(volatile unsigned*)(VIC1Base + VICxDefVectAddr) = 0xdeadbeef;
     *(volatile unsigned*)(VIC2Base + VICxDefVectAddr) = 0xdeadbeef;
 }
 
 void bindInterrupt(InterruptSource src, unsigned vector, void (*isr)()) {
-    unsigned iSrc = static_cast<unsigned>(src);
-    volatile char *base;
-    deduceDaisyChain(iSrc, base);
+    auto iSrc = static_cast<unsigned>(src);
+    auto base = deduceDaisyChain(iSrc);
     // 1. Clear any existing interrupt.
     *(volatile unsigned*)(base + VICxIntEnClear) = 1 << iSrc;
     // 2. Set the address of the interrupt handler.
@@ -50,15 +50,13 @@ void bindInterrupt(InterruptSource src, unsigned vector, void (*isr)()) {
 }
 
 void enableInterrupt(InterruptSource src) {
-    unsigned iSrc = static_cast<unsigned>(src);
-    volatile char *base;
-    deduceDaisyChain(iSrc, base);
+    auto iSrc = static_cast<unsigned>(src);
+    auto base = deduceDaisyChain(iSrc);
     *(volatile unsigned*)(base + VICxIntEnable) |= 1 << iSrc;
 }
 
 void disableInterrupt(InterruptSource src) {
-    unsigned iSrc = static_cast<unsigned>(src);
-    volatile char *base;
-    deduceDaisyChain(iSrc, base);
+    auto iSrc = static_cast<unsigned>(src);
+    auto base = deduceDaisyChain(iSrc);
     *(volatile unsigned*)(base + VICxIntEnClear) = 1 << iSrc;
 }

@@ -1,9 +1,29 @@
 @ vim:ft=armv5
 
+.global irqEntry
 .global kernelEntry
 .global kernelExit
 
 .section .text
+irqEntry:
+    @ Switch to system mode to push user registers.
+    msr cpsr_c, #0xdf
+    stmfd sp, {r0-r15}
+    @ r0: holds the user's stack pointer
+    mov r0, sp
+    @ Switch back to irq mode.
+    msr cpsr, #0xd2
+    @ Store lr as pc in user's stack.
+    stmfd r0, {lr}
+    @ Store the stored PSR in the user's stack.
+    @ r1: holds the task's PSR
+    mrs r1, spsr
+    str r1, [r0, #-0x44]
+    @ Switch back to supervisor mode.
+    msr cpsr, #0xd3
+    @ Restore kernel registers and return.
+    ldmea sp, {r4-r12,sp,pc}
+    
 kernelEntry:
     @ Switch to system mode to push user registers.
     msr cpsr_c, #0xdf
