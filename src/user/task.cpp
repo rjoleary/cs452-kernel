@@ -2,10 +2,10 @@
 #include <task.h>
 
 namespace ctl {
-Tid create(Priority pri, void (*a1)()) {
+int create(Priority pri, void (*a1)()) {
     int a0 = pri.underlying();
     SYSCALL2R(kernel::Syscall::Create)
-    return Tid(ret);
+    return ret;
 }
 Tid myTid() {
     SYSCALL0R(kernel::Syscall::MyTid)

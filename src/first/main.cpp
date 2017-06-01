@@ -51,15 +51,15 @@ void perfMain() {
 
 template <size_t I, int P>
 void testThing() {
-    constexpr auto AmountToSend = 10'000, ClockTicks = 508'000, Microseconds = 1'000'000;
+    constexpr auto AmountToSend = 10'000;//, ClockTicks = 508'000, Microseconds = 1'000'000;
     auto timerVal = (volatile unsigned*)(TIMER3_BASE + VAL_OFFSET);
     bwprintf(COM2, "Size %d Pri %d...\r\n", I, P);
     asm volatile ("":::"memory"); // memory barrier
     auto start = *timerVal;
-    Tid tid = create(Priority(P), perfMain<I>);
+    Tid tid = Tid(create(Priority(P), perfMain<I>));
 
     // Start profiler.
-    profilerStart(1000);
+    //profilerStart(1000);
 
     // Actual test.
     Message<I> msg;
@@ -67,16 +67,14 @@ void testThing() {
         send(tid, msg, msg);
     }
 
-    profilerStop();
+    //profilerStop();
 
     unsigned elapsed = start - *timerVal; 
     asm volatile ("":::"memory"); // memory barrier
     bwprintf(COM2, "Done! Elapsed: %u\r\n", elapsed);
-    unsigned averageTrunc = elapsed/double(ClockTicks)*Microseconds/AmountToSend;
-    bwprintf(COM2, "Average time: %u\r\n", averageTrunc);
 
     // Dump profiler.
-    profilerDump();
+    //profilerDump();
     bwputstr(COM2, "\r\n");
 }
 
@@ -91,10 +89,14 @@ void firstMain() {
     *(volatile unsigned*)(TIMER3_BASE + CRTL_OFFSET) = 0;
     *(volatile unsigned*)(TIMER3_BASE + LDR_OFFSET) = 0xffffffffU;
     *(volatile unsigned*)(TIMER3_BASE + CRTL_OFFSET) = ENABLE_MASK | CLKSEL_MASK;
-    testThing<4,31>();
-    testThing<4,1>();
-    testThing<64,31>();
-    testThing<64,1>();
+
+    constexpr auto ReplyBefore = FIRST_PRI.underlying() + 1;
+    constexpr auto ReplyAfter = FIRST_PRI.underlying() - 1;
+
+    testThing<4,ReplyBefore>();
+    testThing<4,ReplyAfter>();
+    testThing<64,ReplyBefore>();
+    testThing<64,ReplyAfter>();
 }
 }
 #endif

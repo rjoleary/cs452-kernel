@@ -45,10 +45,11 @@ enum class RunState {
 
 // Task descriptor
 struct Td {
+    constexpr static auto SyscallIndex = 5;
     ctl::Tid tid = ctl::INVALID_TID; // task id
     ctl::Tid ptid;                   // parent's task id
     ctl::Priority pri;               // priority
-    Td *nextReady;                   // next TD in the ready queue, or NULL
+    Td *nextReady = nullptr;         // next TD in the ready queue, or NULL
     Td *sendBegin = nullptr,         // queue for senders
        *sendEnd;
     RunState state;                  // current run state
@@ -56,19 +57,19 @@ struct Td {
 
     // Return the syscall number for the given task descriptor. If the task is not
     // performing a syscall, garbage is returned.
-    Syscall getSyscall() const {
-        return static_cast<Syscall>(sp[-16 + 9]);
+    inline Syscall getSyscall() const {
+        return static_cast<Syscall>(sp[-16 + SyscallIndex]);
     }
 
     // Return the sycall's i-th argument for the given task descriptor. If the task
     // is not performing a syscall, garbage is returned.
-    unsigned getArg(int i) const {
+    inline unsigned getArg(int i) const {
         return sp[-16 + i];
     }
 
     // Set the syscall's return value for the given task descriptor. If the task is
     // not performing a syscall, its stack gets corrupted.
-    void setReturn(unsigned v) {
+    inline void setReturn(unsigned v) {
         sp[-16] = v;
     }
 

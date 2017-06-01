@@ -1,5 +1,6 @@
 #include <interrupt.h>
 
+namespace {
 // Manual for the interrupt controller:
 //     http://infocenter.arm.com/help/topic/com.arm.doc.ddi0181e/DDI0181.pdf
 volatile char *const VIC1Base = (char *)(0x800b0000);
@@ -19,9 +20,10 @@ const unsigned
     VICxVectAddr0    = 0x100,
     VICxVectCntl0    = 0x200;
 
-static void deduceDaisyChain(unsigned &iSrc, volatile char *&base) {
+void deduceDaisyChain(unsigned &iSrc, volatile char *&base) {
     base = iSrc < 32 ? VIC1Base : VIC2Base;
     iSrc %= 32;
+}
 }
 
 extern "C" void irqTrampoline();
