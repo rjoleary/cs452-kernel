@@ -6,12 +6,12 @@
 .section .text
 kernelEntry:
     @ Switch to system mode to push user registers.
-    msr cpsr_c, #0x5f
+    msr cpsr_c, #0xdf
     stmfd sp, {r0-r15}
     @ r0: holds the user's stack pointer
     mov r0, sp
     @ Switch back to supervisor mode.
-    msr cpsr, #0x53
+    msr cpsr, #0xd3
     @ Store lr as pc in user's stack.
     stmfd r0, {lr}
     @ Store the stored PSR in the user's stack.
