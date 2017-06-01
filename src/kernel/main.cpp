@@ -29,8 +29,6 @@ static int copyMsg(const unsigned *src, int srcSize, unsigned *dest, int destSiz
     return ret;
 }
 
-extern "C" unsigned isIrq;
-
 int main() {
 #ifdef CACHE_ENABLED
     asm volatile (
@@ -76,6 +74,9 @@ int main() {
     *(volatile unsigned*)(TIMER1_BASE + LDR_OFFSET) = 199;
     *(volatile unsigned*)(TIMER1_BASE + CRTL_OFFSET) = ENABLE_MASK | MODE_MASK;
 
+    bindInterrupt(ctl::InterruptSource::TC1UI, 0, nullptr);
+    enableInterrupt(ctl::InterruptSource::TC1UI);
+
     initInterrupts();
 
     while (1) {
@@ -83,17 +84,19 @@ int main() {
         active->sp = kernelExit(active->sp);
 
         // Handle interrupt. (TODO: a bit hacky)
+        extern unsigned isIrq;
         if (isIrq) {
             isIrq = 0;
             STRACE("RECEIVED INTERRUPT");
             auto vic1addr = *(volatile unsigned*)(0x800b0030);
             if (vic1addr != 0xdeadbeef) {
                 // TODO: only timer support for now
-                Td *notifier = (Td*)vic1addr;
+                auto notifier = (Td*)vic1addr;
                 *(volatile unsigned*)(TIMER1_BASE + CLR_OFFSET) = 0;
                 *(volatile unsigned*)(0x800b0030) = 0;
-                if (notifier->state == RunState::EventBlocked) {
+                if (notifier && notifier->state == RunState::EventBlocked) {
                     scheduler.readyTask(*notifier);
+                    clearInterrupt((ctl::InterruptSource)notifier->getArg(0), 0);
                 }
                 active->interruptLinkReg();
                 scheduler.readyTask(*active);
@@ -203,19 +206,17 @@ int main() {
             }
         }
         else if (active->getSyscall() == Syscall::AwaitEvent) {
-            int eventId = active->getArg(0);
-            // TODO: hack
-            static bool alreadyEnabled = false;
-            if (!alreadyEnabled) {
-                alreadyEnabled = true;
-                // TODO: this is a total hack
-                // TODO: ensure no two tasks bind to the same event
-                // TODO: disable interrupts when?
-                bindInterrupt(InterruptSource(eventId), 0, (void(*)())active);
-                enableInterrupt(InterruptSource(eventId));
+            auto eventId = (ctl::InterruptSource)active->getArg(0);
+            auto ret = enableOnly(eventId, 0, active);
+            if (__builtin_expect(ret == 0, 1)) {
+                active->state = RunState::EventBlocked;
+                STRACE("  [%d] int awaitEvent(eventid=%d) = <BLOCKED>", active->tid, eventId);
             }
-            active->state = RunState::EventBlocked;
-            STRACE("  [%d] int awaitEvent(eventid=%d) = <BLOCKED>", active->tid, eventId);
+            else {
+                STRACE("  [%d] int awaitEvent(eventid=%d) = IN USE", active->tid, eventId);
+                scheduler.readyTask(*active);
+                active->setReturn(ret);
+            }
         }
         else if (active->getSyscall() == Syscall::Create) {
             auto priority = ctl::Priority(active->getArg(0));

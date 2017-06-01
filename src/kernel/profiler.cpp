@@ -36,12 +36,13 @@ void profilerStart(unsigned ticks) {
     *(volatile unsigned*)(TIMER2_BASE + LDR_OFFSET) = ticks;
     *(volatile unsigned*)(TIMER2_BASE + CRTL_OFFSET) = CLKSEL_MASK | ENABLE_MASK | MODE_MASK;
 
-    bindInterrupt(InterruptSource::TC2UI, 0, timer2Irq);
-    enableInterrupt(InterruptSource::TC2UI);
+    // TODO: Fix
+    //kernel::bindInterrupt(ctl::InterruptSource::TC2UI, 1, &timer2Irq);
+    kernel::enableInterrupt(ctl::InterruptSource::TC2UI);
 }
 
 void profilerStop() {
-    disableInterrupt(InterruptSource::TC2UI);
+    kernel::disableInterrupt(ctl::InterruptSource::TC2UI);
 }
 
 void profilerDump() {

@@ -29,6 +29,8 @@ volatile char * deduceDaisyChain(unsigned &iSrc) {
 
 extern "C" void irqEntry();
 
+namespace kernel {
+
 void initInterrupts() {
     // irqTrampoline reads vector address into pc.
     *(volatile unsigned*)(0x38) = (unsigned)irqEntry;
@@ -36,7 +38,7 @@ void initInterrupts() {
     *(volatile unsigned*)(VIC2Base + VICxDefVectAddr) = 0xdeadbeef;
 }
 
-void bindInterrupt(InterruptSource src, unsigned vector, void (*isr)()) {
+void bindInterrupt(ctl::InterruptSource src, unsigned vector, void *isr) {
     auto iSrc = static_cast<unsigned>(src);
     auto base = deduceDaisyChain(iSrc);
     // 1. Clear any existing interrupt.
@@ -49,14 +51,31 @@ void bindInterrupt(InterruptSource src, unsigned vector, void (*isr)()) {
     *(volatile unsigned*)(base + VICxIntSelect) &= ~(1 << iSrc);
 }
 
-void enableInterrupt(InterruptSource src) {
+int enableOnly(ctl::InterruptSource src, unsigned vector, void *isr) {
+    auto iSrc = static_cast<unsigned>(src);
+    auto base = deduceDaisyChain(iSrc);
+    auto addr = (volatile void**)(base + VICxVectAddr0 + vector);
+    if (*addr != nullptr) return -1;
+    *addr = isr;
+    return 0;
+}
+
+void clearInterrupt(ctl::InterruptSource src, unsigned vector) {
+    auto iSrc = static_cast<unsigned>(src);
+    auto base = deduceDaisyChain(iSrc);
+    auto addr = (volatile void**)(base + VICxVectAddr0 + vector);
+    *addr = nullptr;
+}
+
+void enableInterrupt(ctl::InterruptSource src) {
     auto iSrc = static_cast<unsigned>(src);
     auto base = deduceDaisyChain(iSrc);
     *(volatile unsigned*)(base + VICxIntEnable) |= 1 << iSrc;
 }
 
-void disableInterrupt(InterruptSource src) {
+void disableInterrupt(ctl::InterruptSource src) {
     auto iSrc = static_cast<unsigned>(src);
     auto base = deduceDaisyChain(iSrc);
     *(volatile unsigned*)(base + VICxIntEnClear) = 1 << iSrc;
+}
 }

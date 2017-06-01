@@ -21,7 +21,7 @@ void firstMain() {
     // Clock.
     for (int i = 0; ; i++) {
         bwprintf(COM2, "\r%d", i);
-        awaitEvent(static_cast<int>(InterruptSource::TC1UI));
+        awaitEvent(InterruptSource::TC1UI);
     }
 }
 }

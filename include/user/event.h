@@ -3,6 +3,7 @@
 #ifndef USER_EVENT_H__INCLUDED
 #define USER_EVENT_H__INCLUDED
 
+namespace ctl {
 // Interrupt sources which may be relevant.
 // Source: ep93xx-user-guid.pdf, section 6.1.2
 enum class InterruptSource {
@@ -19,7 +20,6 @@ enum class InterruptSource {
     INT_UART2    = 54, // UART 2 Interrupt
 };
 
-namespace ctl {
 // awaitEvent - wait for an external event.
 //
 // Description:
@@ -30,7 +30,7 @@ namespace ctl {
 //   >-1: volatile data, in the form of a positive integer.
 //   -ERR_INVID: invalid event.
 //   -ERR_CORRUPT: corrupted volatile data.
-int awaitEvent(int eventid);
+int awaitEvent(InterruptSource eventid);
 }
 
 #endif // USER_EVENT_H__INCLUDED
