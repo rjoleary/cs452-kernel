@@ -29,6 +29,8 @@ static int copyMsg(const unsigned *src, int srcSize, unsigned *dest, int destSiz
     return ret;
 }
 
+extern "C" unsigned isIrq;
+
 int main() {
 #ifdef CACHE_ENABLED
     asm volatile (
@@ -71,7 +73,7 @@ int main() {
     // - timer starts at 1999 and counts down
     // - interrupt occurs every 10ms
     *(volatile unsigned*)(TIMER1_BASE + CRTL_OFFSET) = 0;
-    *(volatile unsigned*)(TIMER1_BASE + LDR_OFFSET) = 19;
+    *(volatile unsigned*)(TIMER1_BASE + LDR_OFFSET) = 199;
     *(volatile unsigned*)(TIMER1_BASE + CRTL_OFFSET) = ENABLE_MASK | MODE_MASK;
 
     initInterrupts();
@@ -81,28 +83,28 @@ int main() {
         active->sp = kernelExit(active->sp);
 
         // Handle interrupt. (TODO: a bit hacky)
-        auto vic1addr = *(volatile unsigned*)(0x800b0030);
-        if (vic1addr != 0xdeadbeef) {
+        if (isIrq) {
+            isIrq = 0;
             STRACE("RECEIVED INTERRUPT");
-            // TODO: only timer support for now
-            Td *notifier = (Td*)vic1addr;
-            *(volatile unsigned*)(TIMER1_BASE + CLR_OFFSET) = 0;
-            *(volatile unsigned*)(0x800b0030) = 0;
-            //active->interruptLinkReg();
-            scheduler.readyTask(*notifier);
-            scheduler.readyTask(*active);
-            continue;
-        }
-        auto vic2addr = *(volatile unsigned*)(0x800c0030);
-        if (vic2addr != 0xdeadbeef) {
-            STRACE("RECEIVED INTERRUPT");
-            // TODO: only timer support for now
-            Td *notifier = (Td*)vic2addr;
-            *(volatile unsigned*)(TIMER1_BASE + CLR_OFFSET) = 0;
-            *(volatile unsigned*)(0x800c0030) = 0;
-            //active->interruptLinkReg();
-            scheduler.readyTask(*notifier);
-            scheduler.readyTask(*active);
+            auto vic1addr = *(volatile unsigned*)(0x800b0030);
+            if (vic1addr != 0xdeadbeef) {
+                // TODO: only timer support for now
+                Td *notifier = (Td*)vic1addr;
+                *(volatile unsigned*)(TIMER1_BASE + CLR_OFFSET) = 0;
+                *(volatile unsigned*)(0x800b0030) = 0;
+                if (notifier != nullptr) {
+                    scheduler.readyTask(*notifier);
+                }
+                disableInterrupt(InterruptSource(InterruptSource::TC1UI));
+                active->interruptLinkReg();
+                scheduler.readyTask(*active);
+                continue;
+            }
+            auto vic2addr = *(volatile unsigned*)(0x800c0030);
+            if (vic2addr != 0xdeadbeef) {
+                STRACE("VEC2 NOT POSSIBLE YET");
+            }
+            PANIC("RECEIVED INTERRUPT?");
             continue;
         }
 

@@ -3,6 +3,12 @@
 .global irqEntry
 .global kernelEntry
 .global kernelExit
+.global isIrq
+
+.section .data
+.align 4
+isIrq:
+    .word 0
 
 .section .text
 irqEntry:
@@ -21,6 +27,9 @@ irqEntry:
     str r1, [r0, #-0x44]
     @ Switch back to supervisor mode.
     msr cpsr, #0xd3
+    @ Set the irq flag.
+    ldr r1, =isIrq
+    str r1, [r1]
     @ Restore kernel registers and return.
     ldmea sp, {r4-r12,sp,pc}
     
