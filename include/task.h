@@ -54,6 +54,8 @@ struct Td {
        *sendEnd;
     RunState state;                  // current run state
     unsigned *sp;                    // current stack pointer
+    unsigned userTime = 0;           // number of 508kHz ticks spent in this task
+    unsigned sysTime = 0;            // number of 508kHz ticks spent in the kernel
 
     // Return the syscall number for the given task descriptor. If the task is not
     // performing a syscall, garbage is returned.

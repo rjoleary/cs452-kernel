@@ -68,7 +68,7 @@ int main() {
     // Setup TIMER1:
     // - 16-bit precision
     // - 2 kHz clock
-    // - timer starts at 1999 and counts down
+    // - timer starts at 19 and counts down
     // - interrupt occurs every 10ms
     *(volatile unsigned*)(TIMER1_BASE + CRTL_OFFSET) = 0;
     *(volatile unsigned*)(TIMER1_BASE + LDR_OFFSET) = 19;
@@ -79,9 +79,22 @@ int main() {
 
     initInterrupts();
 
+    // Setup TIMER2:
+    // - 16-bit precision
+    // - 508 kHz clock
+    // - timer starts at 0xffff and counts down
+    // - interrupt occurs every 10ms
+    *(volatile unsigned*)(TIMER2_BASE + CRTL_OFFSET) = 0;
+    *(volatile unsigned*)(TIMER2_BASE + LDR_OFFSET) = 0xffff;
+    *(volatile unsigned*)(TIMER2_BASE + CRTL_OFFSET) = CLKSEL_MASK | ENABLE_MASK;
+
     while (1) {
         auto active = scheduler.getNextTask();
+        active->sysTime += 0xffff - *(volatile unsigned*)(TIMER2_BASE + VAL_OFFSET);
+        *(volatile unsigned*)(TIMER2_BASE + LDR_OFFSET) = 0xffff;
         active->sp = kernelExit(active->sp);
+        active->userTime += 0xffff - *(volatile unsigned*)(TIMER2_BASE + VAL_OFFSET);
+        *(volatile unsigned*)(TIMER2_BASE + LDR_OFFSET) = 0xffff;
 
         // Handle interrupt. (TODO: a bit hacky)
         extern unsigned isIrq;
