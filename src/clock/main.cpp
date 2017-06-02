@@ -4,6 +4,7 @@
 #include <itc.h>
 #include <std.h>
 #include <task.h>
+#include <ns.h>
 
 namespace ctl {
 namespace {
@@ -25,9 +26,7 @@ struct Reply {
 }
 
 int delay(Tid tid, int ticks) {
-    if (ticks <= 0) {
-        return -static_cast<int>(Error::BadArg);
-    }
+    ASSERT(ticks > 0);
 
     Message msg;
     msg.type = MsgType::Delay;
@@ -49,13 +48,11 @@ int time(Tid tid) {
         return err;
     }
     ASSERT(err == sizeof(rply));
-    return static_cast<int>(Error::Ok);
+    return rply.ticks;
 }
 
 int delayUntil(Tid tid, int ticks) {
-    if (ticks <= 0) {
-        return -static_cast<int>(Error::BadArg);
-    }
+    ASSERT(ticks > 0);
 
     Message msg;
     msg.type = MsgType::DelayUntil;
@@ -70,6 +67,7 @@ int delayUntil(Tid tid, int ticks) {
 
 void clockMain() {
     int counter = 0;
+    ASSERT(registerAs(Names::ClockServer) == 0);
     for (;;) {
         Tid tid;
         Message msg;
@@ -78,20 +76,20 @@ void clockMain() {
         switch (msg.type) {
             case MsgType::Notify: {
                 counter++;
-                ASSERT(reply(tid, EmptyMessage));
+                ASSERT(reply(tid, EmptyMessage) == 0);
                 break;
             }
 
             case MsgType::Delay: {
                 // TODO: implement
-                ASSERT(reply(tid, EmptyMessage));
+                ASSERT(reply(tid, EmptyMessage) == 0);
                 break;
             }
 
             case MsgType::Time: {
                 Reply rply;
                 rply.ticks = counter;
-                ASSERT(reply(tid, rply));
+                ASSERT(reply(tid, rply) == 0);
                 break;
             }
 
@@ -109,11 +107,11 @@ void clockMain() {
 }
 
 void clockNotifier() {
+    auto clockTid = Tid(whoIs(Names::ClockServer));
+    Message notif{MsgType::Notify};
     for (;;) {
         ASSERT(awaitEvent(InterruptSource::TC1UI) >= 0);
-        // TODO: There may be multiple clocks. How to know which tids to notify?
-        auto CLOCK_TID = Tid(0xcafebabe);
-        ASSERT(send(/*TODO*/CLOCK_TID, EmptyMessage, EmptyMessage) == 0);
+        ASSERT(send(clockTid, notif, EmptyMessage) == 0);
     }
 }
 }

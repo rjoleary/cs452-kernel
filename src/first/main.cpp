@@ -3,25 +3,29 @@
 #include <event.h>
 #include <std.h>
 #include <task.h>
+#include <ns.h>
+#include <clock.h>
 
 #ifndef PERF_TEST
 
 // Forward declaration.
 void idleMain();
-void rpsServerMain();
-void rpsClientMain();
 
 namespace ctl {
 void nsMain();
+void clockNotifier();
+void clockMain();
 
 void firstMain() {
     ASSERT(Tid(create(PRIORITY_MIN, idleMain)) == IDLE_TID);
     ASSERT(Tid(create(PRIORITY_MAX, nsMain)) == NS_TID);
+    ASSERT(create(Priority(30), clockMain) >= 0);
+    ASSERT(create(Priority(30), clockNotifier) >= 0);
 
-    // Clock.
-    for (int i = 0; ; i++) {
-        bwprintf(COM2, "\r%d", i);
-        awaitEvent(InterruptSource::TC1UI);
+    auto clockTid = Tid(whoIs(Names::ClockServer));
+    for (;;) {
+        bwprintf(COM2, "\r%d", time(clockTid));
+        pass();
     }
 }
 }

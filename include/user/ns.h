@@ -6,6 +6,7 @@
 namespace ctl{
 enum class Names {
     RpsServer, 
+    ClockServer,
     LastName // Special name to count
 };
 
