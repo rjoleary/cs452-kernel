@@ -34,7 +34,11 @@ char *strncpy(char *dest, const char *src, size_t n) {
 #include <bwio.h>
 #include <task.h>
 
+namespace ctl {
+namespace detail {
 void assert(const char *file, int line) {
     bwprintf(COM2, "Assertion failed in Tid %d, %s:%d\r\n", ctl::myTid(), file, line);
-    ctl::exeunt();
+    exeunt();
+}
+}
 }
