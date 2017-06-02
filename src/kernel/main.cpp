@@ -71,7 +71,7 @@ int main() {
     // - timer starts at 1999 and counts down
     // - interrupt occurs every 10ms
     *(volatile unsigned*)(TIMER1_BASE + CRTL_OFFSET) = 0;
-    *(volatile unsigned*)(TIMER1_BASE + LDR_OFFSET) = 199;
+    *(volatile unsigned*)(TIMER1_BASE + LDR_OFFSET) = 19;
     *(volatile unsigned*)(TIMER1_BASE + CRTL_OFFSET) = ENABLE_MASK | MODE_MASK;
 
     bindInterrupt(ctl::InterruptSource::TC1UI, 0, nullptr);
@@ -104,7 +104,7 @@ int main() {
             }
             auto vic2addr = *(volatile unsigned*)(0x800c0030);
             if (vic2addr != 0xdeadbeef) {
-                STRACE("VEC2 NOT POSSIBLE YET");
+                STRACE("VIC2 NOT POSSIBLE YET");
             }
             PANIC("RECEIVED INTERRUPT?");
             continue;
