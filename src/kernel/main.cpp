@@ -95,6 +95,7 @@ int main() {
                 *(volatile unsigned*)(TIMER1_BASE + CLR_OFFSET) = 0;
                 *(volatile unsigned*)(0x800b0030) = 0;
                 if (notifier && notifier->state == RunState::EventBlocked) {
+                    notifier->setReturn(0);
                     scheduler.readyTask(*notifier);
                     clearInterrupt((ctl::InterruptSource)notifier->getArg(0), 0);
                 }

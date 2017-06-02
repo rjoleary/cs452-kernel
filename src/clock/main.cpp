@@ -1,10 +1,12 @@
 #include <def.h>
 #include <err.h>
+#include <event.h>
 #include <itc.h>
 #include <std.h>
 #include <task.h>
 
 enum class MsgType {
+    Notify,
     Delay,
     Time,
     DelayUntil,
@@ -64,12 +66,19 @@ int delayUntil(ctl::Tid tid, int ticks) {
 }
 
 void clockMain() {
+    int counter = 0;
     for (;;) {
         ctl::Tid tid;
         Message msg;
         ASSERT(receive(&tid, msg) == sizeof(msg));
 
         switch (msg.type) {
+            case MsgType::Notify: {
+                counter++;
+                ASSERT(reply(tid, ctl::EmptyMessage));
+                break;
+            }
+
             case MsgType::Delay: {
                 // TODO: implement
                 ASSERT(reply(tid, ctl::EmptyMessage));
@@ -78,7 +87,7 @@ void clockMain() {
 
             case MsgType::Time: {
                 Reply rply;
-                // TODO: implement
+                rply.ticks = counter;
                 ASSERT(reply(tid, rply));
                 break;
             }
@@ -93,5 +102,14 @@ void clockMain() {
                 ASSERT(false); // unknown message type
             }
         }
+    }
+}
+
+void clockNotifier() {
+    for (;;) {
+        ASSERT(ctl::awaitEvent(ctl::InterruptSource::TC1UI) >= 0);
+        // TODO: There may be multiple clocks. How to know which tids to notify?
+        auto CLOCK_TID = ctl::Tid(0xcafebabe);
+        ASSERT(ctl::send(/*TODO*/CLOCK_TID, ctl::EmptyMessage, ctl::EmptyMessage) == 0);
     }
 }
