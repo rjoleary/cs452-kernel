@@ -78,7 +78,47 @@ TODO
 
 Executing the kernel produces the following output:
 
-    TODO
+    Tid: 5, MyDelay: 10, TotalDelay: 10
+    Tid: 5, MyDelay: 10, TotalDelay: 20
+    Tid: 6, MyDelay: 23, TotalDelay: 23
+    Tid: 5, MyDelay: 10, TotalDelay: 30
+    Tid: 7, MyDelay: 33, TotalDelay: 33
+    Tid: 5, MyDelay: 10, TotalDelay: 40
+    Tid: 6, MyDelay: 23, TotalDelay: 46
+    Tid: 5, MyDelay: 10, TotalDelay: 50
+    Tid: 5, MyDelay: 10, TotalDelay: 60
+    Tid: 7, MyDelay: 33, TotalDelay: 66
+    Tid: 6, MyDelay: 23, TotalDelay: 69
+    Tid: 5, MyDelay: 10, TotalDelay: 70
+    Tid: 8, MyDelay: 71, TotalDelay: 71
+    Tid: 5, MyDelay: 10, TotalDelay: 80
+    Tid: 5, MyDelay: 10, TotalDelay: 90
+    Tid: 6, MyDelay: 23, TotalDelay: 92
+    Tid: 7, MyDelay: 33, TotalDelay: 99
+    Tid: 5, MyDelay: 10, TotalDelay: 100
+    Tid: 5, MyDelay: 10, TotalDelay: 110
+    Tid: 6, MyDelay: 23, TotalDelay: 115
+    Tid: 5, MyDelay: 10, TotalDelay: 120
+    Tid: 6, MyDelay: 23, TotalDelay: 115
+    Tid: 5, MyDelay: 10, TotalDelay: 120
+    Tid: 5, MyDelay: 10, TotalDelay: 130
+    Tid: 7, MyDelay: 33, TotalDelay: 132
+    Tid: 6, MyDelay: 23, TotalDelay: 138
+    Tid: 5, MyDelay: 10, TotalDelay: 150
+    Tid: 5, MyDelay: 10, TotalDelay: 160
+    Tid: 6, MyDelay: 23, TotalDelay: 161
+    Tid: 7, MyDelay: 33, TotalDelay: 165
+    Tid: 5, MyDelay: 10, TotalDelay: 170
+    Tid: 5, MyDelay: 10, TotalDelay: 180
+    Tid: 6, MyDelay: 23, TotalDelay: 184
+    Tid: 5, MyDelay: 10, TotalDelay: 190
+    Tid: 7, MyDelay: 33, TotalDelay: 198
+    Tid: 5, MyDelay: 10, TotalDelay: 200
+    Tid: 6, MyDelay: 23, TotalDelay: 207
+    Tid: 8, MyDelay: 71, TotalDelay: 213
+
+Description: TODO
+
 
 ## Bugs
 
