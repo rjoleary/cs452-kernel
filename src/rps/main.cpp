@@ -1,3 +1,4 @@
+#if 0
 #include <../panic.h>
 #include <../swap.h>
 #include <bwio.h>
@@ -226,3 +227,4 @@ void rpsClientMain() {
 
     // 4. Exit gracefully.
 }
+#endif
