@@ -1,10 +1,11 @@
 #include <bwio.h>
+#include <clock.h>
 #include <def.h>
 #include <event.h>
+#include <ns.h>
 #include <std.h>
 #include <task.h>
-#include <ns.h>
-#include <clock.h>
+#include <itc.h>
 
 #ifndef PERF_TEST
 
@@ -16,16 +17,45 @@ void nsMain();
 void clockNotifier();
 void clockMain();
 
+namespace {
+struct Message {
+    Priority p; // priority
+    int t; // delay time
+    int n; // number of delays
+};
+
+void clientMain() {
+    Message rply;
+    ASSERT(send(myParentTid(), EmptyMessage, rply) == sizeof(rply));
+    auto clockTid = Tid(whoIs(Names::ClockServer));
+    for (int i = 0; i < rply.n; i++) {
+        delay(clockTid, rply.t);
+        bwprintf(COM2, "Tid: %d, MyDelay: %d, TotalDelay: %d\r\n",
+            myTid(), rply.t, time(clockTid));
+    }
+}
+}
+
 void firstMain() {
     ASSERT(Tid(create(PRIORITY_MIN, idleMain)) == IDLE_TID);
     ASSERT(Tid(create(PRIORITY_MAX, nsMain)) == NS_TID);
     ASSERT(create(Priority(30), clockMain) >= 0);
     ASSERT(create(Priority(30), clockNotifier) >= 0);
 
-    auto clockTid = Tid(whoIs(Names::ClockServer));
-    for (;;) {
-        bwprintf(COM2, "\r%d", time(clockTid));
-        pass();
+    Message msgs[] = {
+        {Priority{6}, 10, 20},
+        {Priority{5}, 23, 9},
+        {Priority{4}, 33, 6},
+        {Priority{3}, 71, 3},
+    };
+    for (const auto &msg : msgs) {
+        Tid tid{create(msg.p, clientMain)};
+        ASSERT(tid.underlying() > 0);
+    }
+    for (const auto &msg : msgs) {
+        Tid tid;
+        ASSERT(receive(&tid, EmptyMessage) == 0);
+        ASSERT(reply(tid, msg) == 0);
     }
 }
 }
@@ -33,7 +63,6 @@ void firstMain() {
 #else
 
 #include <ts7200.h>
-#include <itc.h>
 #include <../profiler.h>
 
 namespace ctl {

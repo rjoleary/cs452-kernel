@@ -16,7 +16,7 @@ constexpr Tid FIRST_TID{0},
           IDLE_TID{1},
           NS_TID{2},
           INVALID_TID{-1};
-constexpr Priority FIRST_PRI{2};
+constexpr Priority FIRST_PRI{15};
 };
 
 #endif // USER_DEF_H__INCLUDED
