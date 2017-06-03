@@ -49,8 +49,8 @@ void firstMain() {
         {Priority{3}, 71, 3},
     };
     for (const auto &msg : msgs) {
-        Tid tid{create(msg.p, clientMain)};
-        ASSERT(tid.underlying() > 0);
+        auto ret = create(msg.p, clientMain);
+        ASSERT(ret > 0);
     }
     for (const auto &msg : msgs) {
         Tid tid;

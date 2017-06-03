@@ -49,8 +49,7 @@ int registerAs(Names name);
 //
 // Returns:
 //   tid: The task id of the registered task.
-//   -ERR_INVID: The nameserver task id inside the wrapper is invalid.
-int whoIs(Names name);
+Tid whoIs(Names name);
 
 void nsMain();
 }

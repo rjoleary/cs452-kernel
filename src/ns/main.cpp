@@ -1,4 +1,3 @@
-#include <../panic.h>
 #include <def.h>
 #include <err.h>
 #include <itc.h>
@@ -31,21 +30,18 @@ int registerAs(Names name) {
     msg.name = name;
 
     Reply rply;
-    if (send(NS_TID, msg, rply) < 0)
-        PANIC("registerAs send failed");
+    ASSERT(send(NS_TID, msg, rply) == sizeof(rply));
     return -static_cast<int>(rply.error);
 }
 
-int whoIs(Names name) {
+Tid whoIs(Names name) {
     Message msg;
     msg.type = MsgType::WhoIs;
     msg.name = name;
     Reply rply;
-    if (send(NS_TID, msg, rply) < 0)
-        PANIC("whoIs send failed");
-    if (rply.error != Error::Ok)
-        return -static_cast<int>(rply.error);
-    return rply.tid.underlying();
+    ASSERT(send(NS_TID, msg, rply) == sizeof(rply));
+    ASSERT(rply.error == Error::Ok);
+    return rply.tid;
 }
 
 void nsMain() {
@@ -57,11 +53,7 @@ void nsMain() {
         Tid tid;
         Message msg;
         Reply rply = {Error::Ok};
-        auto recv = receive(&tid, msg);
-        if (recv != sizeof(msg)) {
-            bwprintf(COM2, "recv: %u size: %u", recv, sizeof(msg));
-            PANIC("message with wrong size");
-        }
+        ASSERT(receive(&tid, msg) == sizeof(msg));
 
         auto idx = static_cast<unsigned>(msg.name);
         switch (msg.type) {
@@ -82,14 +74,11 @@ void nsMain() {
             }
 
             default: {
-                bwprintf(COM2, "msgtype: %d", msg.type);
-                PANIC("unknown message type");
+                ASSERT(false);
             }
         }
 
-        if (reply(tid, rply)) {
-            PANIC("ns reply returned error");
-        }
+        ASSERT(reply(tid, rply) == 0);
     }
 }
 }
