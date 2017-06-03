@@ -5,6 +5,7 @@
 #include <std.h>
 #include <task.h>
 #include <ns.h>
+#include <minheap.h>
 
 namespace ctl {
 namespace {
@@ -22,6 +23,17 @@ struct Message {
 
 struct Reply {
     int ticks;
+};
+
+struct DelayData {
+    int tick;
+    Tid tid;
+};
+
+struct DelayDataComp {
+    bool operator()(const DelayData &lhs, const DelayData &rhs) const {
+        return lhs.tick < rhs.tick;
+    }
 };
 }
 
@@ -68,6 +80,8 @@ int delayUntil(Tid tid, int ticks) {
 void clockMain() {
     int counter = 0;
     ASSERT(registerAs(Names::ClockServer) == 0);
+    Heap<NUM_TD, DelayData, DelayDataComp> minheap;
+
     for (;;) {
         Tid tid;
         Message msg;
@@ -77,12 +91,15 @@ void clockMain() {
             case MsgType::Notify: {
                 counter++;
                 ASSERT(reply(tid, EmptyMessage) == 0);
+                while (!minheap.empty() && minheap.peek().tick <= counter) {
+                    const auto &data = minheap.pop();
+                    ASSERT(reply(data.tid, EmptyMessage) == 0);
+                }
                 break;
             }
 
             case MsgType::Delay: {
-                // TODO: implement
-                ASSERT(reply(tid, EmptyMessage) == 0);
+                minheap.push({counter + msg.ticks, tid});
                 break;
             }
 
@@ -94,8 +111,11 @@ void clockMain() {
             }
 
             case MsgType::DelayUntil: {
-                // TODO: implement
-                ASSERT(reply(tid, EmptyMessage));
+                if (counter <= msg.ticks) {
+                    ASSERT(reply(tid, EmptyMessage) == 0);
+                    break;
+                }
+                minheap.push({msg.ticks, tid});
                 break;
             }
 

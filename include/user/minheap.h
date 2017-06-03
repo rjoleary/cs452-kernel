@@ -45,7 +45,12 @@ class Heap {
         }
     }
 public:
-    Data & pop() {
+    const Data& peek() const {
+        ASSERT(size >= 0);
+        return entries[0];
+    }
+
+    const Data& pop() {
         ASSERT(--size >= 0);
         auto &root = entries[0];
         auto &last = entries[size];
@@ -60,6 +65,10 @@ public:
         entries[size - 1] = data;
 
         bubbleUp(size - 1);
+    }
+
+    bool empty() const {
+        return size == 0;
     }
 };
 }
