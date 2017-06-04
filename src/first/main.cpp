@@ -33,6 +33,9 @@ void clientMain() {
         bwprintf(COM2, "Tid: %d, MyDelay: %d, TotalDelay: %d\r\n",
             myTid(), rply.t, time(clockTid));
     }
+
+    // Send exit message to parent. Does not return
+    send(myParentTid(), EmptyMessage, EmptyMessage);
 }
 }
 
@@ -48,14 +51,25 @@ void firstMain() {
         {Priority{4}, 33, 6},
         {Priority{3}, 71, 3},
     };
+
+    // Create tasks.
     for (const auto &msg : msgs) {
         auto ret = create(msg.p, clientMain);
         ASSERT(ret > 0);
     }
+
+    // Send parameters.
     for (const auto &msg : msgs) {
         Tid tid;
         ASSERT(receive(&tid, EmptyMessage) == 0);
         ASSERT(reply(tid, msg) == 0);
+    }
+
+    // Block until the tasks finish.
+    for (const auto &msg : msgs) {
+        (void)msg;
+        Tid tid;
+        ASSERT(receive(&tid, EmptyMessage) == 0);
     }
 }
 }

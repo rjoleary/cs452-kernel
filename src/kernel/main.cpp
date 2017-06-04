@@ -83,7 +83,7 @@ int main() {
     // - 16-bit precision
     // - 508 kHz clock
     // - timer starts at 0xffff and counts down
-    // - interrupt occurs every 10ms
+    // - It is always expected the timer will be reset before underflowing.
     *(volatile unsigned*)(TIMER2_BASE + CRTL_OFFSET) = 0;
     *(volatile unsigned*)(TIMER2_BASE + LDR_OFFSET) = 0xffff;
     *(volatile unsigned*)(TIMER2_BASE + CRTL_OFFSET) = CLKSEL_MASK | ENABLE_MASK;
@@ -280,6 +280,11 @@ int main() {
         else if (active->getSyscall() == Syscall::Exeunt) {
             active->state = kernel::RunState::Zombie;
             STRACE("  [%d] void exeunt()", active->tid);
+
+            // Quit when the active task exits.
+            if (active->tid == ctl::FIRST_TID) {
+                break;
+            }
         }
 
         // TODO: Implement in kernel 4?
@@ -293,4 +298,6 @@ int main() {
             PANIC("bad syscall number");
         }
     }
+
+    return 0;
 }
