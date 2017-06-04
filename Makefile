@@ -29,7 +29,7 @@ ASFLAGS	= -mcpu=arm920t -mapcs-32
 LDFLAGS = -Wl,-init,main,-Map=build/kernel.map,-N -T orex.ld -nostdlib -nostartfiles -ffreestanding -L/u3/rj2olear/gcc-arm-eabi-6/lib/gcc/arm-none-eabi/6.3.1/
 
 ifeq ($(OPT_ENABLED),1)
-CFLAGS := $(CFLAGS) -O2 -flto
+CFLAGS := $(CFLAGS) -O2 -flto -DOPT_ENABLED
 LDFLAGS := $(LDFLAGS) -O2 -flto
 endif
 

@@ -44,7 +44,7 @@ int main() {
     // Print the build string (date + time).
     bwsetspeed(COM2, 115200);
     bwsetfifo(COM2, OFF);
-    STRACE("  [-] Built %s", buildstr());
+    bwprintf(COM2, "Build string: '%s'\r\n", buildstr());
 
     // Print memory layout.
 #ifdef STRACE_ENABLED
