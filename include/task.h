@@ -99,6 +99,9 @@ public:
     // Return a Td or nullptr if Td does not exist.
     // Runtime: O(n)
     Td* getTd(ctl::Tid tid);
+
+    // Print usage statistics in a nice table.
+    void printUsage();
 };
 }
 

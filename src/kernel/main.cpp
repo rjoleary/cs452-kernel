@@ -299,5 +299,7 @@ int main() {
         }
     }
 
+    bwputstr(COM2, "\r\n");
+    tdManager.printUsage();
     return 0;
 }
