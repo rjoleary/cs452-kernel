@@ -53,7 +53,6 @@ Where `<ARGUMENTS>` may be any combination of the following:
 
 - `CACHE_ENABLED=1`: Enables the instruction and data caches
 - `OPT_ENABLED=1`: Enables optimizations (`-O2` and `-flto`)
-- `PERF_TEST=1`: Enables performance testing, prints context switch latency
 - `STRACE_ENABLED=1`: Enables printing debug information from the kernel
 
 
