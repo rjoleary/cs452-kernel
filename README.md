@@ -65,12 +65,28 @@ TODO
 
 ### Clock
 
-TODO
+We use clock timer 2 for our tick measurements. Since this is a 2kHz clock, we
+set the rollover time to 19, so that it will fire off an interrupt every 20
+counts (which translates to once every 10ms, the length of a tick). A notifier
+task listens to this event, and when it occurs it sends an empty message to the
+clock server. The clock server then increments its time and notifies any waiting
+tasks if appropriate. 
 
 
 ### Min Heap
 
-TODO
+The min heap is implemented as an arbitrary heap with some comparator function.
+This is done with the magic of C++ templates. The heap has 3 functions, 
+`peak()`, `push()`, and `pop()`. `peak()` checks the top of the heap, `push()`
+adds an element and `pop()` removes the top of the heap. We use a minheap to
+manage all the timing requirements of the kernel. When we get a call to
+`delay()` we convert the ticks into an absolute time. Then, for both `delay()`
+and `delayUntil()` we push the TID of the caller and the absolute time into the
+minheap. Any time we increment the ticks, we check the top of the heap and if
+the current tick is equal to the soonest waiting task we pop as many tasks off
+as we can and notify them. We use a minheap as it has `O(log n)` push and pop
+while maintaining a priority queue and due to ease of implementation.
+
 
 
 ## Demo
@@ -78,44 +94,44 @@ TODO
 Executing the kernel produces the following output:
 
     Build string: '21:27:13 Jun  4 2017 CACHE=1 OPT=1'
-    Tid: 5, MyDelay: 10, TotalDelay: 10
-    Tid: 5, MyDelay: 10, TotalDelay: 20
-    Tid: 6, MyDelay: 23, TotalDelay: 23
-    Tid: 5, MyDelay: 10, TotalDelay: 30
-    Tid: 7, MyDelay: 33, TotalDelay: 33
-    Tid: 5, MyDelay: 10, TotalDelay: 40
-    Tid: 6, MyDelay: 23, TotalDelay: 46
-    Tid: 5, MyDelay: 10, TotalDelay: 50
-    Tid: 5, MyDelay: 10, TotalDelay: 60
-    Tid: 7, MyDelay: 33, TotalDelay: 66
-    Tid: 6, MyDelay: 23, TotalDelay: 69
-    Tid: 5, MyDelay: 10, TotalDelay: 70
-    Tid: 8, MyDelay: 71, TotalDelay: 71
-    Tid: 5, MyDelay: 10, TotalDelay: 80
-    Tid: 5, MyDelay: 10, TotalDelay: 90
-    Tid: 6, MyDelay: 23, TotalDelay: 92
-    Tid: 7, MyDelay: 33, TotalDelay: 99
-    Tid: 5, MyDelay: 10, TotalDelay: 100
-    Tid: 5, MyDelay: 10, TotalDelay: 110
-    Tid: 6, MyDelay: 23, TotalDelay: 115
-    Tid: 5, MyDelay: 10, TotalDelay: 120
-    Tid: 6, MyDelay: 23, TotalDelay: 115
-    Tid: 5, MyDelay: 10, TotalDelay: 120
-    Tid: 5, MyDelay: 10, TotalDelay: 130
-    Tid: 7, MyDelay: 33, TotalDelay: 132
-    Tid: 6, MyDelay: 23, TotalDelay: 138
-    Tid: 5, MyDelay: 10, TotalDelay: 150
-    Tid: 5, MyDelay: 10, TotalDelay: 160
-    Tid: 6, MyDelay: 23, TotalDelay: 161
-    Tid: 7, MyDelay: 33, TotalDelay: 165
-    Tid: 5, MyDelay: 10, TotalDelay: 170
-    Tid: 5, MyDelay: 10, TotalDelay: 180
-    Tid: 6, MyDelay: 23, TotalDelay: 184
-    Tid: 5, MyDelay: 10, TotalDelay: 190
-    Tid: 7, MyDelay: 33, TotalDelay: 198
-    Tid: 5, MyDelay: 10, TotalDelay: 200
-    Tid: 6, MyDelay: 23, TotalDelay: 207
-    Tid: 8, MyDelay: 71, TotalDelay: 213
+    Tid: 5, MyDelay: 10, DelayNum: 1
+    Tid: 5, MyDelay: 10, DelayNum: 2
+    Tid: 6, MyDelay: 23, DelayNum: 1
+    Tid: 5, MyDelay: 10, DelayNum: 3
+    Tid: 7, MyDelay: 33, DelayNum: 1
+    Tid: 5, MyDelay: 10, DelayNum: 4
+    Tid: 6, MyDelay: 23, DelayNum: 2
+    Tid: 5, MyDelay: 10, DelayNum: 5
+    Tid: 5, MyDelay: 10, DelayNum: 6
+    Tid: 7, MyDelay: 33, DelayNum: 2
+    Tid: 6, MyDelay: 23, DelayNum: 3
+    Tid: 5, MyDelay: 10, DelayNum: 7
+    Tid: 8, MyDelay: 71, DelayNum: 1
+    Tid: 5, MyDelay: 10, DelayNum: 8
+    Tid: 5, MyDelay: 10, DelayNum: 9
+    Tid: 6, MyDelay: 23, DelayNum: 4
+    Tid: 7, MyDelay: 33, DelayNum: 3
+    Tid: 5, MyDelay: 10, DelayNum: 10
+    Tid: 5, MyDelay: 10, DelayNum: 11
+    Tid: 6, MyDelay: 23, DelayNum: 5
+    Tid: 5, MyDelay: 10, DelayNum: 12
+    Tid: 5, MyDelay: 10, DelayNum: 13
+    Tid: 7, MyDelay: 33, DelayNum: 4
+    Tid: 6, MyDelay: 23, DelayNum: 6
+    Tid: 5, MyDelay: 10, DelayNum: 14
+    Tid: 8, MyDelay: 71, DelayNum: 2
+    Tid: 5, MyDelay: 10, DelayNum: 15
+    Tid: 5, MyDelay: 10, DelayNum: 16
+    Tid: 6, MyDelay: 23, DelayNum: 7
+    Tid: 7, MyDelay: 33, DelayNum: 5
+    Tid: 5, MyDelay: 10, DelayNum: 17
+    Tid: 5, MyDelay: 10, DelayNum: 18
+    Tid: 6, MyDelay: 23, DelayNum: 8
+    Tid: 5, MyDelay: 10, DelayNum: 19
+    Tid: 7, MyDelay: 33, DelayNum: 6
+    Tid: 5, MyDelay: 10, DelayNum: 20
+    Tid: 6, MyDelay: 23, DelayNum: 9
+    Tid: 8, MyDelay: 71, DelayNum: 3
 
     Time usage (measured in 508 kHz ticks):
       TID   PTID    User    Sys
@@ -129,10 +145,17 @@ Executing the kernel produces the following output:
       7     0       9394    12
       8     0       4721    7
 
-Description: TODO
+### Description
+
+Since each number is coprime, the lcm of all 4 is tick 230, which is never
+reached so the priority is a non factor. The resulting output then is quite
+obvious, each task prints whenever its delay has been reached. If we multiply
+any `MyDelay` with `DelayNum` and compare it to another such multiple, we will
+find that the results are strictly increasing, as they should be.
 
 
 ## Bugs
 
 - The kernel successfully returns to RedBoot after completing. However, if you
   attempt to rerun the kernel from RedBoot, it will instantly crash.
+- The systime metric in the time usage is not entirely accurate right now
