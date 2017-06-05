@@ -5,7 +5,7 @@
 #include <std.h>
 #include <task.h>
 #include <ns.h>
-#include <minheap.h>
+#include <heap.h>
 
 namespace ctl {
 namespace {

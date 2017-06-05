@@ -1,4 +1,4 @@
-// Contains an implementation of a minheap.
+// Contains an implementation of a heap.
 
 #pragma once
 #include <def.h>
