@@ -28,8 +28,8 @@ void clientMain() {
     auto clockTid = Tid(whoIs(Names::ClockServer));
     for (int i = 0; i < rply.n; i++) {
         delay(clockTid, rply.t);
-        bwprintf(COM2, "Tid: %d, MyDelay: %d, TotalDelay: %d\r\n",
-            myTid(), rply.t, time(clockTid));
+        bwprintf(COM2, "Tid: %d, MyDelay: %d, DelayNum: %d\r\n",
+            myTid(), rply.t, i + 1);
     }
 
     // Send exit message to parent. Does not return
