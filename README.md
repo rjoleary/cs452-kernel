@@ -11,19 +11,11 @@ Date: June 5, 2017
 
 ## Overview
 
-This program implements non-preemptive multitasking for the ARM 920T CPU.
-Tasks may be created, run and exited from. Tasks must yield occasionally to
-allow other task of the same priority to execute. Additionally, a constant time
-scheduler is implemented with support for up to 32 distinct priorities. Example
-tasks have been included to demonstrate these functionalities.
-
-In addition to the features from the previous kernel, support for inter-task
-communication (ITC) has been added. A demo application which plays
-rock-paper-scissors has been included to demonstrate this functionality.
-
-Furthermore, the kernel supports compiler optimizations (`-O2` and `-flto`) and
-memory caches. Profiles for the context switch has been included in this
-readme.
+This program implements multitasking for the ARM 920T CPU. Tasks may be
+created, run and exited from. Tasks may await a timer event which periodically
+fires every 10ms. Additionally, a constant time scheduler is implemented with
+support for up to 32 distinct priorities. Example tasks have been included to
+demonstrate the functionality of the clock (see the demo section).
 
 
 ## Download Path
@@ -40,7 +32,7 @@ Git hash: 177faedb42a41904e731493f61eedb572b7e8baf
 
 In RedBoot, run the following:
 
-    > load -b 0x00218000 -h 10.15.167.5 "ARM/edakesho/k3.elf"
+    > load -b 0x00218000 -h 10.15.167.5 "ARM/rj2olear/k3.elf"
     > go
 
 
@@ -60,31 +52,45 @@ Where `<ARGUMENTS>` may be any combination of the following:
 
 ### Interrupts
 
-We are using vectored interrupts. At program start, we enable and prioritize all
-the interrupts we care about. When a task syscalls `awaitEvent()`, that task's
-descriptor is stored in the vectored interrupt of the task. Then, when the
-interrupt occurs we retrieve the TID from the interrupt vector. We then retrieve
-the first argument the task used (the one that was used to invoke
-`awaitEvent()`) and notify the task accordingly. We make the assumption that
-only one task will register to an event at a time, which is fine if we use the
-notifier-server-consumer paradigm. We currently only support one interrupt right
-now, but the system is expandable for multiple interrupt sources.
+We are using vectored interrupts. During kernel initialization, we enable and
+prioritize all the interrupts we care about (`TC1UI`). When a task syscalls
+`awaitEvent()`, the pointer to the task descriptor is stored in the vectored
+interrupt address for the interrupt source.
+
+When the interrupt occurs, we retrieve the task pointer from the interrupt
+vector. To determine the interrupt source (type of interrupt), it is stored as
+the first argument, `r0` of the blocked task (which has been pushed to the
+stack).
+
+We make the assumption that only one task will register to an event at a time,
+which is fine if we use the notifier-server-consumer pattern. We currently only
+support one interrupt type right now, but the system is expandable for multiple
+interrupt sources. For the next kernel, we will need to implement the UART
+interrupt source.
 
 
 ### Clock
 
-We use clock timer 2 for our tick measurements. Since this is a 2kHz clock, we
+We use clock timer 1 for our tick measurements. Since this is a 2kHz clock, we
 set the rollover time to 19, so that it will fire off an interrupt every 20
 counts (which translates to once every 10ms, the length of a tick). A notifier
-task listens to this event, and when it occurs it sends an empty message to the
-clock server. The clock server then increments its time and notifies any waiting
-tasks if appropriate. 
+task listens to this event, and when it fires it sends an empty message to the
+clock server. The clock server then increments its time and notifies any
+waiting tasks if appropriate. 
 
+The clock server has the following interface:
+
+- `int delay(Tid tid, int ticks);`: wait for a given amount of time
+- `int time(Tid tid);` give the time since clock server start up
+- `int delayUntil(Tid tid, int ticks);` wait until a time
+
+Where each tick is a 10 ms and the `tid` is the TID of the clock server. The
+clock server's TID is registered to the nameserver.
 
 ### Min Heap
 
 The min heap is implemented as an arbitrary heap with some comparator function.
-This is done with the magic of C++ templates. The heap has 3 functions, 
+This is done with the magic of C++ templates. The heap has 3 functions,
 `peak()`, `push()`, and `pop()`. `peak()` checks the top of the heap, `push()`
 adds an element and `pop()` removes the top of the heap. We use a minheap to
 manage all the timing requirements of the kernel. When we get a call to
@@ -94,7 +100,6 @@ minheap. Any time we increment the ticks, we check the top of the heap and if
 the current tick is equal to the soonest waiting task we pop as many tasks off
 as we can and notify them. We use a minheap as it has `O(log n)` push and pop
 while maintaining a priority queue and due to ease of implementation.
-
 
 
 ## Demo
@@ -155,15 +160,26 @@ Executing the kernel produces the following output:
 
 ### Description
 
-Since each number is coprime, the lcm of all 4 is tick 230, which is never
-reached so the priority is a non factor. The resulting output then is quite
-obvious, each task prints whenever its delay has been reached. If we multiply
-any `MyDelay` with `DelayNum` and compare it to another such multiple, we will
-find that the results are strictly increasing, as they should be.
+Since each number is coprime, the lowest common multiple of all 4 is tick 230,
+which is never reached so now two tasks will be awoken on the same tick will
+occur on the same tick. This means the client task's priorities are irrelevant
+in our analysis.
+
+The resulting output then is quite obvious, each task prints whenever its delay
+has been reached. If we multiply any `MyDelay` with `DelayNum` and compare it
+to another such multiple, we will find that the results are strictly
+increasing, as they should be.
+
+At the end of the output, the user time and system time used by each TID is
+printed. This measurement uses timer 2 where each tick is 508 kHz. System time
+is the total time spent servicing a syscall for the given task. It is important
+to measure both times because some tasks spend a lot of their time making
+syscalls.
 
 
 ## Bugs
 
 - The kernel successfully returns to RedBoot after completing. However, if you
   attempt to rerun the kernel from RedBoot, it will instantly crash.
-- The systime metric in the time usage is not entirely accurate right now
+- The systime metric in the time usage is not entirely accurate because a task
+  is billed for an interrupt awaited on by another task.
