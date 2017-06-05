@@ -25,7 +25,7 @@ demonstrate the functionality of the clock (see the demo section).
 
 ## Checksums
 
-Git hash: 177faedb42a41904e731493f61eedb572b7e8baf
+Git hash: bd3f30b67349214c7da428b1ca05de34af07cc71
 
 
 ## Running
