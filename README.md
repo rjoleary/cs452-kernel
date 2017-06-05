@@ -77,6 +77,7 @@ TODO
 
 Executing the kernel produces the following output:
 
+    Build string: '21:27:13 Jun  4 2017 CACHE=1 OPT=1'
     Tid: 5, MyDelay: 10, TotalDelay: 10
     Tid: 5, MyDelay: 10, TotalDelay: 20
     Tid: 6, MyDelay: 23, TotalDelay: 23
@@ -116,9 +117,22 @@ Executing the kernel produces the following output:
     Tid: 6, MyDelay: 23, TotalDelay: 207
     Tid: 8, MyDelay: 71, TotalDelay: 213
 
+    Time usage (measured in 508 kHz ticks):
+      TID   PTID    User    Sys
+      0     0       21      25
+      1     0       463471  448928
+      2     0       8       17
+      3     0       402     376
+      4     0       223     385
+      5     0       31353   31
+      6     0       14111   18
+      7     0       9394    12
+      8     0       4721    7
+
 Description: TODO
 
 
 ## Bugs
 
-- No known bugs
+- The kernel successfully returns to RedBoot after completing. However, if you
+  attempt to rerun the kernel from RedBoot, it will instantly crash.
