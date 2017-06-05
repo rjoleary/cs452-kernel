@@ -1,11 +1,21 @@
 #include <interrupt.h>
 #include <profiler.h>
 #include <user/bwio.h>
+#include <user/event.h>
 #include <user/std.h>
 #include <user/ts7200.h>
+#include <panic.h>
 
-// TODO: make optional to save space
+using namespace kernel;
+using namespace ctl;
+
+// Save space when profiles are not enabled.
+#ifdef PROF_INTERVAL
 constexpr unsigned BUFFER_LEN = 16 * 1024;
+#else
+constexpr unsigned BUFFER_LEN = 0;
+#endif // PROF_INTERVAL
+
 static unsigned buffer[BUFFER_LEN];
 
 // The lower threshold for reporting addresses
@@ -13,11 +23,10 @@ constexpr unsigned PROF_THRESH = 3;
 
 extern "C" char textStart, textEnd;
 
-extern "C" void timer2Irq();
+extern "C" void profilerFiq();
 
-extern "C" void profilerRecord(unsigned lr) {
-    // Minus 4 because of the interrupt.
-    buffer[(lr - (unsigned)&textStart - 4) / 4]++;
+extern "C" void profilerRecord(unsigned pc) {
+    buffer[(pc - (unsigned)&textStart) / 4]++;
 }
 
 void profilerStart(unsigned ticks) {
@@ -27,22 +36,28 @@ void profilerStart(unsigned ticks) {
         return;
     }
 
-    // Setup TIMER2:
-    // - 16-bit precision
+    // Disable timer 3 interrupt.
+    const unsigned iSrc = static_cast<unsigned>(InterruptSource::TC3UI) - 32;
+    *(volatile unsigned*)(VIC2Base + VICxIntEnClear) = 1 << iSrc;
+
+    // Setup TIMER3:
+    // - 32-bit precision
     // - 508 kHz clock
     // - each 1ms is 508 ticks
     // - periodic mode
-    *(volatile unsigned*)(TIMER2_BASE + CRTL_OFFSET) = 0;
-    *(volatile unsigned*)(TIMER2_BASE + LDR_OFFSET) = ticks;
-    *(volatile unsigned*)(TIMER2_BASE + CRTL_OFFSET) = CLKSEL_MASK | ENABLE_MASK | MODE_MASK;
+    *(volatile unsigned*)(TIMER3_BASE + CRTL_OFFSET) = 0;
+    *(volatile unsigned*)(TIMER3_BASE + LDR_OFFSET) = ticks;
+    *(volatile unsigned*)(TIMER3_BASE + CRTL_OFFSET) = CLKSEL_MASK | ENABLE_MASK | MODE_MASK;
 
-    // TODO: Fix
-    //kernel::bindInterrupt(ctl::InterruptSource::TC2UI, 1, &timer2Irq);
-    kernel::enableInterrupt(ctl::InterruptSource::TC2UI);
+    // Profiler uses FIQ so that it can even interrupts the kernel.
+    *(volatile unsigned*)(0x3c) = (unsigned)profilerFiq;
+    *(volatile unsigned*)(VIC2Base + VICxIntSelect) |= 1 << iSrc;
+    *(volatile unsigned*)(VIC2Base + VICxIntEnable) |= 1 << iSrc;
 }
 
 void profilerStop() {
-    kernel::disableInterrupt(ctl::InterruptSource::TC2UI);
+    const unsigned iSrc = static_cast<unsigned>(InterruptSource::TC3UI) - 32;
+    *(volatile unsigned*)(VIC2Base + VICxIntEnClear) = 1 << iSrc;
 }
 
 void profilerDump() {

@@ -14,5 +14,8 @@ const char* buildstr() {
 #ifdef OPT_ENABLED
         " OPT=" XSTR(OPT_ENABLED)
 #endif
+#ifdef PROF_INTERVAL
+        " PROF=" XSTR(PROF_INTERVAL)
+#endif
         ;
 }

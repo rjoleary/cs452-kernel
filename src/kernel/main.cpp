@@ -2,6 +2,7 @@
 #include <err.h>
 #include <interrupt.h>
 #include <panic.h>
+#include <profiler.h>
 #include <scheduler.h>
 #include <strace.h>
 #include <syscall.h>
@@ -79,6 +80,10 @@ int main() {
 
     initInterrupts();
 
+#ifdef PROF_INTERVAL
+    profilerStart(PROF_INTERVAL);
+#endif // PROF_INTERVAL
+
     // Setup TIMER2:
     // - 16-bit precision
     // - 508 kHz clock
@@ -118,7 +123,7 @@ int main() {
             }
             auto vic2addr = *(volatile unsigned*)(0x800c0030);
             if (vic2addr != 0xdeadbeef) {
-                STRACE("VIC2 NOT POSSIBLE YET");
+                PANIC("VIC2 NOT POSSIBLE YET");
             }
             PANIC("RECEIVED INTERRUPT?");
             continue;
@@ -299,7 +304,16 @@ int main() {
         }
     }
 
+#ifdef PROF_INTERVAL
+    profilerStop();
+#endif // PROF_INTERVAL
+
     bwputstr(COM2, "\r\n");
     tdManager.printUsage();
+
+#ifdef PROF_INTERVAL
+    profilerDump();
+#endif
+
     return 0;
 }

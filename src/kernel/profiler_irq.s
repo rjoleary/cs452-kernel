@@ -1,27 +1,30 @@
 @ vim:ft=armv5
 
-.global timer2Irq
+.global profilerFiq
 
 .section .bss
 .align 4
 irqStack:
-    .zero 128
+    .zero 4096
 irqStackEnd:
 
+
 .section .text
-timer2Irq:
-    @ Push r1.
+profilerFiq:
+    @ Clear the interrupt.
+    @ldr sp, =0x8081008c
+    @str sp, [sp]
+    @subs pc, lr, #4
+
+    @ Push r1. TODO: push fewer registers because FIQ banking
     ldr sp, =irqStackEnd
     stmfd sp!, {r0-r12, lr}
     @ Jump to the function.
-    mov r0, lr
+    sub r0, lr, #4
     bl profilerRecord
     @ Clear the interrupt.
-    ldr r1, =0x8081002c
+    ldr r1, =0x8081008c
     str r1, [r1]
-    @ Acknowledge VIRQ serviced.
-    ldr r1, =0x800b0030
-    str r0, [r1]
     @ Unstack registers.
     ldmfd sp!, {r0-r12, lr}
     @ Return.
