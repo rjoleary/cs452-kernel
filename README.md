@@ -33,14 +33,14 @@ readme.
 
 ## Checksums
 
-Git hash: TODO
+Git hash: 177faedb42a41904e731493f61eedb572b7e8baf
 
 
 ## Running
 
 In RedBoot, run the following:
 
-    > load -b 0x00218000 -h 10.15.167.5 "ARM/TODO"
+    > load -b 0x00218000 -h 10.15.167.5 "ARM/edakesho/k3.elf"
     > go
 
 
@@ -60,7 +60,15 @@ Where `<ARGUMENTS>` may be any combination of the following:
 
 ### Interrupts
 
-TODO
+We are using vectored interrupts. At program start, we enable and prioritize all
+the interrupts we care about. When a task syscalls `awaitEvent()`, that task's
+descriptor is stored in the vectored interrupt of the task. Then, when the
+interrupt occurs we retrieve the TID from the interrupt vector. We then retrieve
+the first argument the task used (the one that was used to invoke
+`awaitEvent()`) and notify the task accordingly. We make the assumption that
+only one task will register to an event at a time, which is fine if we use the
+notifier-server-consumer paradigm. We currently only support one interrupt right
+now, but the system is expandable for multiple interrupt sources.
 
 
 ### Clock
