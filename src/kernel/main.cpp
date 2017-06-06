@@ -94,7 +94,6 @@ int main() {
 
     while (1) {
         auto active = scheduler.getNextTask();
-        active->sysTime += 0xffff - *(volatile unsigned*)(TIMER2_BASE + VAL_OFFSET);
         *(volatile unsigned*)(TIMER2_BASE + LDR_OFFSET) = 0xffff;
         active->sp = kernelExit(active->sp);
         active->userTime += 0xffff - *(volatile unsigned*)(TIMER2_BASE + VAL_OFFSET);
@@ -301,6 +300,10 @@ int main() {
         else {
             PANIC("bad syscall number");
         }
+
+        // Only sys time for syscalls is recorded. Time spent processing
+        // interrupts is ignored.
+        active->sysTime += 0xffff - *(volatile unsigned*)(TIMER2_BASE + VAL_OFFSET);
     }
 
 #ifdef PROF_INTERVAL
