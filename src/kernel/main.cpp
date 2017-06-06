@@ -30,7 +30,7 @@ static int copyMsg(const unsigned *src, int srcSize, unsigned *dest, int destSiz
     return ret;
 }
 
-int main() {
+void initCaches() {
 #ifdef CACHE_ENABLED
     asm volatile (
         "mrc p15, 0, r0, c1, c0, 0\n\t"
@@ -39,14 +39,16 @@ int main() {
         "mcr p15, 0, r0, c1, c0, 0"
     );
 #endif // CACHE_ENABLED
+}
 
-    unsigned *kernelStack = (unsigned*)(&kernelStack + 1);
-
-    // Print the build string (date + time).
+void initSerial() {
     bwsetspeed(COM2, 115200);
     bwsetfifo(COM2, OFF);
-    bwprintf(COM2, "Build string: '%s'\r\n", buildstr());
+}
 
+void printEarlyDebug() {
+    // Print the build string (date + time).
+    bwprintf(COM2, "Build string: '%s'\r\n", buildstr());
     // Print memory layout.
 #ifdef STRACE_ENABLED
     extern char _DataStart, _DataEnd, _BssStart, _BssEnd;
@@ -58,14 +60,9 @@ int main() {
     STRACE("  [-] 0x%08x - 0x%08x: text", &textStart, &textEnd);
     STRACE("  [-] 0x%08x - 0x%08x: kernel stack", &textEnd, kernelStack);
 #endif // STRACE_ENABLED
+}
 
-    Scheduler scheduler;
-    TdManager tdManager(scheduler, userStacks[0] + STACK_SZ/4);
-
-    // Software Interrupt (SWI)
-    auto SVC_ADDR = (void (*volatile*)())0x28;
-    *SVC_ADDR = &kernelEntry;
-
+void initTimers() {
     // Setup TIMER1:
     // - 16-bit precision
     // - 2 kHz clock
@@ -75,14 +72,6 @@ int main() {
     *(volatile unsigned*)(TIMER1_BASE + LDR_OFFSET) = 19;
     *(volatile unsigned*)(TIMER1_BASE + CRTL_OFFSET) = ENABLE_MASK | MODE_MASK;
 
-    initInterrupts();
-    bindInterrupt(ctl::InterruptSource::TC1UI, 0, nullptr);
-    enableInterrupt(ctl::InterruptSource::TC1UI);
-
-#ifdef PROF_INTERVAL
-    profilerStart(PROF_INTERVAL);
-#endif // PROF_INTERVAL
-
     // Setup TIMER2:
     // - 16-bit precision
     // - 508 kHz clock
@@ -91,7 +80,41 @@ int main() {
     *(volatile unsigned*)(TIMER2_BASE + CRTL_OFFSET) = 0;
     *(volatile unsigned*)(TIMER2_BASE + LDR_OFFSET) = 0xffff;
     *(volatile unsigned*)(TIMER2_BASE + CRTL_OFFSET) = CLKSEL_MASK | ENABLE_MASK;
+}
 
+void initInitInterrupts() {
+    initInterrupts();
+    bindInterrupt(ctl::InterruptSource::TC1UI, 0, nullptr);
+    enableInterrupt(ctl::InterruptSource::TC1UI);
+
+    // Software Interrupt (SWI)
+    auto SVC_ADDR = (void (*volatile*)())0x28;
+    *SVC_ADDR = &kernelEntry;
+}
+
+void initProfiler() {
+#ifdef PROF_INTERVAL
+    profilerStart(PROF_INTERVAL);
+#endif // PROF_INTERVAL
+}
+
+int main() {
+    // Approximately the starting address of the kernel stack.
+    unsigned *kernelStack = (unsigned*)(&kernelStack + 1);
+
+    // Initialize subsystems
+    initCaches();
+    initSerial();
+    printEarlyDebug();
+    initTimers();
+    initInitInterrupts();
+    initProfiler();
+
+    // Kernel state
+    Scheduler scheduler;
+    TdManager tdManager(scheduler, userStacks[0] + STACK_SZ/4);
+
+    // Main loop
     while (1) {
         auto active = scheduler.getNextTask();
         *(volatile unsigned*)(TIMER2_BASE + LDR_OFFSET) = 0xffff;
