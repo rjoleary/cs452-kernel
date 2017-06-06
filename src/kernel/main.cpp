@@ -46,9 +46,10 @@ void initSerial() {
     bwsetfifo(COM2, OFF);
 }
 
-void printEarlyDebug() {
+void printEarlyDebug(unsigned *kernelStack) {
     // Print the build string (date + time).
     bwprintf(COM2, "Build string: '%s'\r\n", buildstr());
+
     // Print memory layout.
 #ifdef STRACE_ENABLED
     extern char _DataStart, _DataEnd, _BssStart, _BssEnd;
@@ -105,7 +106,7 @@ int main() {
     // Initialize subsystems
     initCaches();
     initSerial();
-    printEarlyDebug();
+    printEarlyDebug(kernelStack);
     initTimers();
     initInitInterrupts();
     initProfiler();
@@ -114,7 +115,27 @@ int main() {
     Scheduler scheduler;
     TdManager tdManager(scheduler, userStacks[0] + STACK_SZ/4);
 
-    // Main loop
+    // Enter main loop.
+    void mainLoop(Scheduler &scheduler, TdManager &tdManager);
+    mainLoop(scheduler, tdManager);
+
+#ifdef PROF_INTERVAL
+    profilerStop();
+#endif // PROF_INTERVAL
+
+    bwputstr(COM2, "\r\n");
+    tdManager.printUsage();
+
+#ifdef PROF_INTERVAL
+    profilerDump();
+#endif
+
+    // Interrupts must be unbound to return to RedBoot cleanly.
+    uninitInterrupts();
+    return 0;
+}
+
+void mainLoop(Scheduler &scheduler, TdManager &tdManager) {
     while (1) {
         auto active = scheduler.getNextTask();
         *(volatile unsigned*)(TIMER2_BASE + LDR_OFFSET) = 0xffff;
@@ -329,18 +350,4 @@ int main() {
         active->sysTime += 0xffff - *(volatile unsigned*)(TIMER2_BASE + VAL_OFFSET);
     }
 
-#ifdef PROF_INTERVAL
-    profilerStop();
-#endif // PROF_INTERVAL
-
-    bwputstr(COM2, "\r\n");
-    tdManager.printUsage();
-
-#ifdef PROF_INTERVAL
-    profilerDump();
-#endif
-
-    uninitInterrupts();
-
-    return 0;
 }
