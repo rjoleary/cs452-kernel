@@ -60,7 +60,7 @@ public:
         return last;
     }
 
-    void push(Data data) {
+    void push(const Data &data) {
         ASSERT(++size <= MaxSize);
         entries[size - 1] = data;
 
