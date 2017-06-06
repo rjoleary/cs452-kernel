@@ -1,6 +1,4 @@
-#ifndef INTERRUPT_H__INCLUDED
-#define INTERRUPT_H__INCLUDED
-
+#pragma once
 #include <user/event.h>
 
 namespace kernel {
@@ -23,23 +21,20 @@ const unsigned
     VICxVectAddr0    = 0x100,
     VICxVectCntl0    = 0x200;
 
+namespace interrupt {
 // Initialize the vectored interrupt controller.
-void initInterrupts();
+void init();
 
 // Uninitialize the vectored interrupt controller.
 // Must be called to correctly return to RedBoot and re-execute the kernel.
-void uninitInterrupts();
+void clearAll();
 
 // Bind an interrupt to a address. When the interrupt is triggered, control is
 // transferred to that address. To return from the interrupt, run the
 // instruction `subs pc, lr`. Interrupts are initially disabled.
-void bindInterrupt(ctl::InterruptSource src, unsigned vector, void *isr);
-int enableOnly(ctl::InterruptSource src, unsigned vector, void *isr);
-void clearInterrupt(ctl::InterruptSource src, unsigned vector);
-
-// Enable/disable a specific interrupt.
-void enableInterrupt(ctl::InterruptSource src);
-void disableInterrupt(ctl::InterruptSource src);
+void bind(ctl::InterruptSource src, unsigned vector);
+int setVal(ctl::InterruptSource src, unsigned vector, void *isr);
+void clear(ctl::InterruptSource src, unsigned vector);
 }
 
-#endif // INTERRUPT_H__INCLUDED
+}

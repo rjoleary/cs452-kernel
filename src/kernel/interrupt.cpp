@@ -11,31 +11,34 @@ volatile char * deduceDaisyChain(unsigned &iSrc) {
 }
 }
 
-void initInterrupts() {
+namespace interrupt {
+void init() {
     *(volatile unsigned*)(0x38) = (unsigned)irqEntry;
     *(volatile unsigned*)(VIC1Base + VICxDefVectAddr) = 0xdeadbeef;
     *(volatile unsigned*)(VIC2Base + VICxDefVectAddr) = 0xdeadbeef;
 }
 
-void uninitInterrupts() {
+void clearAll() {
+    // Disable all interrupts
     *(volatile unsigned*)(VIC1Base + VICxIntEnClear) = 0xffffffff;
     *(volatile unsigned*)(VIC2Base + VICxIntEnClear) = 0xffffffff;
+    // Set all interrupts to IRQ
+    *(volatile unsigned*)(VIC1Base + VICxIntSelect) = 0;
+    *(volatile unsigned*)(VIC2Base + VICxIntSelect) = 0;
 }
 
-void bindInterrupt(ctl::InterruptSource src, unsigned vector, void *isr) {
+void bind(ctl::InterruptSource src, unsigned vector) {
     auto iSrc = static_cast<unsigned>(src);
     auto base = deduceDaisyChain(iSrc);
-    // 1. Clear any existing interrupt.
-    *(volatile unsigned*)(base + VICxIntEnClear) = 1 << iSrc;
-    // 2. Set the address of the interrupt handler.
-    *(volatile unsigned*)(base + VICxVectAddr0 + vector) = (unsigned)isr;
-    // 3. Set the interrupt source and enable.
+    // 1. Set the address of the interrupt handler.
+    *(volatile void**)(base + VICxVectAddr0 + vector) = nullptr;
+    // 2. Set the interrupt source and enable.
     *(volatile unsigned*)(base + VICxVectCntl0 + vector) = 0x20 | iSrc;
-    // 4. Ensure the interrupt type is set to IRQ.
-    *(volatile unsigned*)(base + VICxIntSelect) &= ~(1 << iSrc);
+    // 3. Enable the interrupt
+    *(volatile unsigned*)(base + VICxIntEnable) = 1 << iSrc;
 }
 
-int enableOnly(ctl::InterruptSource src, unsigned vector, void *isr) {
+int setVal(ctl::InterruptSource src, unsigned vector, void *isr) {
     auto iSrc = static_cast<unsigned>(src);
     auto base = deduceDaisyChain(iSrc);
     auto addr = (volatile void**)(base + VICxVectAddr0 + vector);
@@ -44,22 +47,11 @@ int enableOnly(ctl::InterruptSource src, unsigned vector, void *isr) {
     return 0;
 }
 
-void clearInterrupt(ctl::InterruptSource src, unsigned vector) {
+void clear(ctl::InterruptSource src, unsigned vector) {
     auto iSrc = static_cast<unsigned>(src);
     auto base = deduceDaisyChain(iSrc);
     auto addr = (volatile void**)(base + VICxVectAddr0 + vector);
     *addr = nullptr;
 }
-
-void enableInterrupt(ctl::InterruptSource src) {
-    auto iSrc = static_cast<unsigned>(src);
-    auto base = deduceDaisyChain(iSrc);
-    *(volatile unsigned*)(base + VICxIntEnable) |= 1 << iSrc;
-}
-
-void disableInterrupt(ctl::InterruptSource src) {
-    auto iSrc = static_cast<unsigned>(src);
-    auto base = deduceDaisyChain(iSrc);
-    *(volatile unsigned*)(base + VICxIntEnClear) = 1 << iSrc;
 }
 }

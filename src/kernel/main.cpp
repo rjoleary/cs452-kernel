@@ -71,6 +71,7 @@ void initTimers() {
     // - interrupt occurs every 10ms
     *(volatile unsigned*)(TIMER1_BASE + CRTL_OFFSET) = 0;
     *(volatile unsigned*)(TIMER1_BASE + LDR_OFFSET) = 19;
+    *(volatile unsigned*)(TIMER1_BASE + CLR_OFFSET) = 0;
     *(volatile unsigned*)(TIMER1_BASE + CRTL_OFFSET) = ENABLE_MASK | MODE_MASK;
 
     // Setup TIMER2:
@@ -80,13 +81,14 @@ void initTimers() {
     // - It is always expected the timer will be reset before underflowing.
     *(volatile unsigned*)(TIMER2_BASE + CRTL_OFFSET) = 0;
     *(volatile unsigned*)(TIMER2_BASE + LDR_OFFSET) = 0xffff;
+    *(volatile unsigned*)(TIMER2_BASE + CLR_OFFSET) = 0;
     *(volatile unsigned*)(TIMER2_BASE + CRTL_OFFSET) = CLKSEL_MASK | ENABLE_MASK;
 }
 
-void initInitInterrupts() {
-    initInterrupts();
-    bindInterrupt(ctl::InterruptSource::TC1UI, 0, nullptr);
-    enableInterrupt(ctl::InterruptSource::TC1UI);
+void initInterrupts() {
+    interrupt::clearAll();
+    interrupt::init();
+    interrupt::bind(ctl::InterruptSource::TC1UI, 0);
 
     // Software Interrupt (SWI)
     auto SVC_ADDR = (void (*volatile*)())0x28;
@@ -108,7 +110,7 @@ int main() {
     initSerial();
     printEarlyDebug(kernelStack);
     initTimers();
-    initInitInterrupts();
+    initInterrupts();
     initProfiler();
 
     // Kernel state
@@ -131,7 +133,7 @@ int main() {
 #endif
 
     // Interrupts must be unbound to return to RedBoot cleanly.
-    uninitInterrupts();
+    interrupt::clearAll();
     return 0;
 }
 
@@ -157,7 +159,7 @@ void mainLoop(Scheduler &scheduler, TdManager &tdManager) {
                 if (notifier && notifier->state == RunState::EventBlocked) {
                     notifier->setReturn(0);
                     scheduler.readyTask(*notifier);
-                    clearInterrupt((ctl::InterruptSource)notifier->getArg(0), 0);
+                    interrupt::clear((ctl::InterruptSource)notifier->getArg(0), 0);
                 }
                 active->interruptLinkReg();
                 scheduler.readyTask(*active);
@@ -268,7 +270,7 @@ void mainLoop(Scheduler &scheduler, TdManager &tdManager) {
         }
         else if (active->getSyscall() == Syscall::AwaitEvent) {
             auto eventId = (ctl::InterruptSource)active->getArg(0);
-            auto ret = enableOnly(eventId, 0, active);
+            auto ret = interrupt::setVal(eventId, 0, active);
             if (__builtin_expect(ret == 0, 1)) {
                 active->state = RunState::EventBlocked;
                 STRACE("  [%d] int awaitEvent(eventid=%d) = <BLOCKED>", active->tid, eventId);
