@@ -12,10 +12,14 @@ volatile char * deduceDaisyChain(unsigned &iSrc) {
 }
 
 void initInterrupts() {
-    // irqTrampoline reads vector address into pc.
     *(volatile unsigned*)(0x38) = (unsigned)irqEntry;
     *(volatile unsigned*)(VIC1Base + VICxDefVectAddr) = 0xdeadbeef;
     *(volatile unsigned*)(VIC2Base + VICxDefVectAddr) = 0xdeadbeef;
+}
+
+void uninitInterrupts() {
+    *(volatile unsigned*)(VIC1Base + VICxIntEnClear) = 0xffffffff;
+    *(volatile unsigned*)(VIC2Base + VICxIntEnClear) = 0xffffffff;
 }
 
 void bindInterrupt(ctl::InterruptSource src, unsigned vector, void *isr) {

@@ -75,10 +75,9 @@ int main() {
     *(volatile unsigned*)(TIMER1_BASE + LDR_OFFSET) = 19;
     *(volatile unsigned*)(TIMER1_BASE + CRTL_OFFSET) = ENABLE_MASK | MODE_MASK;
 
+    initInterrupts();
     bindInterrupt(ctl::InterruptSource::TC1UI, 0, nullptr);
     enableInterrupt(ctl::InterruptSource::TC1UI);
-
-    initInterrupts();
 
 #ifdef PROF_INTERVAL
     profilerStart(PROF_INTERVAL);
@@ -314,6 +313,8 @@ int main() {
 #ifdef PROF_INTERVAL
     profilerDump();
 #endif
+
+    uninitInterrupts();
 
     return 0;
 }

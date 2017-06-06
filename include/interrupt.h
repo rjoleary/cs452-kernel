@@ -26,6 +26,10 @@ const unsigned
 // Initialize the vectored interrupt controller.
 void initInterrupts();
 
+// Uninitialize the vectored interrupt controller.
+// Must be called to correctly return to RedBoot and re-execute the kernel.
+void uninitInterrupts();
+
 // Bind an interrupt to a address. When the interrupt is triggered, control is
 // transferred to that address. To return from the interrupt, run the
 // instruction `subs pc, lr`. Interrupts are initially disabled.
