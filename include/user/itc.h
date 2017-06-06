@@ -5,45 +5,12 @@
 
 #include "syscall.h"
 #include "types.h"
+#include <type_traits>
 
 namespace ctl {
 
 struct EmptyMessage_t{};
 extern EmptyMessage_t EmptyMessage;
-namespace detail {
-    template <typename T, typename U>
-    struct is_same {
-        constexpr static auto value = false;
-    };
-    template <typename T>
-    struct is_same<T, T> {
-        constexpr static auto value = true;
-    };
-    template <typename T, typename U>
-    constexpr static auto is_same_v = is_same<T,U>::value;
-
-    template <typename T> struct remove_reference      {using type = T;};
-    template <typename T> struct remove_reference<T&>  {using type = T;};
-    template <typename T> struct remove_reference<T&&> {using type = T;};
-
-    template <typename T> struct remove_const          {using type = T;};
-    template <typename T> struct remove_const<const T> {using type = T;};
-     
-    template <typename T> struct remove_volatile             {using type = T;};
-    template <typename T> struct remove_volatile<volatile T> {using type = T;};
-
-    template <typename T>
-    struct remove_cv {
-        using type = typename remove_volatile<typename remove_const<T>::type>::type;
-    };
-     
-    template <typename T>
-    struct decay {
-        using type = typename remove_cv<typename remove_reference<T>::type>::type;
-    };
-    template <typename T>
-    using decay_t = typename decay<T>::type;
-}
 // send - send a message to a specific task and obtain the corresponding response.
 //
 // Description:
@@ -86,8 +53,8 @@ template <typename T, typename U>
 int send(Tid tid, const T &msg, const U &reply) = delete;
 template <typename T, typename U>
 int send(Tid tid, const T &msg, U &reply) {
-    constexpr bool isEmptyMsg = detail::is_same_v<detail::decay_t<T>, EmptyMessage_t>;
-    constexpr bool isEmptyRpl = detail::is_same_v<detail::decay_t<U>, EmptyMessage_t>;
+    constexpr bool isEmptyMsg = std::is_same<std::decay_t<T>, EmptyMessage_t>::value;
+    constexpr bool isEmptyRpl = std::is_same<std::decay_t<U>, EmptyMessage_t>::value;
     static_assert(alignof(T) >= alignof(unsigned) || isEmptyMsg, "Unaligned send msg");
     static_assert(alignof(U) >= alignof(unsigned) || isEmptyRpl, "Unaligned send reply");
     int a0 = tid.underlying();
@@ -128,7 +95,7 @@ inline int receive(Tid *a0, void *a1, int a2) {
 }
 template <typename T>
 int receive(Tid *a0, T &msg) {
-    constexpr bool isEmpty = detail::is_same_v<detail::decay_t<T>, EmptyMessage_t>;
+    constexpr bool isEmpty = std::is_same<std::decay_t<T>, EmptyMessage_t>::value;
     static_assert(alignof(T) >= alignof(unsigned) || isEmpty, "Unaligned receive");
     void *a1 = isEmpty ? nullptr : &msg;
     int a2 = isEmpty ? 0 : sizeof(T);
@@ -158,7 +125,7 @@ inline int reply(int a0, const void *a1, int a2) {
 
 template <typename T>
 int reply(Tid tid, T &msg) {
-    constexpr bool isEmpty = detail::is_same_v<detail::decay_t<T>, EmptyMessage_t>;
+    constexpr bool isEmpty = std::is_same<std::decay_t<T>, EmptyMessage_t>::value;
     static_assert(alignof(T) >= alignof(unsigned) || isEmpty, "Unaligned reply");
     int a0 = tid.underlying();
     const void *a1 = isEmpty ? nullptr : &msg;
