@@ -30,7 +30,6 @@ struct Message {
 struct alignas(4) Reply {
     char data;
 };
-static_assert(sizeof(Reply) % 4 == 0);
 
 template <Source src, Names server>
 void genericNotifierMain() {
