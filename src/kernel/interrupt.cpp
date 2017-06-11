@@ -27,7 +27,7 @@ void clearAll() {
     *(volatile unsigned*)(VIC2Base + VICxIntSelect) = 0;
 }
 
-void bind(ctl::InterruptSource src, unsigned vector) {
+void bind(ctl::Source src, unsigned vector) {
     auto iSrc = static_cast<unsigned>(src);
     auto base = deduceDaisyChain(iSrc);
     // 1. Set the address of the interrupt handler.
@@ -38,7 +38,7 @@ void bind(ctl::InterruptSource src, unsigned vector) {
     *(volatile unsigned*)(base + VICxIntEnable) = 1 << iSrc;
 }
 
-int setVal(ctl::InterruptSource src, unsigned vector, void *isr) {
+int setVal(ctl::Source src, unsigned vector, void *isr) {
     auto iSrc = static_cast<unsigned>(src);
     auto base = deduceDaisyChain(iSrc);
     auto addr = (volatile void**)(base + VICxVectAddr0 + vector);
@@ -47,7 +47,7 @@ int setVal(ctl::InterruptSource src, unsigned vector, void *isr) {
     return 0;
 }
 
-void clear(ctl::InterruptSource src, unsigned vector) {
+void clear(ctl::Source src, unsigned vector) {
     auto iSrc = static_cast<unsigned>(src);
     auto base = deduceDaisyChain(iSrc);
     auto addr = (volatile void**)(base + VICxVectAddr0 + vector);

@@ -37,7 +37,7 @@ void profilerStart(unsigned ticks) {
     }
 
     // Disable timer 3 interrupt.
-    const unsigned iSrc = static_cast<unsigned>(InterruptSource::TC3UI) - 32;
+    const unsigned iSrc = static_cast<unsigned>(Source::TC3UI) - 32;
     *(volatile unsigned*)(VIC2Base + VICxIntEnClear) = 1 << iSrc;
 
     // Setup TIMER3:
@@ -56,7 +56,7 @@ void profilerStart(unsigned ticks) {
 }
 
 void profilerStop() {
-    const unsigned iSrc = static_cast<unsigned>(InterruptSource::TC3UI) - 32;
+    const unsigned iSrc = static_cast<unsigned>(Source::TC3UI) - 32;
     *(volatile unsigned*)(VIC2Base + VICxIntEnClear) = 1 << iSrc;
 }
 

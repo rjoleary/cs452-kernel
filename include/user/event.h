@@ -6,7 +6,7 @@
 namespace ctl {
 // Interrupt sources which may be relevant.
 // Source: ep93xx-user-guid.pdf, section 6.1.2
-enum class InterruptSource {
+enum class Source {
     COMMRX       = 2,  // ARM Communication Rx for Debug
     COMMTX       = 3,  // ARM Communication Tx for Debug
     TC1UI        = 4,  // TC1 under flow interrupt (Timer Counter 1)
@@ -30,7 +30,7 @@ enum class InterruptSource {
 //   >-1: volatile data, in the form of a positive integer.
 //   -ERR_INVID: invalid event.
 //   -ERR_CORRUPT: corrupted volatile data.
-int awaitEvent(InterruptSource eventid);
+int awaitEvent(Source eventid);
 }
 
 #endif // USER_EVENT_H__INCLUDED

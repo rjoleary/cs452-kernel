@@ -88,7 +88,7 @@ void initTimers() {
 void initInterrupts() {
     interrupt::clearAll();
     interrupt::init();
-    interrupt::bind(ctl::InterruptSource::TC1UI, 0);
+    interrupt::bind(ctl::Source::TC1UI, 0);
 
     // Software Interrupt (SWI)
     auto SVC_ADDR = (void (*volatile*)())0x28;
@@ -159,7 +159,7 @@ void mainLoop(Scheduler &scheduler, TdManager &tdManager) {
                 if (notifier && notifier->state == RunState::EventBlocked) {
                     notifier->setReturn(0);
                     scheduler.readyTask(*notifier);
-                    interrupt::clear((ctl::InterruptSource)notifier->getArg(0), 0);
+                    interrupt::clear((ctl::Source)notifier->getArg(0), 0);
                 }
                 active->interruptLinkReg();
                 scheduler.readyTask(*active);
@@ -269,7 +269,7 @@ void mainLoop(Scheduler &scheduler, TdManager &tdManager) {
             }
         }
         else if (active->getSyscall() == Syscall::AwaitEvent) {
-            auto eventId = (ctl::InterruptSource)active->getArg(0);
+            auto eventId = (ctl::Source)active->getArg(0);
             auto ret = interrupt::setVal(eventId, 0, active);
             if (__builtin_expect(ret == 0, 1)) {
                 active->state = RunState::EventBlocked;

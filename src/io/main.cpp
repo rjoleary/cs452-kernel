@@ -32,7 +32,7 @@ struct alignas(4) Reply {
 };
 static_assert(sizeof(Reply) % 4 == 0);
 
-template <InterruptSource src, Names server>
+template <Source src, Names server>
 void genericNotifierMain() {
     auto serverTid = Tid(whoIs(server));
     Message notify{MsgType::Notify};
@@ -77,9 +77,9 @@ void ioMain() {
 
     // Create notifiers.
     ASSERT(create(Priority(30),
-        genericNotifierMain<InterruptSource::UART2RXINTR2, Names::IoServer>) > 0);
+        genericNotifierMain<Source::UART2RXINTR2, Names::IoServer>) > 0);
     ASSERT(create(Priority(30),
-        genericNotifierMain<InterruptSource::UART2TXINTR2, Names::IoServer>) > 0);
+        genericNotifierMain<Source::UART2TXINTR2, Names::IoServer>) > 0);
 
     for (;;) {
         Tid tid;
