@@ -128,10 +128,10 @@ void clockMain() {
 
 void clockNotifier() {
     auto clockTid = Tid(whoIs(Names::ClockServer));
-    Message notif{MsgType::Notify};
+    Message notify{MsgType::Notify};
     for (;;) {
         ASSERT(awaitEvent(InterruptSource::TC1UI) >= 0);
-        ASSERT(send(clockTid, notif, EmptyMessage) == 0);
+        ASSERT(send(clockTid, notify, EmptyMessage) == 0);
     }
 }
 }

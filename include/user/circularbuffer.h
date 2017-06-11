@@ -1,6 +1,7 @@
 #pragma once
 
 #include <std.h>
+#include <type_traits>
 
 namespace ctl {
 template <typename Data, ctl::size_t MaxSize>

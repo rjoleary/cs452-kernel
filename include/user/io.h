@@ -1,11 +1,9 @@
 // Input/Output
-
-#ifndef USER_IO_H__INCLUDED
-#define USER_IO_H__INCLUDED
+#pragma once
 
 #include "types.h"
 
-namespace ctl {
+namespace io {
 // getc - get a character from a UART.
 //
 // Description:
@@ -15,7 +13,7 @@ namespace ctl {
 //   How communication errors are handled is implementation-dependent.
 //
 //   getc is actually a wrapper for a send to the appropriate server.
-int getc(Tid tid, int uart);
+int getc(ctl::Tid tid, int uart);
 
 // putc - transmit a character from the given UART.
 //
@@ -31,7 +29,5 @@ int getc(Tid tid, int uart);
 // Returns:
 //   -ERR_OK: Success.
 //   -ERR_INVID: The server task id is not the task id of an existing task.
-int putc(Tid tid, int uart, char ch);
+int putc(ctl::Tid tid, int uart, char ch);
 }
-
-#endif // USER_IO_H__INCLUDED
