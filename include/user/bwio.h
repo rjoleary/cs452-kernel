@@ -41,4 +41,6 @@ void bwputw( int channel, int n, char fc, char *bf );
 
 void bwprintf( int channel, const char *format, ... );
 
+extern bool useBusyWait;
+
 #endif // USER_BWIO_H__INCLUDED

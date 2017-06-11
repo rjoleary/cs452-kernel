@@ -12,6 +12,11 @@
 #include <user/ts7200.h>
 
 using namespace kernel;
+using namespace ctl;
+
+// Maps from interrupt source to interrupt vector.
+// TODO: remove global
+static int src2vec[32] = {0};
 
 // Forward declarations
 const char* buildstr();
@@ -42,8 +47,14 @@ void initCaches() {
 }
 
 void initSerial() {
+    // COM1
+    bwsetspeed(COM1, 2400);
+    bwsetfifo(COM1, OFF);
+
+    // COM2
     bwsetspeed(COM2, 115200);
     bwsetfifo(COM2, OFF);
+    *(volatile unsigned*)(UART2_BASE + UART_CTLR_OFFSET) = RIEN_MASK | UARTEN_MASK;
 }
 
 void printEarlyDebug(unsigned *kernelStack) {
@@ -86,9 +97,18 @@ void initTimers() {
 }
 
 void initInterrupts() {
+    src2vec[(int)Source::TC1UI] = 0;
+    src2vec[(int)Source::TC2UI] = 1;
+    src2vec[(int)Source::UART1RXINTR1] = 2;
+    src2vec[(int)Source::UART1TXINTR1] = 3;
+    src2vec[(int)Source::UART2RXINTR2] = 4;
+    src2vec[(int)Source::UART2TXINTR2] = 5;
+
     interrupt::clearAll();
     interrupt::init();
-    interrupt::bind(ctl::Source::TC1UI, 0);
+    interrupt::bind(ctl::Source::TC1UI, src2vec[(int)Source::TC1UI]);
+    interrupt::bind(ctl::Source::UART2RXINTR2, src2vec[(int)Source::UART2RXINTR2]);
+    //interrupt::bind(ctl::Source::UART2TXINTR2, src2vec[(int)Source::UART2TXINTR2]);
 
     // Software Interrupt (SWI)
     auto SVC_ADDR = (void (*volatile*)())0x28;
@@ -118,8 +138,10 @@ int main() {
     TdManager tdManager(scheduler, userStacks[0] + STACK_SZ/4);
 
     // Enter main loop.
+    //useBusyWait = false; TODO
     void mainLoop(Scheduler &scheduler, TdManager &tdManager);
     mainLoop(scheduler, tdManager);
+    useBusyWait = true;
 
 #ifdef PROF_INTERVAL
     profilerStop();
@@ -154,8 +176,9 @@ void mainLoop(Scheduler &scheduler, TdManager &tdManager) {
                 auto notifier = (Td*)vic1addr;
                 if (notifier && notifier->state == RunState::EventBlocked) {
                     scheduler.readyTask(*notifier);
-                    interrupt::clear((ctl::Source)notifier->getArg(0), 0);
-                    switch (ctl::Source(notifier->getArg(0))) {
+                    auto src = ctl::Source(notifier->getArg(0));
+                    interrupt::clear(src, src2vec[(int)src]);
+                    switch (src) {
                         case ctl::Source::TC1UI: {
                             *(volatile unsigned*)(TIMER1_BASE + CLR_OFFSET) = 0;
                             notifier->setReturn(0);
@@ -164,11 +187,13 @@ void mainLoop(Scheduler &scheduler, TdManager &tdManager) {
 
                         case ctl::Source::UART2RXINTR2: {
                             // TODO
+                            PANIC("SUCCESS");
                             break;
                         }
 
                         case ctl::Source::UART2TXINTR2: {
                             // TODO
+                            PANIC("SUCCESS");
                             break;
                         }
 
@@ -293,8 +318,11 @@ void mainLoop(Scheduler &scheduler, TdManager &tdManager) {
         else if (active->getSyscall() == Syscall::AwaitEvent) {
             auto eventId = (ctl::Source)active->getArg(0);
             auto ret = (eventId == ctl::Source::TC1UI ||
+                eventId == ctl::Source::UART1RXINTR1 ||
+                eventId == ctl::Source::UART1TXINTR1 ||
                 eventId == ctl::Source::UART2RXINTR2 ||
-                eventId == ctl::Source::UART2TXINTR2 ) ? interrupt::setVal(eventId, 0, active) : -1;
+                eventId == ctl::Source::UART2TXINTR2 ) ?
+                interrupt::setVal(eventId, src2vec[(int)eventId], active) : -1;
             if (__builtin_expect(ret == 0, 1)) {
                 active->state = RunState::EventBlocked;
                 STRACE("  [%d] int awaitEvent(eventid=%d) = <BLOCKED>", active->tid, eventId);
@@ -345,8 +373,9 @@ void mainLoop(Scheduler &scheduler, TdManager &tdManager) {
 
         else if (active->getSyscall() == Syscall::Pass) {
             scheduler.readyTask(*active);
-            if (!(active->tid == ctl::IDLE_TID))
+            if (!(active->tid == ctl::IDLE_TID)) {
                 STRACE("  [%d] void pass()", active->tid);
+            }
         }
 
         else if (active->getSyscall() == Syscall::Exeunt) {
@@ -374,5 +403,4 @@ void mainLoop(Scheduler &scheduler, TdManager &tdManager) {
         // interrupts is ignored.
         active->sysTime += 0xffff - *(volatile unsigned*)(TIMER2_BASE + VAL_OFFSET);
     }
-
 }

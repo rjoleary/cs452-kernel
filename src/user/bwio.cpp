@@ -7,6 +7,9 @@
 
 #include <ts7200.h>
 #include <bwio.h>
+#include <io.h>
+#include <ns.h>
+#include <std.h>
 
 typedef volatile unsigned * register_t;
 
@@ -65,7 +68,19 @@ int bwsetspeed( int channel, int speed ) {
 	}
 }
 
+// Busy wait is initially enabled for early printing. During init, it is
+// disabled in favour of interrupts.
+bool useBusyWait = true;
+
 int bwputc( int channel, char c ) {
+	using namespace ctl;
+	if (!useBusyWait) {
+		static Tid io = whoIs(Names::IoServer);
+                ASSERT(io.underlying() >= 0);
+		io::putc(io, channel, c);
+		return 0;
+	}
+
 	register_t flags, data;
 	switch( channel ) {
 	case COM1:
@@ -122,28 +137,6 @@ void bwputw( int channel, int n, char fc, char *bf ) {
 	while( *p++ && n > 0 ) n--;
 	while( n-- > 0 ) bwputc( channel, fc );
 	while( ( ch = *bf++ ) ) bwputc( channel, ch );
-}
-
-int bwgetc( int channel ) {
-	register_t flags, data;
-	unsigned char c;
-
-	switch( channel ) {
-	case COM1:
-		flags = (register_t)( UART1_BASE + UART_FLAG_OFFSET );
-		data = (register_t)( UART1_BASE + UART_DATA_OFFSET );
-		break;
-	case COM2:
-		flags = (register_t)( UART2_BASE + UART_FLAG_OFFSET );
-		data = (register_t)( UART2_BASE + UART_DATA_OFFSET );
-		break;
-	default:
-		return -1;
-		break;
-	}
-	while ( !( *flags & RXFF_MASK ) ) ;
-	c = *data;
-	return c;
 }
 
 int bwa2d( char ch ) {

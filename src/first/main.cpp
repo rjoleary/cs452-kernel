@@ -6,9 +6,13 @@
 #include <std.h>
 #include <task.h>
 #include <itc.h>
+#include <io.h>
 
 // Forward declaration.
 void idleMain();
+namespace io {
+void ioMain();
+}
 
 namespace ctl {
 void nsMain();
@@ -39,7 +43,8 @@ void clientMain() {
 
 void firstMain() {
     ASSERT(Tid(create(PRIORITY_MIN, idleMain)) == IDLE_TID);
-    ASSERT(Tid(create(PRIORITY_MAX, nsMain)) == NS_TID);
+    ASSERT(Tid(create(Priority(PRIORITY_MAX.underlying() - 2), nsMain)) == NS_TID);
+    ASSERT(create(Priority(PRIORITY_MAX.underlying() - 1), io::ioMain) >= 0);
     ASSERT(create(Priority(30), clockMain) >= 0);
     ASSERT(create(Priority(30), clockNotifier) >= 0);
 
@@ -68,6 +73,15 @@ void firstMain() {
         (void)msg;
         Tid tid;
         ASSERT(receive(&tid, EmptyMessage) == 0);
+    }
+
+    // Echo
+    Tid io = whoIs(Names::IoServer);
+    ASSERT(io.underlying() >= 0);
+    for (;;) {
+        int c = io::getc(io, COM1);
+        ASSERT(c >= 0);
+        ASSERT(io::putc(io, COM2, c) >= 0);
     }
 }
 }

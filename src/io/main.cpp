@@ -75,10 +75,10 @@ void ioMain() {
     ASSERT(registerAs(Names::IoServer) == 0);
 
     // Create notifiers.
-    ASSERT(create(Priority(30),
+    ASSERT(create(PRIORITY_MAX,
         genericNotifierMain<Source::UART2RXINTR2, Names::IoServer>) > 0);
-    ASSERT(create(Priority(30),
-        genericNotifierMain<Source::UART2TXINTR2, Names::IoServer>) > 0);
+    //ASSERT(create(PRIORITY_MAX,
+    //    genericNotifierMain<Source::UART2TXINTR2, Names::IoServer>) > 0);
 
     for (;;) {
         Tid tid;
