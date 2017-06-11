@@ -13,6 +13,7 @@ volatile char * deduceDaisyChain(unsigned &iSrc) {
 
 namespace interrupt {
 void init() {
+    clearAll();
     *(volatile unsigned*)(0x38) = (unsigned)irqEntry;
     *(volatile unsigned*)(VIC1Base + VICxDefVectAddr) = 0xdeadbeef;
     *(volatile unsigned*)(VIC2Base + VICxDefVectAddr) = 0xdeadbeef;

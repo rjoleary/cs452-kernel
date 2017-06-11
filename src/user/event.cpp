@@ -3,7 +3,7 @@
 
 namespace ctl {
 int awaitEvent(Source a0) {
-    SYSCALL0R(kernel::Syscall::AwaitEvent)
+    SYSCALL1R(kernel::Syscall::AwaitEvent)
     return ret;
 }
 }

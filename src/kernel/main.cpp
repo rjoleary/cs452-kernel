@@ -145,21 +145,43 @@ void mainLoop(Scheduler &scheduler, TdManager &tdManager) {
         active->userTime += 0xffff - *(volatile unsigned*)(TIMER2_BASE + VAL_OFFSET);
         *(volatile unsigned*)(TIMER2_BASE + LDR_OFFSET) = 0xffff;
 
-        // Handle interrupt. (TODO: a bit hacky)
+        // Handle interrupt. (TODO: a bit messy)
         extern unsigned isIrq;
         if (isIrq) {
             isIrq = 0;
-            STRACE("RECEIVED INTERRUPT");
             auto vic1addr = *(volatile unsigned*)(0x800b0030);
             if (vic1addr != 0xdeadbeef) {
-                // TODO: only timer support for now
                 auto notifier = (Td*)vic1addr;
-                *(volatile unsigned*)(TIMER1_BASE + CLR_OFFSET) = 0;
-                *(volatile unsigned*)(0x800b0030) = 0;
                 if (notifier && notifier->state == RunState::EventBlocked) {
-                    notifier->setReturn(0);
                     scheduler.readyTask(*notifier);
                     interrupt::clear((ctl::Source)notifier->getArg(0), 0);
+                    switch (ctl::Source(notifier->getArg(0))) {
+                        case ctl::Source::TC1UI: {
+                            *(volatile unsigned*)(TIMER1_BASE + CLR_OFFSET) = 0;
+                            notifier->setReturn(0);
+                            break;
+                        }
+
+                        case ctl::Source::UART2RXINTR2: {
+                            // TODO
+                            break;
+                        }
+
+                        case ctl::Source::UART2TXINTR2: {
+                            // TODO
+                            break;
+                        }
+
+                        default: {
+                            bwprintf(COM2, "Unknown interrupt: %d\r\n", notifier->getArg(0));
+                            bwprintf(COM2, "TID: %d\r\n", notifier->tid);
+                            PANIC("Interrupt from unknown source");
+                        }
+                    }
+                    *(volatile unsigned*)(0x800b0030) = 0;
+                } else {
+                    // TODO: we still need to clear the interrupt when the
+                    // notifier is not in the blocked state!
                 }
                 active->interruptLinkReg();
                 scheduler.readyTask(*active);
@@ -270,15 +292,16 @@ void mainLoop(Scheduler &scheduler, TdManager &tdManager) {
         }
         else if (active->getSyscall() == Syscall::AwaitEvent) {
             auto eventId = (ctl::Source)active->getArg(0);
-            auto ret = interrupt::setVal(eventId, 0, active);
+            auto ret = (eventId == ctl::Source::TC1UI ||
+                eventId == ctl::Source::UART2RXINTR2 ||
+                eventId == ctl::Source::UART2TXINTR2 ) ? interrupt::setVal(eventId, 0, active) : -1;
             if (__builtin_expect(ret == 0, 1)) {
                 active->state = RunState::EventBlocked;
                 STRACE("  [%d] int awaitEvent(eventid=%d) = <BLOCKED>", active->tid, eventId);
-            }
-            else {
-                STRACE("  [%d] int awaitEvent(eventid=%d) = IN USE", active->tid, eventId);
+            } else {
+                STRACE("  [%d] int awaitEvent(eventid=%d) = %d", active->tid, eventId, ret);
                 scheduler.readyTask(*active);
-                active->setReturn(ret);
+                active->setReturn(-static_cast<int>(Error::InvId));
             }
         }
         else if (active->getSyscall() == Syscall::Create) {
@@ -293,9 +316,9 @@ void mainLoop(Scheduler &scheduler, TdManager &tdManager) {
                 ret = -static_cast<int>(Error::NoRes);
             } 
             else {
-                td->ptid      = active->tid;
-                td->pri       = priority;
-                td->sp        = userStacks[td->tid.underlying()] + kernel::STACK_SZ/4;
+                td->ptid = active->tid;
+                td->pri  = priority;
+                td->sp   = userStacks[td->tid.underlying()] + kernel::STACK_SZ/4;
                 td->initStack(code);
                 scheduler.readyTask(*td);
                 ret = td->tid.underlying();
