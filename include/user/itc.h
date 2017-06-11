@@ -1,7 +1,6 @@
 // Inter-task communication
 
-#ifndef USER_ITC_H__INCLUDED
-#define USER_ITC_H__INCLUDED
+#pragma once
 
 #include "syscall.h"
 #include "types.h"
@@ -57,6 +56,8 @@ int send(Tid tid, const T &msg, U &reply) {
     constexpr bool isEmptyRpl = std::is_same<std::decay_t<U>, EmptyMessage_t>::value;
     static_assert(alignof(T) >= alignof(unsigned) || isEmptyMsg, "Unaligned send msg");
     static_assert(alignof(U) >= alignof(unsigned) || isEmptyRpl, "Unaligned send reply");
+    static_assert((sizeof(T) % sizeof(unsigned)) == 0 || isEmptyMsg, "Bad send msg size");
+    static_assert((sizeof(U) % sizeof(unsigned)) == 0 || isEmptyRpl, "Bad send reply size");
     int a0 = tid.underlying();
     const void *a1 = isEmptyMsg ? nullptr : &msg;
     int a2 = isEmptyMsg ? 0 : sizeof(T);
@@ -97,6 +98,7 @@ template <typename T>
 int receive(Tid *a0, T &msg) {
     constexpr bool isEmpty = std::is_same<std::decay_t<T>, EmptyMessage_t>::value;
     static_assert(alignof(T) >= alignof(unsigned) || isEmpty, "Unaligned receive");
+    static_assert((sizeof(T) % sizeof(unsigned)) == 0 || isEmpty, "Bad receive size");
     void *a1 = isEmpty ? nullptr : &msg;
     int a2 = isEmpty ? 0 : sizeof(T);
     return detail::receive(a0, a1, a2);
@@ -127,11 +129,10 @@ template <typename T>
 int reply(Tid tid, T &msg) {
     constexpr bool isEmpty = std::is_same<std::decay_t<T>, EmptyMessage_t>::value;
     static_assert(alignof(T) >= alignof(unsigned) || isEmpty, "Unaligned reply");
+    static_assert((sizeof(T) % sizeof(unsigned)) == 0 || isEmpty, "Bad reply size");
     int a0 = tid.underlying();
     const void *a1 = isEmpty ? nullptr : &msg;
     int a2 = isEmpty ? 0 : sizeof(T);
     return detail::reply(a0, a1, a2);
 }
 }
-
-#endif // USER_ITC_H__INCLUDED
