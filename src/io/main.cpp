@@ -31,13 +31,17 @@ struct alignas(4) Reply {
     char data;
 };
 
-template <Source src, Names server>
+template <Source src, int uart, Names server>
 void genericNotifierMain() {
     auto serverTid = Tid(whoIs(server));
-    Message notify{MsgType::Notify};
+    Message message{MsgType::Notify, uart};
     for (;;) {
-        ASSERT(awaitEvent(src) >= 0);
-        ASSERT(send(serverTid, notify, EmptyMessage) == 0);
+        int c = awaitEvent(src);
+        // Ignore corrupt data.
+        if (c >= 0) {
+            message.data = c;
+            ASSERT(send(serverTid, message, EmptyMessage) == 0);
+        }
     }
 }
 }
@@ -76,7 +80,7 @@ void ioMain() {
 
     // Create notifiers.
     ASSERT(create(PRIORITY_MAX,
-        genericNotifierMain<Source::UART2RXINTR2, Names::IoServer>) > 0);
+        genericNotifierMain<Source::UART2RXINTR2, COM2, Names::IoServer>) > 0);
     //ASSERT(create(PRIORITY_MAX,
     //    genericNotifierMain<Source::UART2TXINTR2, Names::IoServer>) > 0);
 
@@ -87,7 +91,9 @@ void ioMain() {
 
         switch (msg.type) {
             case MsgType::Notify: {
-                // TODO
+                char data = msg.data;
+                bwputc(COM2, data);
+                ASSERT(reply(tid, EmptyMessage) == 0);
                 break;
             }
 

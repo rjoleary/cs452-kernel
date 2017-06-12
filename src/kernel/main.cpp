@@ -180,14 +180,15 @@ void mainLoop(Scheduler &scheduler, TdManager &tdManager) {
                     interrupt::clear(src, src2vec[(int)src]);
                     switch (src) {
                         case ctl::Source::TC1UI: {
-                            *(volatile unsigned*)(TIMER1_BASE + CLR_OFFSET) = 0;
                             notifier->setReturn(0);
+                            *(volatile unsigned*)(TIMER1_BASE + CLR_OFFSET) = 0;
                             break;
                         }
 
                         case ctl::Source::UART2RXINTR2: {
-                            // TODO
-                            PANIC("SUCCESS");
+                            unsigned c = *(volatile unsigned*)(UART2_BASE + UART_DATA_OFFSET);
+                            notifier->setReturn(c & 0xff);
+                            *(volatile unsigned*)(UART2_BASE + UART_INTR_OFFSET) |= ~(RIS_MASK);
                             break;
                         }
 

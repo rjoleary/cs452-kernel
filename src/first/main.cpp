@@ -81,7 +81,8 @@ void firstMain() {
     for (;;) {
         int c = io::getc(io, COM1);
         ASSERT(c >= 0);
-        ASSERT(io::putc(io, COM2, c) >= 0);
+        bwputc(COM2, c);
+        //ASSERT(io::putc(io, COM2, c) >= 0);
     }
 }
 }
