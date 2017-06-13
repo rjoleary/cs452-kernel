@@ -14,9 +14,6 @@
 using namespace kernel;
 using namespace ctl;
 
-// Maps from interrupt source to interrupt vector.
-// TODO: remove global
-static int src2vec[32] = {0};
 
 // Forward declarations
 const char* buildstr();
@@ -97,18 +94,10 @@ void initTimers() {
 }
 
 void initInterrupts() {
-    src2vec[(int)Source::TC1UI] = 0;
-    src2vec[(int)Source::TC2UI] = 1;
-    src2vec[(int)Source::UART1RXINTR1] = 2;
-    src2vec[(int)Source::UART1TXINTR1] = 3;
-    src2vec[(int)Source::UART2RXINTR2] = 4;
-    src2vec[(int)Source::UART2TXINTR2] = 5;
-
     interrupt::clearAll();
     interrupt::init();
-    interrupt::bind(ctl::Source::TC1UI, src2vec[(int)Source::TC1UI]);
-    interrupt::bind(ctl::Source::UART2RXINTR2, src2vec[(int)Source::UART2RXINTR2]);
-    interrupt::bind(ctl::Source::UART2TXINTR2, src2vec[(int)Source::UART2TXINTR2]);
+    interrupt::bind(ctl::Source::TC1UI);
+    interrupt::bind(ctl::Source::INT_UART2);
 
     // Software Interrupt (SWI)
     auto SVC_ADDR = (void (*volatile*)())0x28;
@@ -174,10 +163,11 @@ void mainLoop(Scheduler &scheduler, TdManager &tdManager) {
             auto vic1addr = *(volatile unsigned*)(0x800b0030);
             if (vic1addr != 0xdeadbeef) {
                 auto notifier = (Td*)vic1addr;
-                if (notifier && notifier->state == RunState::EventBlocked) {
+                if (notifier) {
+                    if (notifier->state != RunState::EventBlocked)
+                        PANIC("Bad!");
                     scheduler.readyTask(*notifier);
                     auto src = ctl::Source(notifier->getArg(0));
-                    interrupt::clear(src, src2vec[(int)src]);
                     switch (src) {
                         case ctl::Source::TC1UI: {
                             notifier->setReturn(0);
@@ -185,14 +175,7 @@ void mainLoop(Scheduler &scheduler, TdManager &tdManager) {
                             break;
                         }
 
-                        case ctl::Source::UART2RXINTR2: {
-                            unsigned c = *(volatile unsigned*)(UART2_BASE + UART_DATA_OFFSET);
-                            notifier->setReturn(c & 0xff);
-                            // TODO: corruption
-                            break;
-                        }
-
-                        case ctl::Source::UART2TXINTR2: {
+                        case ctl::Source::INT_UART2: {
                             ((void (*)())(0xdeadbeef))();
                             notifier->setReturn(0);
                             break;
@@ -204,11 +187,12 @@ void mainLoop(Scheduler &scheduler, TdManager &tdManager) {
                             PANIC("Interrupt from unknown source");
                         }
                     }
-                    *(volatile unsigned*)(0x800b0030) = 0;
+                    interrupt::clear(src);
                 } else {
                     // TODO: we still need to clear the interrupt when the
                     // notifier is not in the blocked state!
                 }
+                *(volatile unsigned*)(0x800b0030) = 0;
                 active->interruptLinkReg();
                 scheduler.readyTask(*active);
                 continue;
@@ -319,11 +303,9 @@ void mainLoop(Scheduler &scheduler, TdManager &tdManager) {
         else if (active->getSyscall() == Syscall::AwaitEvent) {
             auto eventId = (ctl::Source)active->getArg(0);
             auto ret = (eventId == ctl::Source::TC1UI ||
-                eventId == ctl::Source::UART1RXINTR1 ||
-                eventId == ctl::Source::UART1TXINTR1 ||
-                eventId == ctl::Source::UART2RXINTR2 ||
-                eventId == ctl::Source::UART2TXINTR2 ) ?
-                interrupt::setVal(eventId, src2vec[(int)eventId], active) : -1;
+                eventId == ctl::Source::INT_UART1 ||
+                eventId == ctl::Source::INT_UART2 ) ?
+                interrupt::setVal(eventId, active) : -1;
             if (__builtin_expect(ret == 0, 1)) {
                 active->state = RunState::EventBlocked;
                 STRACE("  [%d] int awaitEvent(eventid=%d) = <BLOCKED>", active->tid, eventId);

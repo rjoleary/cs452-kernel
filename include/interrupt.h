@@ -32,9 +32,9 @@ void clearAll();
 // Bind an interrupt to a address. When the interrupt is triggered, control is
 // transferred to that address. To return from the interrupt, run the
 // instruction `subs pc, lr`. Interrupts are initially disabled.
-void bind(ctl::Source src, unsigned vector);
-int setVal(ctl::Source src, unsigned vector, void *isr);
-void clear(ctl::Source src, unsigned vector);
+void bind(ctl::Source src);
+int setVal(ctl::Source src, void *isr);
+void clear(ctl::Source src);
 }
 
 }

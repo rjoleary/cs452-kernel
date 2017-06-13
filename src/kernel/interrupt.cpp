@@ -10,10 +10,19 @@ volatile char * deduceDaisyChain(unsigned &iSrc) {
     iSrc %= 32;
     return base;
 }
+
+// Maps from interrupt source to interrupt vector.
+// TODO: remove global
+static int src2vec[64];
 }
 
 namespace interrupt {
 void init() {
+    src2vec[(int)ctl::Source::TC1UI] = 0;
+    src2vec[(int)ctl::Source::TC2UI] = 1;
+    src2vec[(int)ctl::Source::INT_UART1] = 2;
+    src2vec[(int)ctl::Source::INT_UART2] = 3;
+
     clearAll();
     *(volatile unsigned*)(0x38) = (unsigned)irqEntry;
     *(volatile unsigned*)(VIC1Base + VICxDefVectAddr) = 0xdeadbeef;
@@ -29,8 +38,9 @@ void clearAll() {
     *(volatile unsigned*)(VIC2Base + VICxIntSelect) = 0;
 }
 
-void bind(ctl::Source src, unsigned vector) {
+void bind(ctl::Source src) {
     auto iSrc = static_cast<unsigned>(src);
+    auto vector = src2vec[iSrc];
     auto base = deduceDaisyChain(iSrc);
     // 1. Set the address of the interrupt handler.
     *(volatile void**)(base + VICxVectAddr0 + vector*4) = nullptr;
@@ -40,8 +50,9 @@ void bind(ctl::Source src, unsigned vector) {
     *(volatile unsigned*)(base + VICxIntEnable) = 1 << iSrc;
 }
 
-int setVal(ctl::Source src, unsigned vector, void *isr) {
+int setVal(ctl::Source src, void *isr) {
     auto iSrc = static_cast<unsigned>(src);
+    auto vector = src2vec[iSrc];
     auto base = deduceDaisyChain(iSrc);
     auto addr = (volatile void**)(base + VICxVectAddr0 + vector*4);
     if (*addr != nullptr) return -1;
@@ -49,8 +60,9 @@ int setVal(ctl::Source src, unsigned vector, void *isr) {
     return 0;
 }
 
-void clear(ctl::Source src, unsigned vector) {
+void clear(ctl::Source src) {
     auto iSrc = static_cast<unsigned>(src);
+    auto vector = src2vec[iSrc];
     auto base = deduceDaisyChain(iSrc);
     auto addr = (volatile void**)(base + VICxVectAddr0 + vector*4);
     *addr = nullptr;

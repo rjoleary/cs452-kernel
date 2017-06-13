@@ -14,7 +14,7 @@
 using namespace ctl;
 
 namespace {
-enum MsgType {
+enum class MsgType {
     NotifyRx,
     NotifyTx,
     GetC,
@@ -31,15 +31,27 @@ struct alignas(4) Reply {
     char data;
 };
 
-template <Source src, MsgType msg, Names server>
+template <Source src, Names server>
 void genericNotifierMain() {
     auto serverTid = Tid(whoIs(server));
-    Message message{msg};
     for (;;) {
+        Message message;
         int c = awaitEvent(src);
+
         // Ignore corrupt data.
         if (c >= 0) {
-            message.data = c;
+            auto interruptType = 
+                *(volatile unsigned*)(UART2_BASE + UART_INTR_OFFSET);
+            if (interruptType & RIS_MASK) {
+                message.type = MsgType::NotifyRx;
+                message.data = *(volatile unsigned*)(UART2_BASE + UART_DATA_OFFSET) & 0xff;
+            }
+            else if (interruptType & TIS_MASK) {
+                message.type = MsgType::NotifyTx;
+                message.data = 0;
+            }
+            // Ignore other interrupt reasons
+            else continue;
             ASSERT(send(serverTid, message, EmptyMessage) == 0);
         }
     }
@@ -80,9 +92,7 @@ void ioMain() {
 
     // Create notifiers.
     ASSERT(create(PRIORITY_MAX,
-        genericNotifierMain<Source::UART2RXINTR2, MsgType::NotifyRx, Names::IoServer>) > 0);
-    ASSERT(create(PRIORITY_MAX,
-        genericNotifierMain<Source::UART2TXINTR2, MsgType::NotifyTx, Names::IoServer>) > 0);
+        genericNotifierMain<Source::INT_UART2, Names::IoServer>) > 0);
 
     // Buffers for asynchronicity
     typedef CircularBuffer<char,1024> CharBuffer;
@@ -102,6 +112,7 @@ void ioMain() {
                 if (blockQueue.empty()) {
                     rxQueue.push(msg.data);
                 } else {
+                    ASSERT(rxQueue.empty());
                     Reply rply{msg.data};
                     ASSERT(reply(blockQueue.pop(), rply) == 0);
                 }
@@ -114,8 +125,8 @@ void ioMain() {
                 if (txQueue.empty()) {
                     txFull = false;
                 } else {
+                    ASSERT(txFull);
                     *(volatile unsigned*)(UART2_BASE + UART_DATA_OFFSET) = txQueue.pop();
-                    txFull = true;
                 }
                 break;
             }
@@ -134,8 +145,8 @@ void ioMain() {
                 if (txFull) {
                     txQueue.push(msg.data);
                 } else {
+                    txFull = true;
                     *(volatile unsigned*)(UART2_BASE + UART_DATA_OFFSET) = msg.data;
-                    //txFull = true; TODO
                 }
                 ASSERT(reply(tid, EmptyMessage) == 0);
                 break;
