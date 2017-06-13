@@ -54,7 +54,7 @@ void initSerial() {
     // COM2
     bwsetspeed(COM2, 115200);
     bwsetfifo(COM2, OFF);
-    *(volatile unsigned*)(UART2_BASE + UART_CTLR_OFFSET) = RIEN_MASK | UARTEN_MASK;
+    *(volatile unsigned*)(UART2_BASE + UART_CTLR_OFFSET) = RIEN_MASK | TIEN_MASK | UARTEN_MASK;
 }
 
 void printEarlyDebug(unsigned *kernelStack) {
@@ -108,7 +108,7 @@ void initInterrupts() {
     interrupt::init();
     interrupt::bind(ctl::Source::TC1UI, src2vec[(int)Source::TC1UI]);
     interrupt::bind(ctl::Source::UART2RXINTR2, src2vec[(int)Source::UART2RXINTR2]);
-    //interrupt::bind(ctl::Source::UART2TXINTR2, src2vec[(int)Source::UART2TXINTR2]);
+    interrupt::bind(ctl::Source::UART2TXINTR2, src2vec[(int)Source::UART2TXINTR2]);
 
     // Software Interrupt (SWI)
     auto SVC_ADDR = (void (*volatile*)())0x28;
@@ -138,7 +138,7 @@ int main() {
     TdManager tdManager(scheduler, userStacks[0] + STACK_SZ/4);
 
     // Enter main loop.
-    //useBusyWait = false; TODO
+    useBusyWait = false;
     void mainLoop(Scheduler &scheduler, TdManager &tdManager);
     mainLoop(scheduler, tdManager);
     useBusyWait = true;
@@ -188,12 +188,12 @@ void mainLoop(Scheduler &scheduler, TdManager &tdManager) {
                         case ctl::Source::UART2RXINTR2: {
                             unsigned c = *(volatile unsigned*)(UART2_BASE + UART_DATA_OFFSET);
                             notifier->setReturn(c & 0xff);
+                            // TODO: corruption
                             break;
                         }
 
                         case ctl::Source::UART2TXINTR2: {
-                            // TODO
-                            PANIC("SUCCESS");
+                            notifier->setReturn(0);
                             break;
                         }
 

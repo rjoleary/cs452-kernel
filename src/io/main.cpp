@@ -9,12 +9,14 @@
 #include <itc.h>
 #include <ns.h>
 #include <task.h>
+#include <ts7200.h>
 
 using namespace ctl;
 
 namespace {
 enum MsgType {
-    Notify,
+    NotifyRx,
+    NotifyTx,
     GetC,
     PutC,
 };
@@ -29,10 +31,10 @@ struct alignas(4) Reply {
     char data;
 };
 
-template <Source src, int uart, Names server>
+template <Source src, MsgType msg, Names server>
 void genericNotifierMain() {
     auto serverTid = Tid(whoIs(server));
-    Message message{MsgType::Notify, uart};
+    Message message{msg};
     for (;;) {
         int c = awaitEvent(src);
         // Ignore corrupt data.
@@ -78,12 +80,14 @@ void ioMain() {
 
     // Create notifiers.
     ASSERT(create(PRIORITY_MAX,
-        genericNotifierMain<Source::UART2RXINTR2, COM2, Names::IoServer>) > 0);
-    //ASSERT(create(PRIORITY_MAX,
-    //    genericNotifierMain<Source::UART2TXINTR2, Names::IoServer>) > 0);
+        genericNotifierMain<Source::UART2RXINTR2, MsgType::NotifyRx, Names::IoServer>) > 0);
+    ASSERT(create(PRIORITY_MAX,
+        genericNotifierMain<Source::UART2TXINTR2, MsgType::NotifyTx, Names::IoServer>) > 0);
 
+    // Buffers for asynchronicity
     typedef CircularBuffer<char,1024> CharBuffer;
-    CharBuffer rxQueue;
+    CharBuffer rxQueue, txQueue;
+    bool txFull = false;
     CircularBuffer<Tid, NUM_TD> blockQueue;
 
     for (;;) {
@@ -92,7 +96,7 @@ void ioMain() {
         ASSERT(receive(&tid, msg) == sizeof(msg));
 
         switch (msg.type) {
-            case MsgType::Notify: {
+            case MsgType::NotifyRx: {
                 // Reply immediately so we don't miss any interrupts.
                 ASSERT(reply(tid, EmptyMessage) == 0);
                 if (blockQueue.empty()) {
@@ -100,6 +104,18 @@ void ioMain() {
                 } else {
                     Reply rply{msg.data};
                     ASSERT(reply(blockQueue.pop(), rply) == 0);
+                }
+                break;
+            }
+
+            case MsgType::NotifyTx: {
+                // Reply immediately so we don't miss any interrupts.
+                ASSERT(reply(tid, EmptyMessage) == 0);
+                if (txQueue.empty()) {
+                    txFull = false;
+                } else {
+                    *(volatile unsigned*)(UART2_BASE + UART_DATA_OFFSET) = txQueue.pop();
+                    txFull = true;
                 }
                 break;
             }
@@ -115,7 +131,13 @@ void ioMain() {
             }
 
             case MsgType::PutC: {
-                // TODO
+                if (txFull) {
+                    txQueue.push(msg.data);
+                } else {
+                    *(volatile unsigned*)(UART2_BASE + UART_DATA_OFFSET) = txQueue.pop();
+                    txFull = true;
+                }
+                ASSERT(reply(tid, EmptyMessage));
                 break;
             }
 
