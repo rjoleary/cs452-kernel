@@ -188,7 +188,6 @@ void mainLoop(Scheduler &scheduler, TdManager &tdManager) {
                         case ctl::Source::UART2RXINTR2: {
                             unsigned c = *(volatile unsigned*)(UART2_BASE + UART_DATA_OFFSET);
                             notifier->setReturn(c & 0xff);
-                            *(volatile unsigned*)(UART2_BASE + UART_INTR_OFFSET) |= ~(RIS_MASK);
                             break;
                         }
 
