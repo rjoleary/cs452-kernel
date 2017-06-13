@@ -193,6 +193,7 @@ void mainLoop(Scheduler &scheduler, TdManager &tdManager) {
                         }
 
                         case ctl::Source::UART2TXINTR2: {
+                            ((void (*)())(0xdeadbeef))();
                             notifier->setReturn(0);
                             break;
                         }

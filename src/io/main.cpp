@@ -135,7 +135,7 @@ void ioMain() {
                     txQueue.push(msg.data);
                 } else {
                     *(volatile unsigned*)(UART2_BASE + UART_DATA_OFFSET) = msg.data;
-                    txFull = true;
+                    //txFull = true; TODO
                 }
                 ASSERT(reply(tid, EmptyMessage) == 0);
                 break;
