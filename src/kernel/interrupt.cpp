@@ -1,4 +1,5 @@
 #include <interrupt.h>
+#include <user/bwio.h>
 
 extern "C" void irqEntry();
 
@@ -32,9 +33,9 @@ void bind(ctl::Source src, unsigned vector) {
     auto iSrc = static_cast<unsigned>(src);
     auto base = deduceDaisyChain(iSrc);
     // 1. Set the address of the interrupt handler.
-    *(volatile void**)(base + VICxVectAddr0 + vector) = nullptr;
+    *(volatile void**)(base + VICxVectAddr0 + vector*4) = nullptr;
     // 2. Set the interrupt source and enable.
-    *(volatile unsigned*)(base + VICxVectCntl0 + vector) = 0x20 | iSrc;
+    *(volatile unsigned*)(base + VICxVectCntl0 + vector*4) = 0x20 | iSrc;
     // 3. Enable the interrupt
     *(volatile unsigned*)(base + VICxIntEnable) = 1 << iSrc;
 }
@@ -42,7 +43,7 @@ void bind(ctl::Source src, unsigned vector) {
 int setVal(ctl::Source src, unsigned vector, void *isr) {
     auto iSrc = static_cast<unsigned>(src);
     auto base = deduceDaisyChain(iSrc);
-    auto addr = (volatile void**)(base + VICxVectAddr0 + vector);
+    auto addr = (volatile void**)(base + VICxVectAddr0 + vector*4);
     if (*addr != nullptr) return -1;
     *addr = isr;
     return 0;
@@ -51,7 +52,7 @@ int setVal(ctl::Source src, unsigned vector, void *isr) {
 void clear(ctl::Source src, unsigned vector) {
     auto iSrc = static_cast<unsigned>(src);
     auto base = deduceDaisyChain(iSrc);
-    auto addr = (volatile void**)(base + VICxVectAddr0 + vector);
+    auto addr = (volatile void**)(base + VICxVectAddr0 + vector*4);
     *addr = nullptr;
 }
 }

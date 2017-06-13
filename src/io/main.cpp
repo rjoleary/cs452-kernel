@@ -134,10 +134,10 @@ void ioMain() {
                 if (txFull) {
                     txQueue.push(msg.data);
                 } else {
-                    *(volatile unsigned*)(UART2_BASE + UART_DATA_OFFSET) = txQueue.pop();
+                    *(volatile unsigned*)(UART2_BASE + UART_DATA_OFFSET) = msg.data;
                     txFull = true;
                 }
-                ASSERT(reply(tid, EmptyMessage));
+                ASSERT(reply(tid, EmptyMessage) == 0);
                 break;
             }
 
