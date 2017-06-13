@@ -13,8 +13,6 @@
 using namespace ctl;
 
 namespace {
-typedef CircularBuffer<char,128> CharBuffer;
-
 enum MsgType {
     Notify,
     GetC,
@@ -84,6 +82,10 @@ void ioMain() {
     //ASSERT(create(PRIORITY_MAX,
     //    genericNotifierMain<Source::UART2TXINTR2, Names::IoServer>) > 0);
 
+    typedef CircularBuffer<char,1024> CharBuffer;
+    CharBuffer rxQueue;
+    CircularBuffer<Tid, NUM_TD> blockQueue;
+
     for (;;) {
         Tid tid;
         Message msg;
@@ -91,14 +93,24 @@ void ioMain() {
 
         switch (msg.type) {
             case MsgType::Notify: {
-                char data = msg.data;
-                bwputc(COM2, data);
+                // Reply immediately so we don't miss any interrupts.
                 ASSERT(reply(tid, EmptyMessage) == 0);
+                if (blockQueue.empty()) {
+                    rxQueue.push(msg.data);
+                } else {
+                    Reply rply{msg.data};
+                    ASSERT(reply(blockQueue.pop(), rply) == 0);
+                }
                 break;
             }
 
             case MsgType::GetC: {
-                // TODO
+                if (rxQueue.empty()) {
+                    blockQueue.push(tid);
+                } else {
+                    Reply rply{rxQueue.pop()};
+                    ASSERT(reply(tid, rply) == 0);
+                }
                 break;
             }
 
