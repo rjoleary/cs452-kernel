@@ -135,7 +135,7 @@ void ioMain() {
                     txFull = tid;
                 } else {
                     Reply rply{txQueue.pop()};
-                    ASSERT(reply(txFull, rply) == 0);
+                    ASSERT(reply(tid, rply) == 0);
                     txFull = INVALID_TID;
                 }
                 break;
