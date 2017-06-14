@@ -52,6 +52,7 @@ struct Td {
     Td *nextReady = nullptr;         // next TD in the ready queue, or NULL
     Td *sendBegin = nullptr,         // queue for senders
        *sendEnd;
+    Td *nextIntr;                    // for multiple tds waiting on one interrupt
     RunState state;                  // current run state
     unsigned *sp;                    // current stack pointer
     unsigned userTime = 0;           // number of 508kHz ticks spent in this task

@@ -2,6 +2,9 @@
 #include <user/event.h>
 
 namespace kernel {
+// Forward declare
+struct Td;
+
 // Manual for the interrupt controller:
 //     http://infocenter.arm.com/help/topic/com.arm.doc.ddi0181e/DDI0181.pdf
 volatile char *const VIC1Base = (char *)(0x800b0000);
@@ -49,8 +52,8 @@ void clearAll();
 // transferred to that address. To return from the interrupt, run the
 // instruction `subs pc, lr`. Interrupts are initially disabled.
 void bind(Source src);
-int setVal(ctl::Event eventId, void *isr);
-int setVal(Source src, void *isr);
+int setVal(ctl::Event eventId, Td *td);
+int setVal(Source src, Td *td);
 void clear(ctl::Event eventId);
 void clear(Source src);
 }

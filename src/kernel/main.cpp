@@ -163,9 +163,10 @@ void mainLoop(Scheduler &scheduler, TdManager &tdManager) {
             auto vic1addr = *(volatile unsigned*)(0x800b0030);
             if (vic1addr != 0xdeadbeef) {
                 auto notifier = (Td*)vic1addr;
-                if (notifier) {
-                    if (notifier->state != RunState::EventBlocked)
-                        PANIC("Bad!");
+                while (notifier) {
+                    if (notifier->state != RunState::EventBlocked) {
+                        PANIC("awakening notifier not in blocked state");
+                    }
                     scheduler.readyTask(*notifier);
                     auto eventId = ctl::Event(notifier->getArg(0));
                     switch (eventId) {
@@ -194,10 +195,12 @@ void mainLoop(Scheduler &scheduler, TdManager &tdManager) {
                         }
                     }
                     interrupt::clear(eventId);
-                } else {
-                    // TODO: we still need to clear the interrupt when the
-                    // notifier is not in the blocked state!
+
+                    // Iterate over linked list
+                    notifier = notifier->nextIntr;
                 }
+                // TODO: we still need to clear the interrupt when the
+                // no notifier is not in the blocked state!
                 *(volatile unsigned*)(0x800b0030) = 0;
                 active->interruptLinkReg();
                 scheduler.readyTask(*active);

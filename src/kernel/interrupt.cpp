@@ -1,6 +1,7 @@
 #include <interrupt.h>
 #include <user/bwio.h>
 #include <panic.h>
+#include <task.h>
 
 extern "C" void irqEntry();
 
@@ -65,17 +66,18 @@ void bind(interrupt::Source src) {
     *(volatile unsigned*)(base + VICxIntEnable) = 1 << iSrc;
 }
 
-int setVal(ctl::Event eventId, void *isr) {
-    return setVal(mapEventToSource(eventId), isr);
+int setVal(ctl::Event eventId, Td *td) {
+    return setVal(mapEventToSource(eventId), td);
 }
 
-int setVal(interrupt::Source src, void *isr) {
+int setVal(interrupt::Source src, Td *td) {
     auto iSrc = static_cast<unsigned>(src);
     auto vector = src2vec[iSrc];
     auto base = deduceDaisyChain(iSrc);
     auto addr = (volatile void**)(base + VICxVectAddr0 + vector*4);
-    if (*addr != nullptr) return -1;
-    *addr = isr;
+    // Insert into queue
+    td->nextIntr = (Td*)*addr;
+    *addr = td;
     return 0;
 }
 
