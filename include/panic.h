@@ -6,7 +6,6 @@
 
 #define PANIC(str)                                        \
     do {                                                  \
-    ((void (*)())(0xdeadbeef))(); /* TODO: temporary */   \
     asm volatile (                                        \
         "stmfd sp, {r0-r15}\n\t"                          \
         "add sp, sp, #-64\n\t"                            \
