@@ -33,14 +33,13 @@ struct alignas(4) Reply {
 
 template <Source src, Names server>
 void genericNotifierMain() {
-    bwprintf(COM2, "Hello, I'm a uart notifier and my tid is %d\r\n", myTid());
-
     auto serverTid = Tid(whoIs(server));
     for (;;) {
         Message message;
         ASSERT(awaitEvent(src) == 0);
         auto interruptType =
             *(volatile unsigned*)(UART2_BASE + UART_INTR_OFFSET);
+        bwprintf(COM2, "interruptype: %d\r\n", interruptType);
         // Allow servicing of RX and TX interrupts at the same time.
         if (interruptType & RIS_MASK) {
             message.type = MsgType::NotifyRx;

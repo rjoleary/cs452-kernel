@@ -159,6 +159,7 @@ void mainLoop(Scheduler &scheduler, TdManager &tdManager) {
         // Handle interrupt. (TODO: a bit messy)
         extern unsigned isIrq;
         if (isIrq) {
+            bwputc(COM2, '.');
             isIrq = 0;
             auto vic1addr = *(volatile unsigned*)(0x800b0030);
             if (vic1addr != 0xdeadbeef) {
