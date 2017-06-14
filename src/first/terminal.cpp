@@ -5,6 +5,7 @@
 #include <io.h>
 #include <std.h>
 #include <parse.h>
+#include <event.h>
 
 using namespace ctl;
 
@@ -61,6 +62,23 @@ void restorecur() {
     bwputstr(COM2, restore);
 }
 
+void timerMain() {
+    int tenths = 0;
+    for (;;) {
+        for (int i = 0; i < 10; i++) {
+            awaitEvent(Event::PeriodicTimer, 0);
+        }
+        tenths++;
+        savecur();
+        setpos(1, 0);
+        bwprintf(COM2, "%02d:%02d.%d", 
+            tenths / 10 / 60, // minutes
+            tenths / 10 % 60, // seconds
+            tenths % 10); // tenths of a second
+        restorecur();
+    }
+}
+
 void runTerminal() {
     // Clear display.
     setpos(0, 0);
@@ -75,6 +93,9 @@ void runTerminal() {
     restorecur();
     bwputstr(COM2, prompt);
 
+    // Create timer.
+    // Timer must be higher priority than terminal, otherwise output gets jumbled.
+    ASSERT(create(Priority(28), timerMain) >= 0);
 
     bool isStopped;
     unsigned cmdsz = 0;
