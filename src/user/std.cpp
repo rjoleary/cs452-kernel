@@ -29,6 +29,14 @@ char *strncpy(char *dest, const char *src, size_t n) {
     }
     return dest;
 }
+
+size_t strlen(const char *s) {
+    size_t n = 0;
+    while (*(s++)) {
+        n++;
+    }
+    return n;
+}
 }
 
 #include <bwio.h>

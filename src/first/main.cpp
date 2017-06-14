@@ -10,6 +10,7 @@
 
 // Forward declaration.
 void idleMain();
+void runTerminal();
 namespace io {
 extern void (*ioMainUart1)();
 extern void (*ioMainUart2)();
@@ -77,15 +78,6 @@ void firstMain() {
         ASSERT(receive(&tid, EmptyMessage) == 0);
     }
 
-    bwputc(COM1, 97);
-    // Echo
-    Tid io = whoIs(Names::IoServerUart2);
-    ASSERT(io.underlying() >= 0);
-    for (;;) {
-        int c = io::getc(io, COM1);
-        ASSERT(c >= 0);
-        bwputc(COM2, c);
-        //ASSERT(io::putc(io, COM2, c) >= 0);
-    }
+    runTerminal();
 }
 }

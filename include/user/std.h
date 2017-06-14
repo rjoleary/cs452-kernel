@@ -6,6 +6,7 @@
 #define memset  __builtin_memset
 #define memcmp  __builtin_memcmp
 #define strncpy __builtin_strncpy
+#define strlen  __builtin_strlen
 
 extern "C"
 void fast_memcpy(unsigned *dest, const unsigned *source, int num);
