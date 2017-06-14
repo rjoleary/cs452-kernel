@@ -163,28 +163,38 @@ void mainLoop(Scheduler &scheduler, TdManager &tdManager) {
             auto vic1addr = *(volatile unsigned*)(0x800b0030);
             if (vic1addr != 0xdeadbeef) {
                 auto notifier = (Td*)vic1addr;
+                if (notifier) {
+                    interrupt::clear(ctl::Event(notifier->getArg(0)));
+                }
                 while (notifier) {
                     if (notifier->state != RunState::EventBlocked) {
                         PANIC("awakening notifier not in blocked state");
                     }
-                    scheduler.readyTask(*notifier);
+                    bool handled = false;
                     auto eventId = ctl::Event(notifier->getArg(0));
                     switch (eventId) {
                         case ctl::Event::PeriodicTimer: {
                             notifier->setReturn(0);
                             *(volatile unsigned*)(TIMER1_BASE + CLR_OFFSET) = 0;
+                            handled = true;
                             break;
                         }
 
                         case ctl::Event::Uart2Rx: {
-                            *(volatile unsigned*)(UART2_BASE + UART_CTLR_OFFSET) &= ~RIEN_MASK;
-                            notifier->setReturn(*(volatile unsigned*)(UART2_BASE + UART_DATA_OFFSET) & 0xff);
+                            if (*(volatile unsigned*)(UART2_BASE + UART_INTR_OFFSET) & RIS_MASK) {
+                                *(volatile unsigned*)(UART2_BASE + UART_CTLR_OFFSET) &= ~RIEN_MASK;
+                                notifier->setReturn(*(volatile unsigned*)(UART2_BASE + UART_DATA_OFFSET) & 0xff);
+                                handled = true;
+                            }
                             break;
                         }
 
                         case ctl::Event::Uart2Tx: {
-                            *(volatile unsigned*)(UART2_BASE + UART_CTLR_OFFSET) &= ~TIEN_MASK;
-                            notifier->setReturn(0);
+                            if (*(volatile unsigned*)(UART2_BASE + UART_INTR_OFFSET) & TIS_MASK) {
+                                *(volatile unsigned*)(UART2_BASE + UART_CTLR_OFFSET) &= ~TIEN_MASK;
+                                notifier->setReturn(0);
+                                handled = true;
+                            }
                             break;
                         }
 
@@ -194,7 +204,12 @@ void mainLoop(Scheduler &scheduler, TdManager &tdManager) {
                             PANIC("Interrupt from unknown source");
                         }
                     }
-                    interrupt::clear(eventId);
+                    if (handled) {
+                        scheduler.readyTask(*notifier);
+                    } else {
+                        // Register the interrupt again.
+                        interrupt::setVal(eventId, notifier);
+                    }
 
                     // Iterate over linked list
                     notifier = notifier->nextIntr;
@@ -312,11 +327,16 @@ void mainLoop(Scheduler &scheduler, TdManager &tdManager) {
                 eventId == ctl::Event::Uart2Tx ) ?
                 interrupt::setVal(eventId, active) : -1;
             if (__builtin_expect(ret == 0, 1)) {
-                if (eventId == ctl::Event::Uart2Tx) {
-                    *(volatile unsigned*)(UART2_BASE + UART_CTLR_OFFSET) |= TIEN_MASK;
-                    *(volatile unsigned*)(UART2_BASE + UART_DATA_OFFSET) = active->getArg(1);
-                } else if (eventId == ctl::Event::Uart2Rx) {
-                    *(volatile unsigned*)(UART2_BASE + UART_CTLR_OFFSET) |= RIEN_MASK;
+                switch (eventId) {
+                    case ctl::Event::Uart2Tx:
+                        *(volatile unsigned*)(UART2_BASE + UART_CTLR_OFFSET) |= TIEN_MASK;
+                        *(volatile unsigned*)(UART2_BASE + UART_DATA_OFFSET) = active->getArg(1);
+                        break;
+                    case ctl::Event::Uart2Rx:
+                        *(volatile unsigned*)(UART2_BASE + UART_CTLR_OFFSET) |= RIEN_MASK;
+                        break;
+                    default:
+                        break;
                 }
                 active->state = RunState::EventBlocked;
                 STRACE("  [%d] int awaitEvent(eventid=%d) = <BLOCKED>", active->tid, eventId);
