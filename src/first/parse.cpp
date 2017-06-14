@@ -186,7 +186,6 @@ int parseCmd(const char *cmd) {
         if (terminateCmd(cmdStart, cmd)) {
             return 0;
         }
-        bwputstr(COM2, "Bye!\r\n");
         return 1;
     } else {
         tokenErr("invalid command name", t.start - cmdStart + 2, t.len);

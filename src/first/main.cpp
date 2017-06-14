@@ -7,6 +7,7 @@
 #include <task.h>
 #include <itc.h>
 #include <io.h>
+#include <train.h>
 
 // Forward declaration.
 void idleMain();
@@ -26,6 +27,8 @@ void firstMain() {
     ASSERT(create(Priority(PRIORITY_MAX.underlying() - 2), io::ioMainUart1) >= 0);
     ASSERT(create(Priority(PRIORITY_MAX.underlying() - 2), io::ioMainUart2) >= 0);
     ASSERT(create(Priority(30), clockMain) >= 0);
+
+    stopTrains();
 
     runTerminal();
 }

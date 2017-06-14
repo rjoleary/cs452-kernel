@@ -104,7 +104,7 @@ void runTerminal() {
     Tid io = whoIs(Names::IoServerUart2);
     ASSERT(io.underlying() >= 0);
     for (;;) {
-        int c = io::getc(io, COM1);
+        int c = io::getc(io, COM2);
         ASSERT(c >= 0);
 
         switch (c) {
@@ -115,10 +115,10 @@ void runTerminal() {
             setpos(1, 11);
             if (isStopped) {
                 bwputstr(COM2, "\033[32m GO \033[37m");
-                //goTrains();
+                goTrains();
             } else {
                 bwputstr(COM2, "\033[31mSTOP\033[37m");
-                //stopTrains();
+                stopTrains();
             }
             restorecur();
             isStopped = !isStopped;
