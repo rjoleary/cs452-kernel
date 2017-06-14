@@ -44,7 +44,7 @@ void clientMain() {
 void firstMain() {
     ASSERT(Tid(create(PRIORITY_MIN, idleMain)) == IDLE_TID);
     ASSERT(Tid(create(Priority(PRIORITY_MAX.underlying() - 2), nsMain)) == NS_TID);
-    ASSERT(create(Priority(PRIORITY_MAX.underlying() - 1), io::ioMain) >= 0);
+    //ASSERT(create(Priority(PRIORITY_MAX.underlying() - 1), io::ioMain) >= 0);
     ASSERT(create(Priority(30), clockMain) >= 0);
     ASSERT(create(Priority(30), clockNotifier) >= 0);
 

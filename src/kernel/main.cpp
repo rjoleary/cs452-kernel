@@ -51,7 +51,7 @@ void initSerial() {
     // COM2
     bwsetspeed(COM2, 115200);
     bwsetfifo(COM2, OFF);
-    *(volatile unsigned*)(UART2_BASE + UART_CTLR_OFFSET) = RIEN_MASK | TIEN_MASK | UARTEN_MASK;
+    //*(volatile unsigned*)(UART2_BASE + UART_CTLR_OFFSET) = RIEN_MASK | TIEN_MASK | UARTEN_MASK;
 }
 
 void printEarlyDebug(unsigned *kernelStack) {
@@ -97,7 +97,7 @@ void initInterrupts() {
     interrupt::clearAll();
     interrupt::init();
     interrupt::bind(ctl::Source::TC1UI);
-    interrupt::bind(ctl::Source::INT_UART2);
+    //interrupt::bind(ctl::Source::INT_UART2);
 
     // Software Interrupt (SWI)
     auto SVC_ADDR = (void (*volatile*)())0x28;
@@ -127,7 +127,7 @@ int main() {
     TdManager tdManager(scheduler, userStacks[0] + STACK_SZ/4);
 
     // Enter main loop.
-    useBusyWait = false;
+    //useBusyWait = false;
     void mainLoop(Scheduler &scheduler, TdManager &tdManager);
     mainLoop(scheduler, tdManager);
     useBusyWait = true;
