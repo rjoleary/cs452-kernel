@@ -96,8 +96,8 @@ void initTimers() {
 void initInterrupts() {
     interrupt::clearAll();
     interrupt::init();
-    interrupt::bind(ctl::Source::TC1UI);
-    interrupt::bind(ctl::Source::INT_UART2);
+    interrupt::bind(interrupt::Source::TC1UI);
+    interrupt::bind(interrupt::Source::INT_UART2);
 
     // Software Interrupt (SWI)
     auto SVC_ADDR = (void (*volatile*)())0x28;
@@ -167,15 +167,15 @@ void mainLoop(Scheduler &scheduler, TdManager &tdManager) {
                     if (notifier->state != RunState::EventBlocked)
                         PANIC("Bad!");
                     scheduler.readyTask(*notifier);
-                    auto src = ctl::Source(notifier->getArg(0));
-                    switch (src) {
-                        case ctl::Source::TC1UI: {
+                    auto eventId = ctl::Event(notifier->getArg(0));
+                    switch (eventId) {
+                        case ctl::Event::PeriodicTimer: {
                             notifier->setReturn(0);
                             *(volatile unsigned*)(TIMER1_BASE + CLR_OFFSET) = 0;
                             break;
                         }
 
-                        case ctl::Source::INT_UART2: {
+                        case ctl::Event::Uart2Rx: {
                             bwputc(COM2, *(volatile unsigned*)(UART2_BASE + UART_DATA_OFFSET) & 0xff);
                             notifier->setReturn(0);
                             break;
@@ -187,7 +187,7 @@ void mainLoop(Scheduler &scheduler, TdManager &tdManager) {
                             PANIC("Interrupt from unknown source");
                         }
                     }
-                    interrupt::clear(src);
+                    interrupt::clear(eventId);
                 } else {
                     // TODO: we still need to clear the interrupt when the
                     // notifier is not in the blocked state!
@@ -297,10 +297,10 @@ void mainLoop(Scheduler &scheduler, TdManager &tdManager) {
             }
         }
         else if (active->getSyscall() == Syscall::AwaitEvent) {
-            auto eventId = (ctl::Source)active->getArg(0);
-            auto ret = (eventId == ctl::Source::TC1UI ||
-                eventId == ctl::Source::INT_UART1 ||
-                eventId == ctl::Source::INT_UART2 ) ?
+            auto eventId = (ctl::Event)active->getArg(0);
+            auto ret = (eventId == ctl::Event::PeriodicTimer ||
+                eventId == ctl::Event::Uart2Rx ||
+                eventId == ctl::Event::Uart2Tx ) ?
                 interrupt::setVal(eventId, active) : -1;
             if (__builtin_expect(ret == 0, 1)) {
                 active->state = RunState::EventBlocked;

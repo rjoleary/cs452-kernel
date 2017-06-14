@@ -31,12 +31,12 @@ struct alignas(4) Reply {
     char data;
 };
 
-template <Source src, Names server>
+template <Event src, Names server>
 void genericNotifierMain() {
     auto serverTid = Tid(whoIs(server));
     for (;;) {
         Message message;
-        ASSERT(awaitEvent(src) == 0);
+        ASSERT(awaitEvent(src, 0) == 0);
         continue;
         auto interruptType =
             *(volatile unsigned*)(UART2_BASE + UART_INTR_OFFSET);
@@ -46,11 +46,12 @@ void genericNotifierMain() {
             message.data = *(volatile unsigned*)(UART2_BASE + UART_DATA_OFFSET) & 0xff;
             ASSERT(send(serverTid, message, EmptyMessage) == 0);
         }
-        if (interruptType & TIS_MASK) {
-            message.type = MsgType::NotifyTx;
-            message.data = 0;
-            ASSERT(send(serverTid, message, EmptyMessage) == 0);
-        }
+        // TODO: only receive for now
+        //if (interruptType & TIS_MASK) {
+            //message.type = MsgType::NotifyTx;
+            //message.data = 0;
+            //ASSERT(send(serverTid, message, EmptyMessage) == 0);
+        //}
     }
 }
 }
@@ -89,7 +90,7 @@ void ioMain() {
 
     // Create notifiers.
     ASSERT(create(PRIORITY_MAX,
-        genericNotifierMain<Source::INT_UART2, Names::IoServer>) > 0);
+        genericNotifierMain<Event::Uart2Rx, Names::IoServer>) > 0);
 
     // Buffers for asynchronicity
     typedef CircularBuffer<char,1024> CharBuffer;

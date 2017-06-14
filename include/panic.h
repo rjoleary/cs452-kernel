@@ -21,6 +21,7 @@
         : "=r" (regs)                                     \
     );                                                    \
     kernel::detail::panic(regs, str, __FILE__, __LINE__); \
+    __builtin_unreachable();                              \
     } while(0)
 
 namespace kernel {
