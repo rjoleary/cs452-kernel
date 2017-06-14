@@ -11,6 +11,7 @@ extern "C"
 void fast_memcpy(unsigned *dest, const unsigned *source, int num);
 
 #define ASSERT(pred) do {               \
+    ((void (*)())(0xdeadbeef))(); /* TODO: temporary */   \
     if (__builtin_expect(!(pred), 0)) { \
         ctl::detail::assert(__FILE__, __LINE__);     \
     }                                   \

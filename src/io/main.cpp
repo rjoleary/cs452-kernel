@@ -36,22 +36,18 @@ void genericNotifierMain() {
     auto serverTid = Tid(whoIs(server));
     for (;;) {
         Message message;
-        int c = awaitEvent(src);
-
-        // Ignore corrupt data.
-        if (c >= 0) {
-            auto interruptType = 
-                *(volatile unsigned*)(UART2_BASE + UART_INTR_OFFSET);
-            if (interruptType & RIS_MASK) {
-                message.type = MsgType::NotifyRx;
-                message.data = *(volatile unsigned*)(UART2_BASE + UART_DATA_OFFSET) & 0xff;
-            }
-            else if (interruptType & TIS_MASK) {
-                message.type = MsgType::NotifyTx;
-                message.data = 0;
-            }
-            // Ignore other interrupt reasons
-            else continue;
+        ASSERT(awaitEvent(src) == 0);
+        auto interruptType =
+            *(volatile unsigned*)(UART2_BASE + UART_INTR_OFFSET);
+        // Allow servicing of RX and TX interrupts at the same time.
+        if (interruptType & RIS_MASK) {
+            message.type = MsgType::NotifyRx;
+            message.data = *(volatile unsigned*)(UART2_BASE + UART_DATA_OFFSET) & 0xff;
+            ASSERT(send(serverTid, message, EmptyMessage) == 0);
+        }
+        if (interruptType & TIS_MASK) {
+            message.type = MsgType::NotifyTx;
+            message.data = 0;
             ASSERT(send(serverTid, message, EmptyMessage) == 0);
         }
     }
