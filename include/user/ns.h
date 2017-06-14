@@ -7,7 +7,8 @@ namespace ctl{
 enum class Names {
     RpsServer, 
     ClockServer,
-    IoServer,
+    IoServerUart1,
+    IoServerUart2,
     LastName // Special name to count
 };
 

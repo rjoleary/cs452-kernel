@@ -41,18 +41,7 @@ void genericRxNotifierMain() {
             // Ignore corrupt data
             continue;
         }
-        //auto interruptType =
-        //    *(volatile unsigned*)(UART2_BASE + UART_INTR_OFFSET);
-        // Allow servicing of RX and TX interrupts at the same time.
-        //if (interruptType & RIS_MASK) {
         ASSERT(send(serverTid, message, EmptyMessage) == 0);
-        //}
-        // TODO: only receive for now
-        //if (interruptType & TIS_MASK) {
-            //message.type = MsgType::NotifyTx;
-            //message.data = 0;
-            //ASSERT(send(serverTid, message, EmptyMessage) == 0);
-        //}
     }
 }
 
@@ -96,15 +85,16 @@ int putc(Tid tid, int uart, char ch) {
     return static_cast<int>(Error::Ok);
 }
 
+template <Names server, Event rx, Event tx>
 void ioMain() {
     // Register with the nameserver.
-    ASSERT(registerAs(Names::IoServer) == 0);
+    ASSERT(registerAs(server) == 0);
 
     // Create notifiers.
     ASSERT(create(Priority(PRIORITY_MAX.underlying()-1),
-        genericRxNotifierMain<Event::Uart2Rx, Names::IoServer>) >= 0);
+        genericRxNotifierMain<rx, server>) >= 0);
     ASSERT(create(Priority(PRIORITY_MAX.underlying()-1),
-        genericTxNotifierMain<Event::Uart2Tx, Names::IoServer>) >= 0);
+        genericTxNotifierMain<tx, server>) >= 0);
 
     // Buffers for asynchronicity
     typedef CircularBuffer<char,512> CharBuffer;
@@ -169,4 +159,7 @@ void ioMain() {
         }
     }
 }
+
+void (*ioMainUart1)() = io::ioMain<Names::IoServerUart1, Event::Uart1Rx, Event::Uart1Tx>;
+void (*ioMainUart2)() = io::ioMain<Names::IoServerUart2, Event::Uart2Rx, Event::Uart2Tx>;
 }

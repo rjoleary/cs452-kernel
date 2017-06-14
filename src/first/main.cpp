@@ -11,7 +11,8 @@
 // Forward declaration.
 void idleMain();
 namespace io {
-void ioMain();
+extern void (*ioMainUart1)();
+extern void (*ioMainUart2)();
 }
 
 namespace ctl {
@@ -44,7 +45,8 @@ void clientMain() {
 void firstMain() {
     ASSERT(Tid(create(PRIORITY_MIN, idleMain)) == IDLE_TID);
     ASSERT(Tid(create(PRIORITY_MAX, nsMain)) == NS_TID);
-    ASSERT(create(Priority(PRIORITY_MAX.underlying() - 2), io::ioMain) >= 0);
+    ASSERT(create(Priority(PRIORITY_MAX.underlying() - 2), io::ioMainUart1) >= 0);
+    ASSERT(create(Priority(PRIORITY_MAX.underlying() - 2), io::ioMainUart2) >= 0);
     ASSERT(create(Priority(30), clockMain) >= 0);
     ASSERT(create(Priority(30), clockNotifier) >= 0);
 
@@ -76,7 +78,7 @@ void firstMain() {
     }
 
     // Echo
-    Tid io = whoIs(Names::IoServer);
+    Tid io = whoIs(Names::IoServerUart2);
     ASSERT(io.underlying() >= 0);
     for (;;) {
         int c = io::getc(io, COM1);

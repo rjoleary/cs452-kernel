@@ -180,6 +180,24 @@ void mainLoop(Scheduler &scheduler, TdManager &tdManager) {
                             break;
                         }
 
+                        case ctl::Event::Uart1Rx: {
+                            if (*(volatile unsigned*)(UART1_BASE + UART_INTR_OFFSET) & RIS_MASK) {
+                                *(volatile unsigned*)(UART1_BASE + UART_CTLR_OFFSET) &= ~RIEN_MASK;
+                                notifier->setReturn(*(volatile unsigned*)(UART1_BASE + UART_DATA_OFFSET) & 0xff);
+                                handled = true;
+                            }
+                            break;
+                        }
+
+                        case ctl::Event::Uart1Tx: {
+                            if (*(volatile unsigned*)(UART1_BASE + UART_INTR_OFFSET) & TIS_MASK) {
+                                *(volatile unsigned*)(UART1_BASE + UART_CTLR_OFFSET) &= ~TIEN_MASK;
+                                notifier->setReturn(0);
+                                handled = true;
+                            }
+                            break;
+                        }
+
                         case ctl::Event::Uart2Rx: {
                             if (*(volatile unsigned*)(UART2_BASE + UART_INTR_OFFSET) & RIS_MASK) {
                                 *(volatile unsigned*)(UART2_BASE + UART_CTLR_OFFSET) &= ~RIEN_MASK;
@@ -323,11 +341,20 @@ void mainLoop(Scheduler &scheduler, TdManager &tdManager) {
         else if (active->getSyscall() == Syscall::AwaitEvent) {
             auto eventId = (ctl::Event)active->getArg(0);
             auto ret = (eventId == ctl::Event::PeriodicTimer ||
+                eventId == ctl::Event::Uart1Rx ||
+                eventId == ctl::Event::Uart1Tx ||
                 eventId == ctl::Event::Uart2Rx ||
                 eventId == ctl::Event::Uart2Tx ) ?
                 interrupt::setVal(eventId, active) : -1;
             if (__builtin_expect(ret == 0, 1)) {
                 switch (eventId) {
+                    case ctl::Event::Uart1Tx:
+                        *(volatile unsigned*)(UART1_BASE + UART_CTLR_OFFSET) |= TIEN_MASK;
+                        *(volatile unsigned*)(UART1_BASE + UART_DATA_OFFSET) = active->getArg(1);
+                        break;
+                    case ctl::Event::Uart1Rx:
+                        *(volatile unsigned*)(UART1_BASE + UART_CTLR_OFFSET) |= RIEN_MASK;
+                        break;
                     case ctl::Event::Uart2Tx:
                         *(volatile unsigned*)(UART2_BASE + UART_CTLR_OFFSET) |= TIEN_MASK;
                         *(volatile unsigned*)(UART2_BASE + UART_DATA_OFFSET) = active->getArg(1);

@@ -75,9 +75,10 @@ bool useBusyWait = true;
 int bwputc( int channel, char c ) {
 	using namespace ctl;
 	if (!useBusyWait) {
-		static Tid io = whoIs(Names::IoServer);
-                ASSERT(io.underlying() >= 0);
-		io::putc(io, channel, c);
+		static Tid io[2] = {whoIs(Names::IoServerUart1), whoIs(Names::IoServerUart2)};
+                ASSERT(io[0].underlying() >= 0);
+                ASSERT(io[1].underlying() >= 0);
+		io::putc(io[channel], channel, c);
 		return 0;
 	}
 

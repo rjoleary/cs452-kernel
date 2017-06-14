@@ -18,6 +18,10 @@ interrupt::Source mapEventToSource(ctl::Event eventId) {
     switch (eventId) {
         case ctl::Event::PeriodicTimer:
             return interrupt::Source::TC1UI;
+        case ctl::Event::Uart1Rx:
+            return interrupt::Source::INT_UART1;
+        case ctl::Event::Uart1Tx:
+            return interrupt::Source::INT_UART1;
         case ctl::Event::Uart2Rx:
             return interrupt::Source::INT_UART2;
         case ctl::Event::Uart2Tx:
