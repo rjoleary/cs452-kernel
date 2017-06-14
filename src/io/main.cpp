@@ -101,13 +101,13 @@ void ioMain() {
     ASSERT(registerAs(Names::IoServer) == 0);
 
     // Create notifiers.
-    //ASSERT(create(Priority(PRIORITY_MAX.underlying-1),
-        //genericRxNotifierMain<Event::Uart2Rx, Names::IoServer>) >= 0);
+    ASSERT(create(Priority(PRIORITY_MAX.underlying()-1),
+        genericRxNotifierMain<Event::Uart2Rx, Names::IoServer>) >= 0);
     ASSERT(create(Priority(PRIORITY_MAX.underlying()-1),
         genericTxNotifierMain<Event::Uart2Tx, Names::IoServer>) >= 0);
 
     // Buffers for asynchronicity
-    typedef CircularBuffer<char,1024> CharBuffer;
+    typedef CircularBuffer<char,512> CharBuffer;
     CharBuffer rxQueue, txQueue;
     Tid txFull = INVALID_TID;
     CircularBuffer<Tid, NUM_TD> blockQueue;

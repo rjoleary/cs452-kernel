@@ -51,7 +51,7 @@ void initSerial() {
     // COM2
     bwsetspeed(COM2, 115200);
     bwsetfifo(COM2, OFF);
-    *(volatile unsigned*)(UART2_BASE + UART_CTLR_OFFSET) = /*RIEN_MASK | TIEN_MASK |*/ UARTEN_MASK;
+    *(volatile unsigned*)(UART2_BASE + UART_CTLR_OFFSET) = UARTEN_MASK;
 }
 
 void printEarlyDebug(unsigned *kernelStack) {
@@ -176,14 +176,14 @@ void mainLoop(Scheduler &scheduler, TdManager &tdManager) {
                             break;
                         }
 
-                        /*case ctl::Event::Uart2Rx: {
+                        case ctl::Event::Uart2Rx: {
+                            *(volatile unsigned*)(UART2_BASE + UART_CTLR_OFFSET) &= ~RIEN_MASK;
                             notifier->setReturn(*(volatile unsigned*)(UART2_BASE + UART_DATA_OFFSET) & 0xff);
                             break;
-                        }*/
+                        }
 
                         case ctl::Event::Uart2Tx: {
-                            *(volatile unsigned*)(UART2_BASE + UART_CTLR_OFFSET) =
-                                /*RIEN_MASK | TIEN_MASK |*/ UARTEN_MASK;
+                            *(volatile unsigned*)(UART2_BASE + UART_CTLR_OFFSET) &= ~TIEN_MASK;
                             notifier->setReturn(0);
                             break;
                         }
@@ -313,9 +313,10 @@ void mainLoop(Scheduler &scheduler, TdManager &tdManager) {
                 interrupt::setVal(eventId, active) : -1;
             if (__builtin_expect(ret == 0, 1)) {
                 if (eventId == ctl::Event::Uart2Tx) {
-                    *(volatile unsigned*)(UART2_BASE + UART_CTLR_OFFSET) =
-                            /*RIEN_MASK |*/ TIEN_MASK | UARTEN_MASK;
+                    *(volatile unsigned*)(UART2_BASE + UART_CTLR_OFFSET) |= TIEN_MASK;
                     *(volatile unsigned*)(UART2_BASE + UART_DATA_OFFSET) = active->getArg(1);
+                } else if (eventId == ctl::Event::Uart2Rx) {
+                    *(volatile unsigned*)(UART2_BASE + UART_CTLR_OFFSET) |= RIEN_MASK;
                 }
                 active->state = RunState::EventBlocked;
                 STRACE("  [%d] int awaitEvent(eventid=%d) = <BLOCKED>", active->tid, eventId);

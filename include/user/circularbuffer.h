@@ -4,27 +4,25 @@
 #include <type_traits>
 
 namespace ctl {
-template <typename Data, ctl::size_t MaxSize>
+// Overflow policy is to drop characters.
+template <typename Data, size_t MaxSize>
 class CircularBuffer {
     static_assert(std::is_trivial<Data>::value, "Data must be trivial");
     Data entries[MaxSize];
-    Data *read = &entries[0], *write = &entries[0];
-    size_t size = 0;
+    size_t begin = 0, end = 0, size = 0;
 public:
     const Data& pop() {
-        ASSERT(--size >= 0);
-        const auto &ret = *read;
-        ++read;
-        if (read == &entries[MaxSize])
-            read = &entries[0];
-        return ret;
+        Data &data = entries[begin];
+        begin = (begin + 1) % MaxSize;
+        size--;
+        return data;
     }
     void push(const Data &data) {
-        ASSERT(++size <= MaxSize);
-        *write = data;
-        ++write;
-        if (write == &entries[MaxSize])
-            write = &entries[0];
+        if (size != MaxSize) {
+            entries[end] = data;
+            end = (end + 1) % MaxSize;
+            size++;
+        }
     }
     bool empty() const {
         return size == 0;
