@@ -176,8 +176,7 @@ void mainLoop(Scheduler &scheduler, TdManager &tdManager) {
                         }
 
                         case ctl::Event::Uart2Rx: {
-                            bwputc(COM2, *(volatile unsigned*)(UART2_BASE + UART_DATA_OFFSET) & 0xff);
-                            notifier->setReturn(0);
+                            notifier->setReturn(*(volatile unsigned*)(UART2_BASE + UART_DATA_OFFSET) & 0xff);
                             break;
                         }
 

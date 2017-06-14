@@ -34,18 +34,19 @@ struct alignas(4) Reply {
 template <Event src, Names server>
 void genericNotifierMain() {
     auto serverTid = Tid(whoIs(server));
+    Message message{MsgType::NotifyRx};
     for (;;) {
-        Message message;
-        ASSERT(awaitEvent(src, 0) == 0);
-        continue;
-        auto interruptType =
-            *(volatile unsigned*)(UART2_BASE + UART_INTR_OFFSET);
-        // Allow servicing of RX and TX interrupts at the same time.
-        if (interruptType & RIS_MASK) {
-            message.type = MsgType::NotifyRx;
-            message.data = *(volatile unsigned*)(UART2_BASE + UART_DATA_OFFSET) & 0xff;
-            ASSERT(send(serverTid, message, EmptyMessage) == 0);
+        message.data = awaitEvent(src, 0);
+        if (message.data < 0) {
+            // Ignore corrupt data
+            continue;
         }
+        //auto interruptType =
+        //    *(volatile unsigned*)(UART2_BASE + UART_INTR_OFFSET);
+        // Allow servicing of RX and TX interrupts at the same time.
+        //if (interruptType & RIS_MASK) {
+        ASSERT(send(serverTid, message, EmptyMessage) == 0);
+        //}
         // TODO: only receive for now
         //if (interruptType & TIS_MASK) {
             //message.type = MsgType::NotifyTx;
