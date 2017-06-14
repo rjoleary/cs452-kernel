@@ -97,7 +97,7 @@ void ioMain() {
         genericTxNotifierMain<tx, server>) >= 0);
 
     // Buffers for asynchronicity
-    typedef CircularBuffer<char,512> CharBuffer;
+    typedef CircularBuffer<char,4096> CharBuffer;
     CharBuffer rxQueue, txQueue;
     Tid txFull = INVALID_TID;
     CircularBuffer<Tid, NUM_TD> blockQueue;

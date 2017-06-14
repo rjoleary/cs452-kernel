@@ -82,6 +82,9 @@ void clockMain() {
     ASSERT(registerAs(Names::ClockServer) == 0);
     Heap<NUM_TD, DelayData, DelayDataComp> minheap;
 
+    void clockNotifier();
+    ASSERT(create(Priority(30), clockNotifier) >= 0);
+
     for (;;) {
         Tid tid;
         Message msg;

@@ -19,6 +19,30 @@ using namespace ctl;
 
 static const char prompt[] = "% ";
 
+void printLayout() {
+    bwputstr(COM2,
+        "00:00.0   STOP   Built ??:??:?? ??? ?? ????\r\n"
+        "                                           \r\n"
+        "Longest loop: 0 us                         \r\n"
+        "Current loop: 0 us                         \r\n"
+        "                                           \r\n"
+        "Sensor triggers          Switches          \r\n"
+        "  ________                  1-U   12-U     \r\n"
+        "  ________                  2-U   13-U     \r\n"
+        "  ________                  3-U   14-U     \r\n"
+        "  ________                  4-U   15-U     \r\n"
+        "  ________                  5-U   16-U     \r\n"
+        "  ________                  6-U   17-U     \r\n"
+        "  ________                  7-U   18-U     \r\n"
+        "  ________                  8-U  153-U     \r\n"
+        "  ________                  9-U  154-U     \r\n"
+        "  ________                 10-U  155-U     \r\n"
+        "  ________                 11-U  156-U     \r\n"
+        "                                           \r\n"
+        "Run help for a list of commands.           \r\n"
+    );
+}
+
 // Set position of cursor to (row, col).
 void setpos(unsigned row, unsigned col) {
     char str[] = "\033[%d;%dH";
@@ -38,6 +62,20 @@ void restorecur() {
 }
 
 void runTerminal() {
+    // Clear display.
+    setpos(0, 0);
+    char clear[] = "\033[J";
+    bwputstr(COM2, clear);
+
+    // Print initial text.
+    printLayout();
+    savecur();
+    setpos(1, 11);
+    bwputstr(COM2, "\033[32m GO \033[37m");
+    restorecur();
+    bwputstr(COM2, prompt);
+
+
     bool isStopped;
     unsigned cmdsz = 0;
     char cmdbuf[MAX_CMDSZ+1];
@@ -56,10 +94,10 @@ void runTerminal() {
             setpos(1, 11);
             if (isStopped) {
                 bwputstr(COM2, "\033[32m GO \033[37m");
-                goTrains();
+                //goTrains();
             } else {
                 bwputstr(COM2, "\033[31mSTOP\033[37m");
-                stopTrains();
+                //stopTrains();
             }
             restorecur();
             isStopped = !isStopped;
