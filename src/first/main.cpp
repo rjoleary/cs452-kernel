@@ -77,6 +77,7 @@ void firstMain() {
         ASSERT(receive(&tid, EmptyMessage) == 0);
     }
 
+    bwputc(COM1, 97);
     // Echo
     Tid io = whoIs(Names::IoServerUart2);
     ASSERT(io.underlying() >= 0);
