@@ -51,7 +51,7 @@ void initSerial() {
     // COM2
     bwsetspeed(COM2, 115200);
     bwsetfifo(COM2, OFF);
-    *(volatile unsigned*)(UART2_BASE + UART_CTLR_OFFSET) = RIEN_MASK /*| TIEN_MASK*/ | UARTEN_MASK;
+    *(volatile unsigned*)(UART2_BASE + UART_CTLR_OFFSET) = /*RIEN_MASK | TIEN_MASK |*/ UARTEN_MASK;
 }
 
 void printEarlyDebug(unsigned *kernelStack) {
@@ -127,7 +127,7 @@ int main() {
     TdManager tdManager(scheduler, userStacks[0] + STACK_SZ/4);
 
     // Enter main loop.
-    //useBusyWait = false;
+    useBusyWait = false;
     void mainLoop(Scheduler &scheduler, TdManager &tdManager);
     mainLoop(scheduler, tdManager);
     useBusyWait = true;
@@ -175,8 +175,15 @@ void mainLoop(Scheduler &scheduler, TdManager &tdManager) {
                             break;
                         }
 
-                        case ctl::Event::Uart2Rx: {
+                        /*case ctl::Event::Uart2Rx: {
                             notifier->setReturn(*(volatile unsigned*)(UART2_BASE + UART_DATA_OFFSET) & 0xff);
+                            break;
+                        }*/
+
+                        case ctl::Event::Uart2Tx: {
+                            *(volatile unsigned*)(UART2_BASE + UART_CTLR_OFFSET) =
+                                /*RIEN_MASK | TIEN_MASK |*/ UARTEN_MASK;
+                            notifier->setReturn(0);
                             break;
                         }
 
@@ -302,6 +309,11 @@ void mainLoop(Scheduler &scheduler, TdManager &tdManager) {
                 eventId == ctl::Event::Uart2Tx ) ?
                 interrupt::setVal(eventId, active) : -1;
             if (__builtin_expect(ret == 0, 1)) {
+                if (eventId == ctl::Event::Uart2Tx) {
+                    *(volatile unsigned*)(UART2_BASE + UART_CTLR_OFFSET) =
+                            /*RIEN_MASK |*/ TIEN_MASK | UARTEN_MASK;
+                    *(volatile unsigned*)(UART2_BASE + UART_DATA_OFFSET) = active->getArg(1);
+                }
                 active->state = RunState::EventBlocked;
                 STRACE("  [%d] int awaitEvent(eventid=%d) = <BLOCKED>", active->tid, eventId);
             } else {

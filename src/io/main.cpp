@@ -32,7 +32,7 @@ struct alignas(4) Reply {
 };
 
 template <Event src, Names server>
-void genericNotifierMain() {
+void genericRxNotifierMain() {
     auto serverTid = Tid(whoIs(server));
     Message message{MsgType::NotifyRx};
     for (;;) {
@@ -53,6 +53,17 @@ void genericNotifierMain() {
             //message.data = 0;
             //ASSERT(send(serverTid, message, EmptyMessage) == 0);
         //}
+    }
+}
+
+template <Event src, Names server>
+void genericTxNotifierMain() {
+    auto serverTid = Tid(whoIs(server));
+    Message message{MsgType::NotifyTx};
+    for (;;) {
+        Reply rply;
+        ASSERT(send(serverTid, message, rply) == sizeof(rply));
+        awaitEvent(src, rply.data);
     }
 }
 }
@@ -90,13 +101,15 @@ void ioMain() {
     ASSERT(registerAs(Names::IoServer) == 0);
 
     // Create notifiers.
-    ASSERT(create(PRIORITY_MAX,
-        genericNotifierMain<Event::Uart2Rx, Names::IoServer>) > 0);
+    //ASSERT(create(Priority(PRIORITY_MAX.underlying-1),
+        //genericRxNotifierMain<Event::Uart2Rx, Names::IoServer>) >= 0);
+    ASSERT(create(Priority(PRIORITY_MAX.underlying()-1),
+        genericTxNotifierMain<Event::Uart2Tx, Names::IoServer>) >= 0);
 
     // Buffers for asynchronicity
     typedef CircularBuffer<char,1024> CharBuffer;
     CharBuffer rxQueue, txQueue;
-    bool txFull = false;
+    Tid txFull = INVALID_TID;
     CircularBuffer<Tid, NUM_TD> blockQueue;
 
     for (;;) {
@@ -119,12 +132,12 @@ void ioMain() {
 
             case MsgType::NotifyTx: {
                 if (txQueue.empty()) {
-                    txFull = false;
+                    txFull = tid;
                 } else {
-                    ASSERT(txFull);
-                    *(volatile unsigned*)(UART2_BASE + UART_DATA_OFFSET) = txQueue.pop();
+                    Reply rply{txQueue.pop()};
+                    ASSERT(reply(txFull, rply) == 0);
+                    txFull = INVALID_TID;
                 }
-                ASSERT(reply(tid, EmptyMessage) == 0);
                 break;
             }
 
@@ -139,11 +152,12 @@ void ioMain() {
             }
 
             case MsgType::PutC: {
-                if (txFull) {
+                if (txFull == INVALID_TID) {
                     txQueue.push(msg.data);
                 } else {
-                    txFull = true;
-                    *(volatile unsigned*)(UART2_BASE + UART_DATA_OFFSET) = msg.data;
+                    Reply rply{msg.data};
+                    ASSERT(reply(txFull, rply) == 0);
+                    txFull = INVALID_TID;
                 }
                 ASSERT(reply(tid, EmptyMessage) == 0);
                 break;
