@@ -33,6 +33,8 @@ struct alignas(4) Reply {
 
 template <Source src, Names server>
 void genericNotifierMain() {
+    bwprintf(COM2, "Hello, I'm a uart notifier and my tid is %d\r\n", myTid());
+
     auto serverTid = Tid(whoIs(server));
     for (;;) {
         Message message;
@@ -103,8 +105,6 @@ void ioMain() {
 
         switch (msg.type) {
             case MsgType::NotifyRx: {
-                // Reply immediately so we don't miss any interrupts.
-                ASSERT(reply(tid, EmptyMessage) == 0);
                 if (blockQueue.empty()) {
                     rxQueue.push(msg.data);
                 } else {
@@ -112,18 +112,18 @@ void ioMain() {
                     Reply rply{msg.data};
                     ASSERT(reply(blockQueue.pop(), rply) == 0);
                 }
+                ASSERT(reply(tid, EmptyMessage) == 0);
                 break;
             }
 
             case MsgType::NotifyTx: {
-                // Reply immediately so we don't miss any interrupts.
-                ASSERT(reply(tid, EmptyMessage) == 0);
                 if (txQueue.empty()) {
                     txFull = false;
                 } else {
                     ASSERT(txFull);
                     *(volatile unsigned*)(UART2_BASE + UART_DATA_OFFSET) = txQueue.pop();
                 }
+                ASSERT(reply(tid, EmptyMessage) == 0);
                 break;
             }
 

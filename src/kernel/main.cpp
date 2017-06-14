@@ -175,31 +175,6 @@ void mainLoop(Scheduler &scheduler, TdManager &tdManager) {
                             break;
                         }
 
-                        default: {
-                            bwprintf(COM2, "Unknown interrupt: %d\r\n", notifier->getArg(0));
-                            bwprintf(COM2, "TID: %d\r\n", notifier->tid);
-                            PANIC("Interrupt from unknown source");
-                        }
-                    }
-                    interrupt::clear(src);
-                } else {
-                    // TODO: we still need to clear the interrupt when the
-                    // notifier is not in the blocked state!
-                }
-                *(volatile unsigned*)(0x800b0030) = 0;
-                active->interruptLinkReg();
-                scheduler.readyTask(*active);
-                continue;
-            }
-            auto vic2addr = *(volatile unsigned*)(0x800c0030);
-            if (vic2addr != 0xdeadbeef) {
-                auto notifier = (Td*)vic2addr;
-                if (notifier) {
-                    if (notifier->state != RunState::EventBlocked)
-                        PANIC("Bad!");
-                    scheduler.readyTask(*notifier);
-                    auto src = ctl::Source(notifier->getArg(0));
-                    switch (src) {
                         case ctl::Source::INT_UART2: {
                             notifier->setReturn(0);
                             break;
@@ -216,7 +191,7 @@ void mainLoop(Scheduler &scheduler, TdManager &tdManager) {
                     // TODO: we still need to clear the interrupt when the
                     // notifier is not in the blocked state!
                 }
-                *(volatile unsigned*)(0x800c0030) = 0;
+                *(volatile unsigned*)(0x800b0030) = 0;
                 active->interruptLinkReg();
                 scheduler.readyTask(*active);
                 continue;
