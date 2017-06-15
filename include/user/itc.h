@@ -126,7 +126,7 @@ inline int reply(int a0, const void *a1, int a2) {
 }
 
 template <typename T>
-int reply(Tid tid, T &msg) {
+int reply(Tid tid, const T &msg) {
     constexpr bool isEmpty = std::is_same<std::decay_t<T>, EmptyMessage_t>::value;
     static_assert(alignof(T) >= alignof(unsigned) || isEmpty, "Unaligned reply");
     static_assert((sizeof(T) % sizeof(unsigned)) == 0 || isEmpty, "Bad reply size");

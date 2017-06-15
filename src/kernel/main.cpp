@@ -51,7 +51,7 @@ void initSerial() {
     // COM2
     bwsetspeed(COM2, 115200);
     bwsetfifo(COM2, OFF);
-    *(volatile unsigned*)(UART2_BASE + UART_CTLR_OFFSET) = UARTEN_MASK;
+    *(volatile unsigned*)(UART2_BASE + UART_CTLR_OFFSET) = UARTEN_MASK | RIEN_MASK;
 }
 
 void printEarlyDebug(unsigned *kernelStack) {
@@ -94,10 +94,7 @@ void initTimers() {
 }
 
 void initInterrupts() {
-    interrupt::clearAll();
     interrupt::init();
-    interrupt::bind(interrupt::Source::TC1UI);
-    interrupt::bind(interrupt::Source::INT_UART2);
 
     // Software Interrupt (SWI)
     auto SVC_ADDR = (void (*volatile*)())0x28;
@@ -127,8 +124,9 @@ int main() {
     TdManager tdManager(scheduler, userStacks[0] + STACK_SZ/4);
 
     // Enter main loop.
-    useBusyWait = false;
+    //useBusyWait = false;
     void mainLoop(Scheduler &scheduler, TdManager &tdManager);
+    bwputstr(COM2, "\033[0m");
     mainLoop(scheduler, tdManager);
     useBusyWait = true;
 
@@ -149,6 +147,7 @@ int main() {
 }
 
 void mainLoop(Scheduler &scheduler, TdManager &tdManager) {
+    Td *interruptHead = nullptr, *interruptTail;
     while (1) {
         auto active = scheduler.getNextTask();
         *(volatile unsigned*)(TIMER2_BASE + LDR_OFFSET) = 0xffff;
@@ -160,86 +159,54 @@ void mainLoop(Scheduler &scheduler, TdManager &tdManager) {
         extern unsigned isIrq;
         if (isIrq) {
             isIrq = 0;
-            auto vic1addr = *(volatile unsigned*)(0x800b0030);
-            if (vic1addr != 0xdeadbeef) {
-                auto notifier = (Td*)vic1addr;
-                if (notifier) {
-                    interrupt::clear(ctl::Event(notifier->getArg(0)));
+
+            auto vic1Status = *(volatile unsigned*)(VIC1Base + VICxIRQStatus),
+                 vic2Status = *(volatile unsigned*)(VIC2Base + VICxIRQStatus);
+            auto validEvent = (vic1Status != 0) || (vic2Status != 0);
+            if (validEvent) {
+                int ret = 0;
+                Event event;
+                if (vic1Status & (1u << interrupt::TC1UI)) {
+                    event = Event::PeriodicTimer;
+                    *(volatile unsigned *)(TIMER1_BASE + CLR_OFFSET) = 0;
                 }
-                while (notifier) {
-                    if (notifier->state != RunState::EventBlocked) {
-                        PANIC("awakening notifier not in blocked state");
+                else if (vic2Status & (1u << interrupt::INT_UART2)) {
+                    auto uartStatus = *(volatile unsigned*)(UART2_BASE + UART_INTR_OFFSET);
+                    //bwputc(COM2, ',');
+                    if (uartStatus & TIS_MASK) {
+                        event = Event::Uart2Tx;
+                        *(volatile unsigned*)(UART2_BASE + UART_CTLR_OFFSET) &= ~TIEN_MASK;
                     }
-                    bool handled = false;
-                    auto eventId = ctl::Event(notifier->getArg(0));
-                    switch (eventId) {
-                        case ctl::Event::PeriodicTimer: {
-                            notifier->setReturn(0);
-                            *(volatile unsigned*)(TIMER1_BASE + CLR_OFFSET) = 0;
-                            handled = true;
-                            break;
-                        }
-
-                        case ctl::Event::Uart1Rx: {
-                            if (*(volatile unsigned*)(UART1_BASE + UART_INTR_OFFSET) & RIS_MASK) {
-                                *(volatile unsigned*)(UART1_BASE + UART_CTLR_OFFSET) &= ~RIEN_MASK;
-                                notifier->setReturn(*(volatile unsigned*)(UART1_BASE + UART_DATA_OFFSET) & 0xff);
-                                handled = true;
-                            }
-                            break;
-                        }
-
-                        case ctl::Event::Uart1Tx: {
-                            if (*(volatile unsigned*)(UART1_BASE + UART_INTR_OFFSET) & TIS_MASK) {
-                                *(volatile unsigned*)(UART1_BASE + UART_CTLR_OFFSET) &= ~TIEN_MASK;
-                                notifier->setReturn(0);
-                                handled = true;
-                            }
-                            break;
-                        }
-
-                        case ctl::Event::Uart2Rx: {
-                            if (*(volatile unsigned*)(UART2_BASE + UART_INTR_OFFSET) & RIS_MASK) {
-                                *(volatile unsigned*)(UART2_BASE + UART_CTLR_OFFSET) &= ~RIEN_MASK;
-                                notifier->setReturn(*(volatile unsigned*)(UART2_BASE + UART_DATA_OFFSET) & 0xff);
-                                handled = true;
-                            }
-                            break;
-                        }
-
-                        case ctl::Event::Uart2Tx: {
-                            if (*(volatile unsigned*)(UART2_BASE + UART_INTR_OFFSET) & TIS_MASK) {
-                                *(volatile unsigned*)(UART2_BASE + UART_CTLR_OFFSET) &= ~TIEN_MASK;
-                                notifier->setReturn(0);
-                                handled = true;
-                            }
-                            break;
-                        }
-
-                        default: {
-                            bwprintf(COM2, "Unknown interrupt: %d\r\n", notifier->getArg(0));
-                            bwprintf(COM2, "TID: %d\r\n", notifier->tid);
-                            PANIC("Interrupt from unknown source");
-                        }
+                    else if (uartStatus & RIS_MASK) {
+                        event = Event::Uart2Rx;
+                        ret = *(volatile unsigned*)(UART2_BASE + UART_DATA_OFFSET) & 0xff;
                     }
-                    if (handled) {
-                        scheduler.readyTask(*notifier);
-                    } else {
-                        // Register the interrupt again.
-                        interrupt::setVal(eventId, notifier);
+                    else {
+                        bwprintf(COM2, "mask: %x\r", uartStatus);
+                        PANIC("");
                     }
-
-                    // Iterate over linked list
-                    notifier = notifier->nextIntr;
                 }
-                // TODO: we still need to clear the interrupt when the
-                // no notifier is not in the blocked state!
-                *(volatile unsigned*)(0x800b0030) = 0;
-                active->interruptLinkReg();
-                scheduler.readyTask(*active);
-                continue;
+                else {
+                    bwprintf(COM2, "Event %d %d\r\n", vic1Status, vic2Status);
+                    PANIC("Unsupported event type");
+                }
+                auto intHandler = interruptHead;
+                while (intHandler) {
+                    if (intHandler->state == RunState::EventBlocked 
+                            && (Event)intHandler->getArg(0) == event) {
+                        intHandler->setReturn(ret);
+                        scheduler.readyTask(*intHandler);
+                        //STRACE("  [%d] int awaitEvent(%d) = %d\r\n",
+                        //        intHandler->tid, event, 0);
+
+                        break;
+                    }
+                    intHandler = intHandler->nextReady;
+                }
             }
-            PANIC("RECEIVED INTERRUPT?");
+            // Reschedule interrupted task
+            active->interruptLinkReg();
+            scheduler.readyTask(*active);
             continue;
         }
 
@@ -340,37 +307,29 @@ void mainLoop(Scheduler &scheduler, TdManager &tdManager) {
         }
         else if (active->getSyscall() == Syscall::AwaitEvent) {
             auto eventId = (ctl::Event)active->getArg(0);
-            auto ret = (eventId == ctl::Event::PeriodicTimer ||
-                eventId == ctl::Event::Uart1Rx ||
-                eventId == ctl::Event::Uart1Tx ||
-                eventId == ctl::Event::Uart2Rx ||
-                eventId == ctl::Event::Uart2Tx ) ?
-                interrupt::setVal(eventId, active) : -1;
-            if (__builtin_expect(ret == 0, 1)) {
-                switch (eventId) {
-                    case ctl::Event::Uart1Tx:
-                        *(volatile unsigned*)(UART1_BASE + UART_CTLR_OFFSET) |= TIEN_MASK;
-                        *(volatile unsigned*)(UART1_BASE + UART_DATA_OFFSET) = active->getArg(1);
-                        break;
-                    case ctl::Event::Uart1Rx:
-                        *(volatile unsigned*)(UART1_BASE + UART_CTLR_OFFSET) |= RIEN_MASK;
-                        break;
-                    case ctl::Event::Uart2Tx:
-                        *(volatile unsigned*)(UART2_BASE + UART_CTLR_OFFSET) |= TIEN_MASK;
-                        *(volatile unsigned*)(UART2_BASE + UART_DATA_OFFSET) = active->getArg(1);
-                        break;
-                    case ctl::Event::Uart2Rx:
-                        *(volatile unsigned*)(UART2_BASE + UART_CTLR_OFFSET) |= RIEN_MASK;
-                        break;
-                    default:
-                        break;
-                }
+
+            if (eventId == ctl::Event::PeriodicTimer ||
+                        eventId == ctl::Event::Uart1Rx ||
+                        eventId == ctl::Event::Uart1Tx ||
+                        eventId == ctl::Event::Uart2Rx ||
+                        eventId == ctl::Event::Uart2Tx ) {
+                if (eventId == ctl::Event::Uart2Tx)
+                    *(volatile unsigned *)(UART2_BASE + UART_CTLR_OFFSET) |= TIEN_MASK;
                 active->state = RunState::EventBlocked;
                 STRACE("  [%d] int awaitEvent(eventid=%d) = <BLOCKED>", active->tid, eventId);
-            } else {
-                STRACE("  [%d] int awaitEvent(eventid=%d) = %d", active->tid, eventId, ret);
+                if (interruptHead) {
+                    interruptTail->nextReady = active;
+                    interruptTail = active;
+                }
+                else {
+                    interruptHead = interruptTail = active;
+                }
+                active->nextReady = nullptr;
+            }
+            else {
+                STRACE("  [%d] int awaitEvent(eventid=%d) = %d", active->tid, eventId, -1);
                 scheduler.readyTask(*active);
-                active->setReturn(-static_cast<int>(Error::InvId));
+                active->setReturn(-1);
             }
         }
         else if (active->getSyscall() == Syscall::Create) {

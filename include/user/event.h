@@ -42,7 +42,7 @@ enum class Event {
 //   >-1: volatile data, in the form of a positive integer.
 //   -ERR_INVID: invalid event.
 //   -ERR_CORRUPT: corrupted volatile data.
-int awaitEvent(Event eventid, int data);
+int awaitEvent(Event eventid);
 }
 
 #endif // USER_EVENT_H__INCLUDED

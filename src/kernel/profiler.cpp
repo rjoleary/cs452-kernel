@@ -8,6 +8,7 @@
 
 using namespace kernel;
 using namespace ctl;
+/*
 
 // Save space when profiles are not enabled.
 #ifdef PROF_INTERVAL
@@ -66,4 +67,4 @@ void profilerDump() {
             bwprintf(COM2, "0x%08x: %d\r\n", (unsigned)&textStart + i * 4, buffer[i]);
         }
     }
-}
+}*/

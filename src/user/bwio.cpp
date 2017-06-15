@@ -73,9 +73,9 @@ int bwsetspeed( int channel, int speed ) {
 bool useBusyWait = true;
 
 int bwputc( int channel, char c ) {
-	using namespace ctl;
+	
 	if (!useBusyWait) {
-		static Tid io[2] = {whoIs(Names::IoServerUart1), whoIs(Names::IoServerUart2)};
+		static ctl::Tid io[2] = {whoIs(ctl::Names::Uart1Tx), whoIs(ctl::Names::Uart2Tx)};
                 ASSERT(io[0].underlying() >= 0);
                 ASSERT(io[1].underlying() >= 0);
 		io::putc(io[channel], channel, c);

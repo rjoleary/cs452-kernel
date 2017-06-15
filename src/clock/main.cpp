@@ -133,7 +133,7 @@ void clockNotifier() {
     auto clockTid = Tid(whoIs(Names::ClockServer));
     Message notify{MsgType::Notify};
     for (;;) {
-        ASSERT(awaitEvent(Event::PeriodicTimer, 0) >= 0);
+        ASSERT(awaitEvent(Event::PeriodicTimer) >= 0);
         ASSERT(send(clockTid, notify, EmptyMessage) == 0);
     }
 }
