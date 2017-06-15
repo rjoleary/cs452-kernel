@@ -5,6 +5,8 @@
 #ifndef USER_BWIO_H__INCLUDED
 #define USER_BWIO_H__INCLUDED
 
+#include <types.h>
+
 typedef char *va_list;
 
 #define __va_argsiz(t)	\
@@ -42,5 +44,6 @@ void bwputw( int channel, int n, char fc, char *bf );
 void bwprintf( int channel, const char *format, ... );
 
 extern bool useBusyWait;
+extern ctl::Tid bwioServs[2];
 
 #endif // USER_BWIO_H__INCLUDED

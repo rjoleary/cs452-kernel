@@ -45,6 +45,7 @@ size_t strlen(const char *s) {
 namespace ctl {
 namespace detail {
 void assert(const char *file, int line) {
+    useBusyWait = false;
     bwprintf(COM2, "Assertion failed in Tid %d, %s:%d\r\n", ctl::myTid(), file, line);
     exeunt();
 }

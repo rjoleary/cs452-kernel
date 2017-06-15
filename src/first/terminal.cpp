@@ -8,7 +8,7 @@
 #include <event.h>
 
 using namespace ctl;
-
+/*
 // The number of bytes allocated for the command buffer.
 #define MAX_CMDSZ 70
 
@@ -146,4 +146,4 @@ void runTerminal() {
             }
         }
     }
-}
+}*/

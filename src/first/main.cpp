@@ -30,12 +30,15 @@ void firstMain() {
                 io::txMain<Names::Uart2Tx, Event::Uart2Tx>) >= 0);
     ASSERT(create(Priority(PRIORITY_MAX.underlying() - 2), 
                 io::rxMain<Names::Uart2Rx, Event::Uart2Rx>) >= 0);
-    ASSERT(create(Priority(PRIORITY_MAX.underlying() - 2), clockMain) >= 0);
+    bwioServs[0] = Tid(0);
+    bwioServs[1] = whoIs(Names::Uart2Tx);
+    bwputstr(COM2, "\033[0m");
+    //ASSERT(create(Priority(PRIORITY_MAX.underlying() - 2), clockMain) >= 0);
 
     //stopTrains();
 
     //runTerminal();
-    bwprintf(COM2, "Something something\r\n");
+    //bwprintf(COM2, "Something something\r\n");
     //auto clockServ = whoIs(Names::ClockServer);
     auto txServ = whoIs(Names::Uart2Tx);
     auto rxServ = whoIs(Names::Uart2Rx);

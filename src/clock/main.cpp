@@ -6,6 +6,7 @@
 #include <task.h>
 #include <ns.h>
 #include <heap.h>
+#include <bwio.h>
 
 namespace ctl {
 namespace {

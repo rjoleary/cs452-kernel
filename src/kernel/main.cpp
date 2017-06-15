@@ -124,9 +124,8 @@ int main() {
     TdManager tdManager(scheduler, userStacks[0] + STACK_SZ/4);
 
     // Enter main loop.
-    //useBusyWait = false;
+    useBusyWait = false;
     void mainLoop(Scheduler &scheduler, TdManager &tdManager);
-    bwputstr(COM2, "\033[0m");
     mainLoop(scheduler, tdManager);
     useBusyWait = true;
 

@@ -71,14 +71,12 @@ int bwsetspeed( int channel, int speed ) {
 // Busy wait is initially enabled for early printing. During init, it is
 // disabled in favour of interrupts.
 bool useBusyWait = true;
+ctl::Tid bwioServs[2];
 
 int bwputc( int channel, char c ) {
 	
 	if (!useBusyWait) {
-		static ctl::Tid io[2] = {whoIs(ctl::Names::Uart1Tx), whoIs(ctl::Names::Uart2Tx)};
-                ASSERT(io[0].underlying() >= 0);
-                ASSERT(io[1].underlying() >= 0);
-		io::putc(io[channel], channel, c);
+		io::putc(bwioServs[channel], channel, c);
 		return 0;
 	}
 
