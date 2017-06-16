@@ -14,7 +14,6 @@
 using namespace kernel;
 using namespace ctl;
 
-
 // Forward declarations
 const char* buildstr();
 

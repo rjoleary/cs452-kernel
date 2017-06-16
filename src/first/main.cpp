@@ -30,25 +30,17 @@ void firstMain() {
                 io::txMain<Names::Uart2Tx, Event::Uart2Tx>) >= 0);
     ASSERT(create(Priority(PRIORITY_MAX.underlying() - 2), 
                 io::rxMain<Names::Uart2Rx, Event::Uart2Rx>) >= 0);
-    //ASSERT(create(Priority(PRIORITY_MAX.underlying() - 2), 
-    //            io::txMain<Names::Uart1Tx, Event::Uart1Tx>) >= 0);
-    //ASSERT(create(Priority(PRIORITY_MAX.underlying() - 2), 
-    //            io::rxMain<Names::Uart1Rx, Event::Uart1Rx>) >= 0);
+    ASSERT(create(Priority(PRIORITY_MAX.underlying() - 2), 
+                io::txMain<Names::Uart1Tx, Event::Uart1Tx>) >= 0);
+    ASSERT(create(Priority(PRIORITY_MAX.underlying() - 2), 
+                io::rxMain<Names::Uart1Rx, Event::Uart1Rx>) >= 0);
     ASSERT(create(Priority(PRIORITY_MAX.underlying() - 2), clockMain) >= 0);
-    //bwioServs[0] = whoIs(Names::Uart1Tx);
+    // TODO: move
+    bwioServs[0] = whoIs(Names::Uart1Tx);
     bwioServs[1] = whoIs(Names::Uart2Tx);
-    //bwputstr(COM2, "\033[0m");
+    bwputstr(COM2, "\033[0m"); // reset special formatting
 
-    //stopTrains();
-
-    //runTerminal();
-    //bwprintf(COM2, "Something something\r\n");
-    //auto clockServ = whoIs(Names::ClockServer);
-    auto rxServ = whoIs(Names::Uart2Rx);
-    for (int i = 0; i < 10; ++i) {
-        bwputstr(COM2, "AAAA\r\n");
-        bwprintf(COM2, "%d\r\n", time(whoIs(Names::ClockServer)));
-        io::getc(rxServ, COM2);
-    }
+    stopTrains();
+    runTerminal();
 }
 }

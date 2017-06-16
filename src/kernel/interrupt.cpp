@@ -34,9 +34,7 @@ InterruptController::InterruptController() {
     clearAll();
     *(volatile unsigned*)(0x38) = (unsigned)irqEntry;
     *(volatile unsigned*)(VIC1Base + VICxIntEnable) = (1u << TC1UI);
-    *(volatile unsigned*)(VIC2Base + VICxIntEnable) =
-    //    (1u << INT_UART1) +
-        (1u << INT_UART2);
+    *(volatile unsigned*)(VIC2Base + VICxIntEnable) = (1u << INT_UART1) + (1u << INT_UART2);
 }
 
 InterruptController::~InterruptController() {
@@ -82,6 +80,18 @@ void InterruptController::handle(Scheduler &scheduler, TdManager &tdManager) {
     if (vic1Status & (1u << TC1UI)) {
         *(volatile unsigned *)(TIMER1_BASE + CLR_OFFSET) = 0;
         awaken(scheduler, ctl::Event::PeriodicTimer, 0);
+    }
+    if (vic2Status & (1u << INT_UART1)) {
+        const auto uartStatus = *(volatile unsigned*)(UART1_BASE + UART_INTR_OFFSET);
+        if (uartStatus & TIS_MASK) {
+            *(volatile unsigned*)(UART1_BASE + UART_CTLR_OFFSET) &= ~TIEN_MASK;
+            awaken(scheduler, ctl::Event::Uart1Tx, 0);
+        }
+        if (uartStatus & RIS_MASK) {
+            int ret = *(volatile unsigned*)(UART1_BASE + UART_DATA_OFFSET) & 0xff;
+            // TODO: corrupt data
+            awaken(scheduler, ctl::Event::Uart1Rx, ret);
+        }
     }
     if (vic2Status & (1u << INT_UART2)) {
         const auto uartStatus = *(volatile unsigned*)(UART2_BASE + UART_INTR_OFFSET);
