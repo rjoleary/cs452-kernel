@@ -67,8 +67,8 @@ void timerMain() {
     int tenths = 0;
     auto clock = whoIs(Names::ClockServer);
     for (;;) {
-        delay(clock, 10);
         tenths++;
+        delayUntil(clock, tenths);
         savecur();
         setpos(1, 1);
         bwprintf(COM2, "%02d:%02d.%d", 
