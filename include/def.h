@@ -5,9 +5,13 @@
 
 #include <user/def.h>
 
-namespace kernel {
 // Size of individual user stacks in bytes.
-constexpr auto STACK_SZ = 4096;
+#ifndef STACK_SZ
+#warning Stack size should be defined in Makefile.
+#define STACK_SZ 4096
+#endif
+
+namespace kernel {
 
 // The number of available priorities.
 constexpr auto NUM_PRI = ctl::PRIORITY_MAX.underlying() - ctl::PRIORITY_MIN.underlying() + 1;

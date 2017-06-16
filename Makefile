@@ -1,10 +1,15 @@
 export PATH := /u3/rj2olear/gcc-arm-eabi-6/bin:$(PATH)
 
+STACK_SZ ?= 4096
+
 XCC     := arm-none-eabi-g++
 AS      := arm-none-eabi-as
 LD      := arm-none-eabi-g++
 OBJDUMP := arm-none-eabi-objdump
-CFLAGS  := -c -fPIC -Wall -Werror -mcpu=arm920t -msoft-float --std=gnu++14 -nostdlib -nostartfiles -ffreestanding -fno-exceptions -fno-unwind-tables -fno-rtti -fno-threadsafe-statics
+CFLAGS  := -c -fPIC -Wall -Werror -mcpu=arm920t -msoft-float --std=gnu++14    \
+    -nostdlib -nostartfiles -ffreestanding -fno-exceptions -fno-unwind-tables \
+    -fno-rtti -fno-threadsafe-statics -Wstack-usage=$(STACK_SZ)               \
+    -DSTACK_SZ=$(STACK_SZ)
 # -g: include hooks for gdb
 # -c: only compile
 # -mcpu=arm920t: generate code for the 920t architecture

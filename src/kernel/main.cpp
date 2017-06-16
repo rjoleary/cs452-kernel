@@ -356,7 +356,7 @@ void mainLoop(Scheduler &scheduler, TdManager &tdManager) {
             else {
                 td->ptid = active->tid;
                 td->pri  = priority;
-                td->sp   = userStacks[td->tid.underlying()] + kernel::STACK_SZ/4;
+                td->sp   = userStacks[td->tid.underlying()] + STACK_SZ/4;
                 td->initStack(code);
                 scheduler.readyTask(*td);
                 ret = td->tid.underlying();
