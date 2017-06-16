@@ -28,12 +28,6 @@ const unsigned
     VICxVectCntl0    = 0x200;
 
 class InterruptController : private NonCopyable {
-    // TODO: inherit these deletions
-    InterruptController(const InterruptController &) = delete;
-    InterruptController(const InterruptController &&) = delete;
-    void operator=(const InterruptController &) = delete;
-    void operator=(const InterruptController &&) = delete;
-
     // Maps event ids to a linked list of tasks blocked on that event.
     Td *awaitQueues[ctl::EVENT_NUM] = {0};
 
