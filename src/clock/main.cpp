@@ -80,7 +80,7 @@ int delayUntil(Tid tid, int ticks) {
 
 void clockMain() {
     int counter = 0;
-    ASSERT(registerAs(Names::ClockServer) == 0);
+    ASSERT(registerAs(names::ClockServer) == 0);
     Heap<NUM_TD, DelayData, DelayDataComp> minheap;
 
     void clockNotifier();
@@ -131,7 +131,7 @@ void clockMain() {
 }
 
 void clockNotifier() {
-    auto clockTid = Tid(whoIs(Names::ClockServer));
+    auto clockTid = Tid(whoIs(names::ClockServer));
     Message notify{MsgType::Notify};
     for (;;) {
         ASSERT(awaitEvent(Event::PeriodicTimer) >= 0);

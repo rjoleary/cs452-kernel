@@ -13,10 +13,10 @@
 void idleMain();
 void runTerminal();
 namespace io {
-template <ctl::Names Server, ctl::Event Ev>
-void txMain();
-template <ctl::Names Server, ctl::Event Ev>
-void rxMain();
+extern void (*uart1TxMain)();
+extern void (*uart1RxMain)();
+extern void (*uart2TxMain)();
+extern void (*uart2RxMain)();
 }
 
 namespace ctl {
@@ -26,18 +26,14 @@ void clockMain();
 void firstMain() {
     ASSERT(Tid(create(PRIORITY_MIN, idleMain)) == IDLE_TID);
     ASSERT(Tid(create(Priority(2), nsMain)) == NS_TID);
-    ASSERT(create(Priority(PRIORITY_MAX.underlying() - 2), 
-                io::txMain<Names::Uart2Tx, Event::Uart2Tx>) >= 0);
-    ASSERT(create(Priority(PRIORITY_MAX.underlying() - 2), 
-                io::rxMain<Names::Uart2Rx, Event::Uart2Rx>) >= 0);
-    ASSERT(create(Priority(PRIORITY_MAX.underlying() - 2), 
-                io::txMain<Names::Uart1Tx, Event::Uart1Tx>) >= 0);
-    ASSERT(create(Priority(PRIORITY_MAX.underlying() - 2), 
-                io::rxMain<Names::Uart1Rx, Event::Uart1Rx>) >= 0);
+    ASSERT(create(Priority(PRIORITY_MAX.underlying() - 2), io::uart2TxMain) >= 0);
+    ASSERT(create(Priority(PRIORITY_MAX.underlying() - 2), io::uart2RxMain) >= 0);
+    ASSERT(create(Priority(PRIORITY_MAX.underlying() - 2), io::uart1TxMain) >= 0);
+    ASSERT(create(Priority(PRIORITY_MAX.underlying() - 2), io::uart1RxMain) >= 0);
     ASSERT(create(Priority(PRIORITY_MAX.underlying() - 2), clockMain) >= 0);
     // TODO: move
-    bwioServs[0] = whoIs(Names::Uart1Tx);
-    bwioServs[1] = whoIs(Names::Uart2Tx);
+    bwioServs[0] = whoIs(names::Uart1TxServer);
+    bwioServs[1] = whoIs(names::Uart2TxServer);
     bwputstr(COM2, "\033[0m"); // reset special formatting
 
     initTrains();

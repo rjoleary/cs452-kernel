@@ -65,7 +65,7 @@ void restorecur() {
 
 void timerMain() {
     int tenths = 0;
-    auto clock = whoIs(Names::ClockServer);
+    auto clock = whoIs(names::ClockServer);
     for (;;) {
         tenths++;
         delayUntil(clock, tenths);
@@ -103,7 +103,7 @@ void runTerminal() {
     unsigned cmdsz = 0;
     char cmdbuf[MAX_CMDSZ+1];
 
-    Tid io = whoIs(Names::Uart2Rx);
+    Tid io = whoIs(names::Uart2RxServer);
     ASSERT(io.underlying() >= 0);
     for (;;) {
         int c = io::getc(io, COM2);

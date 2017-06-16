@@ -15,7 +15,7 @@ enum class MsgType {
 
 struct Message {
     MsgType type;
-    Names name;
+    Name name;
 };
 
 struct Reply {
@@ -24,7 +24,7 @@ struct Reply {
 };
 }
 
-int registerAs(Names name) {
+int registerAs(Name name) {
     Message msg;
     msg.type = MsgType::Register;
     msg.name = name;
@@ -34,7 +34,7 @@ int registerAs(Names name) {
     return -static_cast<int>(rply.error);
 }
 
-Tid whoIs(Names name) {
+Tid whoIs(Name name) {
     Message msg;
     msg.type = MsgType::WhoIs;
     msg.name = name;
@@ -45,9 +45,13 @@ Tid whoIs(Names name) {
 }
 
 void nsMain() {
-    Tid map[static_cast<unsigned>(Names::LastName)];
-    for (int i = 0; i < static_cast<int>(Names::LastName); ++i)
-        map[i] = INVALID_TID;
+    // Map from names to servers.
+    struct Entry {
+        Name name;
+        Tid tid = INVALID_TID;
+    };
+    Entry map[NUM_TD];
+    unsigned mapSize = 0;
 
     for (;;) {
         Tid tid;
@@ -55,21 +59,33 @@ void nsMain() {
         Reply rply = {Error::Ok};
         ASSERT(receive(&tid, msg) == sizeof(msg));
 
-        auto idx = static_cast<unsigned>(msg.name);
+        int idx = -1;
+        for (unsigned i = 0; i < mapSize; i++) {
+            if (memcmp(msg.name.data, map[i].name.data, sizeof(msg.name.data)) == 0) {
+                idx = i;
+                break;
+            }
+        }
+
         switch (msg.type) {
             case MsgType::Register: {
-                if (map[idx] == INVALID_TID)
-                    map[idx] = tid;
-                else
+                if (mapSize >= NUM_TD || idx != -1) {
+                    // TODO: is this up to spec? or should it overwrite
                     rply.error = Error::NoRes;
+                } else {
+                    map[mapSize].name = msg.name;
+                    map[mapSize].tid = tid;
+                    mapSize++;
+                }
                 break;
             }
 
             case MsgType::WhoIs: {
-                if (map[idx] == INVALID_TID) 
+                if (idx != -1)  {
+                    rply.tid = map[idx].tid;
+                } else  {
                     rply.error = Error::BadArg;
-                else 
-                    rply.tid = map[idx];
+                }
                 break;
             }
 

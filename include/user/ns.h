@@ -4,14 +4,17 @@
 #define USER_NS_H__INCLUDED
 
 namespace ctl{
-enum class Names {
-    ClockServer,
-    Uart1Rx,
-    Uart1Tx,
-    Uart2Rx,
-    Uart2Tx,
-    LastName // Special name to count
-};
+
+// Names are capped at eight characters including the null terminator.
+struct Name {char data[8];};
+
+namespace names {
+constexpr Name ClockServer{"Clock"};
+constexpr Name Uart1RxServer{"Uart1Rx"};
+constexpr Name Uart1TxServer{"Uart1Tx"};
+constexpr Name Uart2RxServer{"Uart2Rx"};
+constexpr Name Uart2TxServer{"Uart2Tx"};
+}
 
 // registerAs - register a name with the name server.
 //
@@ -33,7 +36,7 @@ enum class Names {
 // Returns:
 //   -ERR_OK: Success.
 //   -ERR_INVID: The nameserver task id inside the wrapper is invalid.
-int registerAs(Names name);
+int registerAs(Name name);
 
 // whoIs - query the nameserver.
 //
@@ -52,7 +55,7 @@ int registerAs(Names name);
 //
 // Returns:
 //   tid: The task id of the registered task.
-Tid whoIs(Names name);
+Tid whoIs(Name name);
 
 void nsMain();
 }

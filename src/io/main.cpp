@@ -31,24 +31,35 @@ struct alignas(4) Reply {
     char data;
 };
 
-template <Names Server, Event Ev>
-void txNotifierMain() {
-    auto serverTid = Tid(whoIs(Server));
-    Message message{MsgType::NotifyTx};
+struct Uart1Traits {
+    static constexpr auto &txServer = names::Uart1TxServer;
+    static constexpr auto &rxServer = names::Uart1RxServer;
+    static constexpr auto txEvent = Event::Uart1Tx;
+    static constexpr auto rxEvent = Event::Uart1Rx;
+    static constexpr auto dataReg = UART1_BASE + UART_DATA_OFFSET;
+    static constexpr auto flagReg = UART1_BASE + UART_FLAG_OFFSET;
+};
 
-    auto data = Ev == Event::Uart1Tx
-        ? (volatile unsigned*)(UART1_BASE + UART_DATA_OFFSET)
-        : (volatile unsigned*)(UART2_BASE + UART_DATA_OFFSET);
-    auto flags = Ev == Event::Uart1Tx
-        ? (volatile unsigned*)(UART1_BASE + UART_FLAG_OFFSET)
-        : (volatile unsigned*)(UART2_BASE + UART_FLAG_OFFSET);
+struct Uart2Traits {
+    static constexpr auto &txServer = names::Uart2TxServer;
+    static constexpr auto &rxServer = names::Uart2RxServer;
+    static constexpr auto txEvent = Event::Uart2Tx;
+    static constexpr auto rxEvent = Event::Uart2Rx;
+    static constexpr auto dataReg = UART2_BASE + UART_DATA_OFFSET;
+    static constexpr auto flagReg = UART2_BASE + UART_FLAG_OFFSET;
+};
+
+template <typename T>
+void txNotifierMain() {
+    auto serverTid = Tid(whoIs(T::txServer));
+    Message message{MsgType::NotifyTx};
     for (;;) {
         Reply toPrint;
         ASSERT(send(serverTid, message, toPrint) == sizeof(toPrint));
         for (;;) {
-            if (awaitEvent(Ev) >= 0) {
-                if (!(*flags & TXFF_MASK)) {
-                    *data = toPrint.data;
+            if (awaitEvent(T::txEvent) >= 0) {
+                if (!(*(volatile unsigned*)(T::flagReg) & TXFF_MASK)) {
+                    *(volatile unsigned*)(T::dataReg) = toPrint.data;
                     break;
                 }
             }
@@ -56,12 +67,12 @@ void txNotifierMain() {
     }
 }
 
-template <Names Server, Event Ev>
+template <typename T>
 void rxNotifierMain() {
-    auto serverTid = Tid(whoIs(Server));
+    auto serverTid = Tid(whoIs(T::rxServer));
     Message message{MsgType::NotifyRx};
     for (;;) {
-        auto ch = awaitEvent(Ev);
+        auto ch = awaitEvent(T::rxEvent);
         if (ch >= 0) {
             message.data = ch;
             ASSERT(send(serverTid, message, EmptyMessage) == 0);
@@ -99,14 +110,13 @@ int putc(Tid tid, int uart, char ch) {
 }
 
 // Handles TX interrupt, used by putc
-template <Names Server, Event Ev>
+template <typename T>
 void txMain() {
     // Register with the nameserver.
-    ASSERT(registerAs(Server) == 0);
+    ASSERT(registerAs(T::txServer) == 0);
 
-    // Create notifiers.
-    ASSERT(create(Priority(PRIORITY_MAX.underlying()-1),
-        txNotifierMain<Server, Ev>) >= 0);
+    // Create notifier.
+    ASSERT(create(Priority(PRIORITY_MAX.underlying()-1), txNotifierMain<T>) >= 0);
 
     // Buffers for asynchronicity
     typedef CircularBuffer<char, 2048> CharBuffer;
@@ -147,17 +157,13 @@ void txMain() {
     }
 }
 
-template void txMain<Names::Uart2Tx, Event::Uart2Tx>();
-template void txMain<Names::Uart1Tx, Event::Uart1Tx>();
-
-template <Names Server, Event Ev>
+template <typename T>
 void rxMain() {
     // Register with the nameserver.
-    ASSERT(registerAs(Server) == 0);
+    ASSERT(registerAs(T::rxServer) == 0);
 
-    // Create notifiers.
-    ASSERT(create(Priority(PRIORITY_MAX.underlying()-1),
-        rxNotifierMain<Server, Ev>) >= 0);
+    // Create notifier.
+    ASSERT(create(Priority(PRIORITY_MAX.underlying()-1), rxNotifierMain<T>) >= 0);
 
     // Buffers for asynchronicity
     typedef CircularBuffer<char, 512> CharBuffer;
@@ -195,7 +201,10 @@ void rxMain() {
         }
     }
 }
-template void rxMain<Names::Uart2Rx, Event::Uart2Rx>();
-template void rxMain<Names::Uart1Rx, Event::Uart1Rx>();
 
+// Export template functions.
+void (*uart1TxMain)() = txMain<Uart1Traits>;
+void (*uart1RxMain)() = rxMain<Uart1Traits>;
+void (*uart2TxMain)() = txMain<Uart2Traits>;
+void (*uart2RxMain)() = rxMain<Uart2Traits>;
 }
