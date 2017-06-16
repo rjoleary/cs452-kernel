@@ -1,88 +1,152 @@
-#include <bwio.h>
 #include <train.h>
 
-typedef enum {
-    // Train has unknown lights and speed. Assume trains are all set to speed 0
-    // and transition to StateRunning.
-    StateUnknown = 0,
+#include <bwio.h>
+#include <circularbuffer.h>
+#include <clock.h>
+#include <def.h>
+#include <itc.h>
+#include <ns.h>
+#include <std.h>
+#include <task.h>
 
-    // Stay running at the same speed.
-    StateRunning,
+namespace {
+enum class MsgType : char {
+    CheckIn,
+    LightOn,
+    LightOff,
+    LightToggle,
+    SetSpeed,
+    Reverse,
+};
 
-    // Set the train's speed.
-    StateSetSpeed,
+struct alignas(4) Message {
+    MsgType type;
+    char train, speed;
+};
 
-    // Slow down to reverse. Once the stop is reversed, transition to
-    // StateRunning.
-    StateSlowToReverse,
-    StateSlowToReverseWait,
-    StateReverse,
-} State;
+// Manages a single train.
+// TODO: data framing
+void trainMain() {
+    // Receive train number from the train man.
+    unsigned number;
+    ctl::Tid trainMan;
+    ASSERT(receive(&trainMan, number) == sizeof(number));
+    ASSERT(reply(trainMan, ctl::EmptyMessage) == 0);
 
-typedef struct {
-    //State state;
-    char state;
-    // light and speed
-    char speed;
-    // Estimate time when the train will come to a stop.
-    unsigned stopTime;
-} Train;
+    // Register as "TrainXX".
+    ctl::Name name{"TrainXX"};
+    name.data[6] = number / 10 % 10 + '0';
+    name.data[1] = number % 10 + '0';
+    ASSERT(registerAs(name) == 0);
 
-// Train #1 is at index 0.
-static Train trains[80];
+    // Get clock server.
+    ctl::Tid clockServer = whoIs(ctl::names::ClockServer);
+    ASSERT(clockServer.underlying() >= 0);
 
-void initTrains() {
-    // Set train speeds to 0.
-    int i;
-    for (i = 0; i < 80; i++) {
-        trains[i].state = StateUnknown;
-        trains[i].speed = 0;
+    // Train state
+    char speed = 0; // light and speed
+    const char LIGHT_MASK = 0x10;
+    const char SPEED_MASK = 0x0f;
+
+    // Receive messages from the train man.
+    Message msg{MsgType::CheckIn, char(number)};
+    for (;;) {
+        Message rply;
+        ASSERT(send(trainMan, msg, rply) == sizeof(rply));
+
+        switch (rply.type) {
+            case MsgType::LightOn: {
+                speed = speed & LIGHT_MASK;
+                break;
+            }
+
+            case MsgType::LightOff: {
+                speed = speed & ~LIGHT_MASK;
+                break;
+            }
+
+            case MsgType::LightToggle: {
+                speed = speed ^ LIGHT_MASK;
+                break;
+            }
+
+            case MsgType::SetSpeed: {
+                speed = (speed & ~SPEED_MASK) | (rply.speed & SPEED_MASK);
+                bwputc(COM1, speed);
+                bwputc(COM1, number);
+                break;
+            }
+
+            case MsgType::Reverse: {
+                // Stop
+                bwputc(COM1, speed & ~SPEED_MASK);
+                bwputc(COM1, number);
+                // 200 milliseconds for each train speed
+                ctl::delay(clockServer, 20);
+                // Reverse
+                bwputc(COM1, speed | SPEED_MASK);
+                bwputc(COM1, number);
+                // Set speed
+                bwputc(COM1, speed);
+                bwputc(COM1, number);
+                break;
+            }
+            
+            default: {
+                ASSERT(false);
+            }
+        }
     }
-
-    goTrains();
+}
 }
 
-/*void updateTrain(int train, unsigned time) {
-    Train *t = &trains[train-1];
-    switch (t->state) {
+// Manages all the trains.
+void trainManMain() {
+    ASSERT(ctl::registerAs(ctl::Name{"TrMan"}) == 0);
 
-    case StateUnknown:
-        t->state = StateRunning;
-        break;
+    // Maps trains to their Tids.
+    // Indexing: train #1 is at index 0
+    struct Train {
+        ctl::Tid tid = ctl::INVALID_TID;
+        bool waiting = false;
+        ctl::CircularBuffer<Message, 4> messages;
+    };
+    Train trains[80];
 
-    case StateRunning:
-        break;
+    for (;;) {
+        ctl::Tid tid;
+        Message msg;
+        ASSERT(receive(&tid, msg) == sizeof(msg));
+        Train &train = trains[msg.train-1];
 
-    case StateSetSpeed:
-        bufferEnqueue2(COM1, t->speed, train);
-        t->state = StateRunning;
-        break;
-
-    case StateSlowToReverse:
-        if (t->speed == 0) {
-            t->state = StateReverse;
+        // If this is a train checking in, reply with the queued message.
+        if (msg.type == MsgType::CheckIn) {
+            if (!train.messages.empty()) {
+                ASSERT(reply(tid, train.messages.pop()));
+                train.waiting = false;
+            } else {
+                train.waiting = true;
+            }
         } else {
-            bufferEnqueue2(COM1, t->speed & ~0x0f, train);
-            // 200 milliseconds for each train speed
-            t->stopTime = time + t->speed * 200;
-            t->state = StateSlowToReverseWait;
-        }
-        break;
+            // Create new task for the train if one does not exist.
+            if (train.tid == ctl::INVALID_TID) {
+                train.tid = ctl::Tid(create(ctl::Priority(20), trainMain));
+                ASSERT(train.tid.underlying() >= 0);
+                ASSERT(send(train.tid, unsigned(msg.train), ctl::EmptyMessage) == sizeof(ctl::EmptyMessage));
+            }
 
-    case StateSlowToReverseWait:
-        if (time >= t->stopTime) {
-            bufferEnqueue2(COM1, t->speed | 0x0f, train);
-            t->state = StateReverse;
-        }
-        break;
+            // Send the message to the train or queue it.
+            if (train.waiting) {
+                ASSERT(reply(tid, msg));
+                train.waiting = false;
+            } else {
+                train.messages.push(msg);
+            }
 
-    case StateReverse:
-        if (time >= t->stopTime + 150) {
-            t->state = StateSetSpeed;
         }
-        break;
     }
-}*/
+}
+
 
 void stopTrains() {
     bwputc(COM1, 97);
@@ -96,10 +160,7 @@ void cmdToggleLight(int train) {
     if (train < 1 || 80 < train) {
         bwputstr(COM2, "Error: train number must be between 1 and 80 inclusive\r\n");
     }
-    Train *t = &trains[train-1];
-    t->speed ^= 0x10; // toggle light
-    bwputc(COM1, t->speed);
-    bwputc(COM1, train);
+    ASSERT(send(whoIs(ctl::Name{"TrMan"}), Message{MsgType::LightToggle, char(train)}, ctl::EmptyMessage));
 }
 
 void cmdSetSpeed(int train, int speed) {
@@ -110,14 +171,12 @@ void cmdSetSpeed(int train, int speed) {
         bwputstr(COM2, "Error: speed must be between 0 and 15 inclusive\r\n");
         return;
     }
-    Train *t = &trains[train-1];
-    t->speed = (t->speed & ~0x0f) | speed;
-    t->state = StateSetSpeed;
+    ASSERT(send(whoIs(ctl::Name{"TrMan"}), Message{MsgType::SetSpeed, char(train), char(speed)}, ctl::EmptyMessage));
 }
 
 void cmdReverse(int train) {
     if (train < 1 || 80 < train) {
         bwputstr(COM2, "Error: train number must be between 1 and 80 inclusive\r\n");
     }
-    trains[train-1].state = StateSlowToReverse;
+    ASSERT(send(whoIs(ctl::Name{"TrMan"}), Message{MsgType::Reverse, char(train)}, ctl::EmptyMessage));
 }

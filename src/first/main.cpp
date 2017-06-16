@@ -37,7 +37,7 @@ void firstMain() {
     bwioServs[1] = whoIs(names::Uart2TxServer);
     bwputstr(COM2, "\033[0m"); // reset special formatting
 
-    initTrains();
+    goTrains();
     runTerminal();
 }
 }
