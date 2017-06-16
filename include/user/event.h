@@ -30,7 +30,12 @@ enum class Event {
     // Input: 8-bit char to write
     // Output: 0
     Uart2Tx,
+
+    // Number of events, keep as last.
+    EventNum,
 };
+
+const int EVENT_NUM = static_cast<int>(Event::EventNum);
 
 // awaitEvent - wait for an external event.
 //

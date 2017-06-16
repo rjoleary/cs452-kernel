@@ -1,5 +1,7 @@
 #pragma once
 #include <user/event.h>
+#include <scheduler.h>
+#include <task.h>
 
 namespace kernel {
 // Forward declare
@@ -24,7 +26,37 @@ const unsigned
     VICxVectAddr0    = 0x100,
     VICxVectCntl0    = 0x200;
 
-namespace interrupt {
+class InterruptController {
+    // TODO: inherit these deletions
+    InterruptController(const InterruptController &) = delete;
+    InterruptController(const InterruptController &&) = delete;
+    void operator=(const InterruptController &) = delete;
+    void operator=(const InterruptController &&) = delete;
+
+    // Maps event ids to a linked list of tasks blocked on that event.
+    Td *awaitQueues[ctl::EVENT_NUM] = {0};
+
+    // Clears all interrupts.
+    void clearAll();
+
+    // Awaken all the tasks blocked on an event.
+    void awaken(Scheduler &scheduler, const ctl::Event event, int ret);
+
+public:
+    // Initialize the interrupt controller and enable interrupts.
+    InterruptController();
+
+    // Uninitialize the interrupt controller and disable all interrupts. Must
+    // be called to correctly return to RedBoot and re-execute the kernel.
+    ~InterruptController();
+
+    // Await a task descriptor on an event.
+    int awaitEvent(Td *td, const ctl::Event event);
+
+    // Handles an interrupt.
+    void handle(Scheduler &scheduler, TdManager &tdManager);
+};
+
 // Interrupt sources which may be relevant.
 // Source: ep93xx-user-guid.pdf, section 6.1.2
 enum SourceVic1 {
@@ -42,13 +74,4 @@ enum SourceVic2 {
     INT_UART1    = 52 - 32, // UART 1 Interrupt
     INT_UART2    = 54 - 32, // UART 2 Interrupt
 };
-
-// Initialize the interrupt controller.
-void init();
-
-// Uninitialize the interrupt controller.
-// Must be called to correctly return to RedBoot and re-execute the kernel.
-void clearAll();
-}
-
 }

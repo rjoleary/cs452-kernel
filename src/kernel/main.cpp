@@ -93,9 +93,7 @@ void initTimers() {
     *(volatile unsigned*)(TIMER2_BASE + CRTL_OFFSET) = CLKSEL_MASK | ENABLE_MASK;
 }
 
-void initInterrupts() {
-    interrupt::init();
-
+void initSwi() {
     // Software Interrupt (SWI)
     auto SVC_ADDR = (void (*volatile*)())0x28;
     *SVC_ADDR = &kernelEntry;
@@ -116,17 +114,18 @@ int main() {
     initSerial();
     printEarlyDebug(kernelStack);
     initTimers();
-    initInterrupts();
     initProfiler();
+    initSwi();
 
     // Kernel state
     Scheduler scheduler;
     TdManager tdManager(scheduler, userStacks[0] + STACK_SZ/4);
+    InterruptController intControl; // enables interrupts
 
     // Enter main loop.
     useBusyWait = false;
-    void mainLoop(Scheduler &scheduler, TdManager &tdManager);
-    mainLoop(scheduler, tdManager);
+    void mainLoop(Scheduler &scheduler, TdManager &tdManager, InterruptController &intControl);
+    mainLoop(scheduler, tdManager, intControl);
     useBusyWait = true;
 
 #ifdef PROF_INTERVAL
@@ -140,14 +139,10 @@ int main() {
     profilerDump();
 #endif
 
-    // Interrupts must be unbound to return to RedBoot cleanly.
-    interrupt::clearAll();
     return 0;
 }
 
-void mainLoop(Scheduler &scheduler, TdManager &tdManager) {
-    Td *interruptHead = nullptr;
-    Td *interruptTail;
+void mainLoop(Scheduler &scheduler, TdManager &tdManager, InterruptController &intControl) {
     while (1) {
         auto active = scheduler.getNextTask();
         *(volatile unsigned*)(TIMER2_BASE + LDR_OFFSET) = 0xffff;
@@ -155,73 +150,21 @@ void mainLoop(Scheduler &scheduler, TdManager &tdManager) {
         active->userTime += 0xffff - *(volatile unsigned*)(TIMER2_BASE + VAL_OFFSET);
         *(volatile unsigned*)(TIMER2_BASE + LDR_OFFSET) = 0xffff;
 
-        // Handle interrupt. (TODO: a bit messy)
+        // Handle interrupt.
         extern unsigned isIrq;
         if (isIrq) {
             isIrq = 0;
+            intControl.handle(scheduler, tdManager);
 
-            auto vic1Status = *(volatile unsigned*)(VIC1Base + VICxIRQStatus),
-                 vic2Status = *(volatile unsigned*)(VIC2Base + VICxIRQStatus);
-            auto validEvent = (vic1Status != 0) || (vic2Status != 0);
-            if (validEvent) {
-                int ret = 0;
-                Event event;
-                if (vic1Status & (1u << interrupt::TC1UI)) {
-                    event = Event::PeriodicTimer;
-                    *(volatile unsigned *)(TIMER1_BASE + CLR_OFFSET) = 0;
-                }
-                else if (vic2Status & (1u << interrupt::INT_UART2)) {
-                    auto uartStatus = *(volatile unsigned*)(UART2_BASE + UART_INTR_OFFSET);
-                    //bwputc(COM2, ',');
-                    if (uartStatus & TIS_MASK) {
-                        event = Event::Uart2Tx;
-                        *(volatile unsigned*)(UART2_BASE + UART_CTLR_OFFSET) &= ~TIEN_MASK;
-                    }
-                    else if (uartStatus & RIS_MASK) {
-                        event = Event::Uart2Rx;
-                        ret = *(volatile unsigned*)(UART2_BASE + UART_DATA_OFFSET) & 0xff;
-                    }
-                    else {
-                        bwprintf(COM2, "mask: %x\r", uartStatus);
-                        PANIC("");
-                    }
-                }
-                else {
-                    bwprintf(COM2, "Event %d %d\r\n", vic1Status, vic2Status);
-                    PANIC("Unsupported event type");
-                }
-                auto intHandler = interruptHead;
-                Td *previous = nullptr;
-                while (intHandler) {
-                    if ((Event)intHandler->getArg(0) == event) {
-                        intHandler->setReturn(ret);
-
-                        if (previous) {
-                         //   previous->nextReady = intHandler->nextReady;
-                        }
-                        else {
-                        //    interruptHead = intHandler->nextReady;
-                        }
-
-                        scheduler.readyTask(*intHandler);
-                        //STRACE("  [%d] int awaitEvent(%d) = %d\r\n",
-                        //        intHandler->tid, event, 0);
-
-                        break;
-                    }
-                    previous = intHandler;
-                    intHandler = intHandler->nextReady;
-                }
-            }
-            // Reschedule interrupted task
+            // Reschedule interrupted task.
             active->interruptLinkReg();
             scheduler.readyTask(*active);
             continue;
         }
 
         // Handle syscall.
-        using ctl::Error;
         if (active->getSyscall() == Syscall::Receive) {
+            using ctl::Error;
             auto tid = (ctl::Tid*)active->getArg(0);
             auto msg = (unsigned*)active->getArg(1);
             int msglen = active->getArg(2);
@@ -316,31 +259,13 @@ void mainLoop(Scheduler &scheduler, TdManager &tdManager) {
         }
         else if (active->getSyscall() == Syscall::AwaitEvent) {
             auto eventId = (ctl::Event)active->getArg(0);
-
-            if (eventId == ctl::Event::PeriodicTimer ||
-                        eventId == ctl::Event::Uart1Rx ||
-                        eventId == ctl::Event::Uart1Tx ||
-                        eventId == ctl::Event::Uart2Rx ||
-                        eventId == ctl::Event::Uart2Tx ) {
-                if (eventId == ctl::Event::Uart1Tx)
-                    *(volatile unsigned *)(UART1_BASE + UART_CTLR_OFFSET) |= TIEN_MASK;
-                else if (eventId == ctl::Event::Uart2Tx)
-                    *(volatile unsigned *)(UART2_BASE + UART_CTLR_OFFSET) |= TIEN_MASK;
-                active->state = RunState::EventBlocked;
+            int ret = intControl.awaitEvent(active, eventId);
+            if (ret == 0) {
                 STRACE("  [%d] int awaitEvent(eventid=%d) = <BLOCKED>", active->tid, eventId);
-                if (interruptHead) {
-                    interruptTail->nextReady = active;
-                    interruptTail = active;
-                }
-                else {
-                    interruptHead = interruptTail = active;
-                }
-                active->nextReady = nullptr;
-            }
-            else {
-                STRACE("  [%d] int awaitEvent(eventid=%d) = %d", active->tid, eventId, -1);
+            } else {
+                active->setReturn(ret);
                 scheduler.readyTask(*active);
-                active->setReturn(-1);
+                STRACE("  [%d] int awaitEvent(eventid=%d) = %d", active->tid, eventId, ret);
             }
         }
         else if (active->getSyscall() == Syscall::Create) {
