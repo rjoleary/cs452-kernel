@@ -197,7 +197,7 @@ int parseCmd(const char *cmd) {
             return 0;
         }
         if (number.err == 1) {
-            tokenErr("expect argument", number.token.start - cmdStart + 2, number.token.len);
+            tokenErr("expected an argument", number.token.start - cmdStart + 2, number.token.len);
             return 0;
         } else if (number.err == 0) {
             tid = ctl::Tid(number.val); 
