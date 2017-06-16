@@ -47,7 +47,7 @@ const char interruptToStr[] = "ARZBBBE";
 
 // Task descriptor
 struct Td {
-    constexpr static auto SyscallIndex = 5;
+    constexpr static auto SyscallIndex = 7;
     ctl::Tid tid = ctl::INVALID_TID; // task id
     ctl::Tid ptid;                   // parent's task id
     ctl::Priority pri;               // priority

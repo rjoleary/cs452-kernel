@@ -60,12 +60,12 @@ void printEarlyDebug(unsigned *kernelStack) {
     // Print memory layout.
     extern char _DataStart, _DataEnd, _BssStart, _BssEnd;
     extern char userStart, userEnd, textStart, textEnd;
-    bwprintf(COM2, "Memory layout:");
-    bwprintf(COM2, "  0x%08x - 0x%08x: data", &_DataStart, &_DataEnd);
-    bwprintf(COM2, "  0x%08x - 0x%08x: bss", &_BssStart, &_BssEnd);
-    bwprintf(COM2, "    0x%08x - 0x%08x: user stacks (%d)", &userStart, &userEnd, NUM_TD);
-    bwprintf(COM2, "  0x%08x - 0x%08x: text", &textStart, &textEnd);
-    bwprintf(COM2, "  0x%08x - 0x%08x: kernel stack", &textEnd, kernelStack);
+    bwprintf(COM2, "Memory layout:\r\n");
+    bwprintf(COM2, "  0x%08x - 0x%08x: data\r\n", &_DataStart, &_DataEnd);
+    bwprintf(COM2, "  0x%08x - 0x%08x: bss\r\n", &_BssStart, &_BssEnd);
+    bwprintf(COM2, "    0x%08x - 0x%08x: user stacks (%d)\r\n", &userStart, &userEnd, NUM_TD);
+    bwprintf(COM2, "  0x%08x - 0x%08x: text\r\n", &textStart, &textEnd);
+    bwprintf(COM2, "  0x%08x - 0x%08x: kernel stack\r\n", &textEnd, kernelStack);
 }
 
 void initTimers() {
@@ -167,11 +167,8 @@ void mainLoop(Scheduler &scheduler, TdManager &tdManager, InterruptController &i
             if (sender) {
                 auto senderMsg = (const unsigned*)sender->getArg(1);
                 int senderMsglen = sender->getArg(2);
-
                 *tid = sender->tid;
-
                 active->setReturn(copyMsg(senderMsg, senderMsglen, msg, msglen));
-
                 scheduler.readyTask(*active);
             }
             else {
