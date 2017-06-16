@@ -25,7 +25,7 @@ void clockMain();
 
 void firstMain() {
     ASSERT(Tid(create(PRIORITY_MIN, idleMain)) == IDLE_TID);
-    ASSERT(Tid(create(PRIORITY_MAX, nsMain)) == NS_TID);
+    ASSERT(Tid(create(Priority(2), nsMain)) == NS_TID);
     ASSERT(create(Priority(PRIORITY_MAX.underlying() - 2), 
                 io::txMain<Names::Uart2Tx, Event::Uart2Tx>) >= 0);
     ASSERT(create(Priority(PRIORITY_MAX.underlying() - 2), 
@@ -40,7 +40,7 @@ void firstMain() {
     bwioServs[1] = whoIs(Names::Uart2Tx);
     bwputstr(COM2, "\033[0m"); // reset special formatting
 
-    stopTrains();
+    initTrains();
     runTerminal();
 }
 }
