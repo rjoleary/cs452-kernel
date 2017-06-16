@@ -46,11 +46,11 @@ size_t strlen(const char *s) {
 namespace ctl {
 namespace detail {
 void assert(const char *file, int line) {
-    useBusyWait = false;
+    useBusyWait = true;
     auto uartState = *(volatile unsigned*)(UART2_BASE + UART_CTLR_OFFSET);
     *(volatile unsigned*)(UART2_BASE + UART_CTLR_OFFSET) = UARTEN_MASK;
     bwprintf(COM2, "Assertion failed in Tid %d, %s:%d\r\n", ctl::myTid(), file, line);
-    useBusyWait = true;
+    useBusyWait = false;
     *(volatile unsigned*)(UART2_BASE + UART_CTLR_OFFSET) = uartState;
     exeunt();
 }

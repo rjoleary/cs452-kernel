@@ -3,7 +3,7 @@
 #include <user/ts7200.h>
 
 void kernel::detail::panic(unsigned *regs, const char *str, const char *file, int line) {
-    useBusyWait = false;
+    useBusyWait = true;
     *(volatile unsigned*)(UART2_BASE + UART_CTLR_OFFSET) = UARTEN_MASK;
     bwputstr(COM2, "\r\n!!!!!!!! PANIC !!!!!!!!\r\n");
     bwprintf(COM2, "Error: %s\r\n", str);
