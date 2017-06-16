@@ -34,10 +34,6 @@ void firstMain() {
     ASSERT(create(Priority(PRIORITY_MAX.underlying() - 2), io::uart1RxMain) >= 0);
     ASSERT(create(Priority(PRIORITY_MAX.underlying() - 2), clockMain) >= 0);
     ASSERT(create(Priority(22), trainManMain) >= 0);
-    // TODO: move
-    bwioServs[0] = whoIs(names::Uart1TxServer);
-    bwioServs[1] = whoIs(names::Uart2TxServer);
-    bwputstr(COM2, "\033[0m"); // reset special formatting
 
     goTrains();
     runTerminal();

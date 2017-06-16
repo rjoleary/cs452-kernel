@@ -81,6 +81,9 @@ void timerMain() {
 }
 
 void runTerminal() {
+    // Reset special formatting.
+    bwputstr(COM2, "\033[0m");
+
     // Clear display.
     setpos(1, 1);
     char clear[] = "\033[J";
@@ -97,7 +100,6 @@ void runTerminal() {
     // Create timer.
     // Timer must be higher priority than terminal, otherwise output gets jumbled.
     ASSERT(create(Priority(28), timerMain) >= 0);
-
 
     bool isStopped;
     unsigned cmdsz = 0;
