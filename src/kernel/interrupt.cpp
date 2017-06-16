@@ -69,6 +69,7 @@ int InterruptController::awaitEvent(Td *td, const ctl::Event event) {
     // Update td state and insert into await queue.
     td->state = RunState::EventBlocked;
     td->nextReady = awaitQueues[eventId];
+    awaitQueues[eventId] = td;
 
     return 0;
 }

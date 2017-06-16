@@ -51,7 +51,7 @@ void initSerial() {
     // COM2
     bwsetspeed(COM2, 115200);
     bwsetfifo(COM2, OFF);
-    *(volatile unsigned*)(UART2_BASE + UART_CTLR_OFFSET) = UARTEN_MASK | RIEN_MASK;
+    *(volatile unsigned*)(UART2_BASE + UART_CTLR_OFFSET) = UARTEN_MASK /*| RIEN_MASK*/;
 }
 
 void printEarlyDebug(unsigned *kernelStack) {
@@ -123,7 +123,7 @@ int main() {
     InterruptController intControl; // enables interrupts
 
     // Enter main loop.
-    useBusyWait = false;
+    //useBusyWait = false;
     void mainLoop(Scheduler &scheduler, TdManager &tdManager, InterruptController &intControl);
     mainLoop(scheduler, tdManager, intControl);
     useBusyWait = true;
