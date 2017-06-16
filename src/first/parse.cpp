@@ -229,7 +229,7 @@ int parseCmd(const char *cmd) {
         if (terminateCmd(cmdStart, cmd)) {
             return 0;
         }
-        bwputstr(COM2, "TID\tPTID\tPRI\tState\tUser\tSys\r\n");
+        bwputstr(COM2, "TID\tNAME\tPTID\tPRI\tState\tUser\tSys\r\n");
         for (int tid = 0; tid < NUM_TD; tid++) {
             ctl::TaskInfo ti;
             if (ctl::taskInfo(ctl::Tid(tid), &ti) == 0) {
