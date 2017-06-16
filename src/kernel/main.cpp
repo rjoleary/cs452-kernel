@@ -146,7 +146,8 @@ int main() {
 }
 
 void mainLoop(Scheduler &scheduler, TdManager &tdManager) {
-    Td *interruptHead = nullptr, *interruptTail;
+    Td *interruptHead = nullptr;
+    Td *interruptTail;
     while (1) {
         auto active = scheduler.getNextTask();
         *(volatile unsigned*)(TIMER2_BASE + LDR_OFFSET) = 0xffff;
