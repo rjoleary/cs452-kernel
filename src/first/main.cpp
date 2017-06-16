@@ -26,6 +26,7 @@ void clockMain();
 void firstMain() {
     ASSERT(Tid(create(Priority(1), nsMain)) == NS_TID);
     ASSERT(Tid(create(PRIORITY_MIN, idleMain)) == IDLE_TID);
+    ASSERT(ctl::registerAs(Name{"First"}) == 0);
     ASSERT(create(Priority(PRIORITY_MAX.underlying() - 2), io::uart2TxMain) >= 0);
     ASSERT(create(Priority(PRIORITY_MAX.underlying() - 2), io::uart2RxMain) >= 0);
     ASSERT(create(Priority(PRIORITY_MAX.underlying() - 2), io::uart1TxMain) >= 0);
