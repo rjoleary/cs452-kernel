@@ -23,7 +23,6 @@ enum class MsgType {
 
 struct Message {
     MsgType type;
-    int uart;
     char data;
 };
 
@@ -85,7 +84,6 @@ namespace io {
 int getc(Tid tid, int uart) {
     Message msg;
     msg.type = MsgType::GetC;
-    msg.uart = uart;
     Reply rply;
     int err = send(tid, msg, rply);
     if (err == -static_cast<int>(Error::InvId)) {
@@ -98,7 +96,6 @@ int getc(Tid tid, int uart) {
 int putc(Tid tid, int uart, char ch) {
     Message msg;
     msg.type = MsgType::PutC;
-    msg.uart = uart;
     msg.data = ch;
     Reply rply;
     int err = send(tid, msg, rply);

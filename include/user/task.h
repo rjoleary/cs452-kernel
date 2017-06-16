@@ -57,7 +57,6 @@ Tid myParentTid();
 struct TaskInfo {
     Tid tid, ptid;
     Priority pri;
-    unsigned userTime, sysTime;
     char userPercent, sysPercent;
     char state; // [ARZBE]
 };

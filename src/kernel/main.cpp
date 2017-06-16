@@ -338,8 +338,6 @@ void mainLoop(Scheduler &scheduler, TdManager &tdManager, InterruptController &i
                 ti->tid         = td->tid;
                 ti->ptid        = td->ptid;
                 ti->pri         = td->pri;
-                ti->userTime    = td->userTime;
-                ti->sysTime     = td->sysTime;
                 ti->userPercent = td->userTime * 100 / userTime;
                 ti->sysPercent  = td->sysTime * 100 / sysTime;
                 ti->state       = interruptToStr[(int)td->state];
