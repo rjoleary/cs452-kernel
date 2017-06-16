@@ -21,3 +21,11 @@ namespace detail {
 void assert(const char *file, int line);
 }
 }
+
+class NonCopyable {
+    NonCopyable(const NonCopyable&) = delete;
+    NonCopyable &operator=(const NonCopyable&) = delete;
+protected:
+    constexpr NonCopyable() = default;
+    ~NonCopyable() = default;
+};

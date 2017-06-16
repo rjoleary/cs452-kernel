@@ -2,6 +2,7 @@
 #include <user/event.h>
 #include <scheduler.h>
 #include <task.h>
+#include <user/std.h>
 
 namespace kernel {
 // Forward declare
@@ -26,7 +27,7 @@ const unsigned
     VICxVectAddr0    = 0x100,
     VICxVectCntl0    = 0x200;
 
-class InterruptController {
+class InterruptController : private NonCopyable {
     // TODO: inherit these deletions
     InterruptController(const InterruptController &) = delete;
     InterruptController(const InterruptController &&) = delete;

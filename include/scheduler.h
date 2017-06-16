@@ -1,12 +1,13 @@
 #pragma once
 
 #include <def.h>
+#include <user/std.h>
 
 namespace kernel {
 // Forward declaration
 struct Td;
 
-class Scheduler {
+class Scheduler : private NonCopyable {
     // A bitset indicating which queues are non-empty.
     unsigned status = 0;
 

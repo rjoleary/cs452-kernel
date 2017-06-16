@@ -4,6 +4,7 @@
 #include <task.h>
 #include <user/ts7200.h>
 #include <user/err.h>
+#include <user/std.h>
 
 extern "C" void irqEntry();
 

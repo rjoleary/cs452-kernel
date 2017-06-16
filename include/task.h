@@ -6,6 +6,7 @@
 #include "user/task.h"
 #include "user/syscall.h"
 #include "user/event.h"
+#include "user/std.h"
 
 namespace kernel {
 class Scheduler;
@@ -90,7 +91,7 @@ struct Td {
     void pushSender(Td&);
 };
 
-class TdManager {
+class TdManager : private NonCopyable {
     typename ctl::Tid::underlying_type usedTds{1};
     Td tds[NUM_TD];
 public:
