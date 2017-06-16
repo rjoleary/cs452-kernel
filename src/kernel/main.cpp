@@ -123,7 +123,7 @@ int main() {
     InterruptController intControl; // enables interrupts
 
     // Enter main loop.
-    //useBusyWait = false;
+    useBusyWait = false;
     void mainLoop(Scheduler &scheduler, TdManager &tdManager, InterruptController &intControl);
     mainLoop(scheduler, tdManager, intControl);
     useBusyWait = true;
