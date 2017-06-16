@@ -46,6 +46,7 @@ void initSerial() {
     // COM1
     bwsetspeed(COM1, 2400);
     bwsetfifo(COM1, OFF);
+    *(volatile unsigned*)(UART2_BASE + UART_CTLR_OFFSET) = UARTEN_MASK | RIEN_MASK /*| MIEN_MASK*/;
 
     // COM2
     bwsetspeed(COM2, 115200);

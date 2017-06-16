@@ -37,6 +37,10 @@ struct Uart1Traits {
     static constexpr auto rxEvent = Event::Uart1Rx;
     static constexpr auto dataReg = UART1_BASE + UART_DATA_OFFSET;
     static constexpr auto flagReg = UART1_BASE + UART_FLAG_OFFSET;
+    static void checkModem() {
+        // TODO: this doesn't actually check the modem
+        for (volatile int i = 0; i < 10000; i++);
+    }
 };
 
 struct Uart2Traits {
@@ -46,6 +50,7 @@ struct Uart2Traits {
     static constexpr auto rxEvent = Event::Uart2Rx;
     static constexpr auto dataReg = UART2_BASE + UART_DATA_OFFSET;
     static constexpr auto flagReg = UART2_BASE + UART_FLAG_OFFSET;
+    static void checkModem() {}
 };
 
 template <typename T>
@@ -58,6 +63,7 @@ void txNotifierMain() {
         for (;;) {
             if (awaitEvent(T::txEvent) >= 0) {
                 if (!(*(volatile unsigned*)(T::flagReg) & TXFF_MASK)) {
+                    T::checkModem();
                     *(volatile unsigned*)(T::dataReg) = toPrint.data;
                     break;
                 }
