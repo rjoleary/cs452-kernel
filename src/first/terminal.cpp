@@ -101,7 +101,7 @@ void runTerminal() {
     // Timer must be higher priority than terminal, otherwise output gets jumbled.
     ASSERT(create(Priority(28), timerMain) >= 0);
 
-    bool isStopped;
+    bool isStopped = true;
     unsigned cmdsz = 0;
     char cmdbuf[MAX_CMDSZ+1];
 
