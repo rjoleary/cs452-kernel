@@ -1,8 +1,7 @@
-#include <task.h>
+#include <ns.h>
+#include <std.h>
 
 void idleMain() {
-    while (1) {
-        // TODO: keep track of idle time
-        ctl::pass();
-    }
+    ASSERT(ctl::registerAs(ctl::Name{"Idle"}) == 0);
+    for (;;);
 }

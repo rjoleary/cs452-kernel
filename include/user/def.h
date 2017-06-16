@@ -9,8 +9,8 @@ constexpr auto NUM_TD = 32;
 
 namespace ctl {
 constexpr Tid FIRST_TID{0},
-          IDLE_TID{1},
-          NS_TID{2},
+          NS_TID{1},
+          IDLE_TID{2},
           INVALID_TID{-1};
 constexpr Priority FIRST_PRI{15};
 };

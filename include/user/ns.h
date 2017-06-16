@@ -3,6 +3,8 @@
 #ifndef USER_NS_H__INCLUDED
 #define USER_NS_H__INCLUDED
 
+#include <task.h>
+
 namespace ctl{
 
 // Names are capped at eight characters including the null terminator.
