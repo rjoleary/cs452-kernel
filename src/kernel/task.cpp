@@ -44,16 +44,6 @@ Td* TdManager::getTd(ctl::Tid tid) {
     return nullptr;
 }
 
-void TdManager::printUsage() {
-    bwputstr(COM2, "Time usage (measured in 508 kHz ticks):\r\n");
-    bwputstr(COM2, "  TID\tPTID\tPRI\tUser\tSys\r\n");
-    for (const Td &td : tds) {
-        if (!(td.tid == ctl::INVALID_TID)) {
-            bwprintf(COM2, "  %d\t%d\t%d\t%d\t%d\r\n", td.tid, td.ptid, td.pri, td.userTime, td.sysTime);
-        }
-    }
-}
-
 void Td::initStack(void (*entrypoint)()) {
     // Note that the task's state is stored above the stack, in the location
     // which will be written to next according the the ABI. However, we do not

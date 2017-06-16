@@ -129,14 +129,8 @@ int main() {
 
 #ifdef PROF_INTERVAL
     profilerStop();
-#endif // PROF_INTERVAL
-
-    bwputstr(COM2, "\r\n");
-    tdManager.printUsage();
-
-#ifdef PROF_INTERVAL
     profilerDump();
-#endif
+#endif // PROF_INTERVAL
 
     return 0;
 }
