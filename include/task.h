@@ -1,7 +1,7 @@
 // Exports facilities for tasks.
 #pragma once
 
-#include "types.h"
+#include "user/types.h"
 #include "def.h"
 #include "user/task.h"
 #include "user/syscall.h"
@@ -91,7 +91,7 @@ struct Td {
     void pushSender(Td&);
 };
 
-class TdManager : private NonCopyable {
+class TdManager : private ctl::NonCopyable {
     typename ctl::Tid::underlying_type usedTds{1};
     Td tds[NUM_TD];
 public:

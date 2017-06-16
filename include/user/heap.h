@@ -4,7 +4,6 @@
 #include <def.h>
 #include <std.h>
 #include <types.h>
-#include <swap.h>
 
 namespace ctl {
 template <size_t MaxSize, typename Data, typename Comp>

@@ -27,7 +27,7 @@ const unsigned
     VICxVectAddr0    = 0x100,
     VICxVectCntl0    = 0x200;
 
-class InterruptController : private NonCopyable {
+class InterruptController : private ctl::NonCopyable {
     // Maps event ids to a linked list of tasks blocked on that event.
     Td *awaitQueues[ctl::EVENT_NUM] = {0};
 

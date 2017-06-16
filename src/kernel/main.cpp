@@ -1,5 +1,5 @@
 #include <def.h>
-#include <err.h>
+#include <user/err.h>
 #include <interrupt.h>
 #include <panic.h>
 #include <profiler.h>
@@ -7,7 +7,6 @@
 #include <strace.h>
 #include <syscall.h>
 #include <task.h>
-#include <user/math.h>
 #include <user/std.h>
 #include <user/ts7200.h>
 

@@ -20,6 +20,22 @@ using size_t = decltype(sizeof(0));
 namespace detail {
 void assert(const char *file, int line);
 }
+
+template <typename T>
+void swap(T &lhs, T &rhs) {
+    T temp = lhs;
+    lhs = rhs;
+    rhs = temp;
+}
+
+template <typename T>
+constexpr T min(T lhs, T rhs) {
+    return lhs < rhs ? lhs : rhs;
+}
+
+template <typename T>
+constexpr T max(T lhs, T rhs) {
+    return lhs < rhs ? rhs : lhs;
 }
 
 class NonCopyable {
@@ -29,3 +45,5 @@ protected:
     constexpr NonCopyable() = default;
     ~NonCopyable() = default;
 };
+}
+

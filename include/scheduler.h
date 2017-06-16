@@ -7,7 +7,7 @@ namespace kernel {
 // Forward declaration
 struct Td;
 
-class Scheduler : private NonCopyable {
+class Scheduler : private ctl::NonCopyable {
     // A bitset indicating which queues are non-empty.
     unsigned status = 0;
 
