@@ -142,8 +142,8 @@ int main() {
 }
 
 void mainLoop(Scheduler &scheduler, TdManager &tdManager, InterruptController &intControl) {
-    unsigned sysTime = 0;
-    unsigned userTime = 0;
+    unsigned long long sysTime = 0;
+    unsigned long long userTime = 0;
     while (1) {
         auto active = scheduler.getNextTask();
         *(volatile unsigned*)(TIMER2_BASE + LDR_OFFSET) = 0xffff;
