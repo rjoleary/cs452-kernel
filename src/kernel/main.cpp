@@ -4,9 +4,10 @@
 #include <panic.h>
 #include <profiler.h>
 #include <scheduler.h>
-#include <strace.h>
 #include <syscall.h>
 #include <task.h>
+#include <user/bwio.h>
+#include <user/math.h>
 #include <user/std.h>
 #include <user/ts7200.h>
 
@@ -58,16 +59,14 @@ void printEarlyDebug(unsigned *kernelStack) {
     bwprintf(COM2, "Build string: '%s'\r\n", buildstr());
 
     // Print memory layout.
-#ifdef STRACE_ENABLED
     extern char _DataStart, _DataEnd, _BssStart, _BssEnd;
     extern char userStart, userEnd, textStart, textEnd;
-    STRACE("  [-] Memory layout:");
-    STRACE("  [-] 0x%08x - 0x%08x: data", &_DataStart, &_DataEnd);
-    STRACE("  [-] 0x%08x - 0x%08x: bss", &_BssStart, &_BssEnd);
-    STRACE("  [-]   0x%08x - 0x%08x: user stacks (%d)", &userStart, &userEnd, NUM_TD);
-    STRACE("  [-] 0x%08x - 0x%08x: text", &textStart, &textEnd);
-    STRACE("  [-] 0x%08x - 0x%08x: kernel stack", &textEnd, kernelStack);
-#endif // STRACE_ENABLED
+    bwprintf(COM2, "Memory layout:");
+    bwprintf(COM2, "  0x%08x - 0x%08x: data", &_DataStart, &_DataEnd);
+    bwprintf(COM2, "  0x%08x - 0x%08x: bss", &_BssStart, &_BssEnd);
+    bwprintf(COM2, "    0x%08x - 0x%08x: user stacks (%d)", &userStart, &userEnd, NUM_TD);
+    bwprintf(COM2, "  0x%08x - 0x%08x: text", &textStart, &textEnd);
+    bwprintf(COM2, "  0x%08x - 0x%08x: kernel stack", &textEnd, kernelStack);
 }
 
 void initTimers() {
@@ -165,8 +164,6 @@ void mainLoop(Scheduler &scheduler, TdManager &tdManager, InterruptController &i
             auto tid = (ctl::Tid*)active->getArg(0);
             auto msg = (unsigned*)active->getArg(1);
             int msglen = active->getArg(2);
-            STRACE("  [%d] int receive(tid=0x%08d, msg=0x%08x, msglen=%d)",
-                    active->tid, tid, msg, msglen);
             auto sender = active->popSender();
             if (sender) {
                 auto senderMsg = (const unsigned*)sender->getArg(1);
@@ -177,13 +174,9 @@ void mainLoop(Scheduler &scheduler, TdManager &tdManager, InterruptController &i
                 active->setReturn(copyMsg(senderMsg, senderMsglen, msg, msglen));
 
                 scheduler.readyTask(*active);
-                STRACE("  [%d] SendMsg: %x %d ReceiveMsg %x %d",
-                        active->tid, senderMsg, senderMsglen, msg, msglen);
-                STRACE("  [%d] Received from %d", active->tid, *tid);
             }
             else {
                 active->state = kernel::RunState::ReceiveBlocked;
-                STRACE("  [%d] ReceiveBlocked", active->tid);
             }
         }
 
@@ -192,17 +185,13 @@ void mainLoop(Scheduler &scheduler, TdManager &tdManager, InterruptController &i
             auto tid = ctl::Tid(active->getArg(0));
             auto reply = (const unsigned*)active->getArg(1);
             int rplen = active->getArg(2);
-            STRACE("  [%d] int reply(tid=%d, reply=0x%08x, rplen=%d)",
-                    active->tid, tid, reply, rplen);
             auto receiver = tdManager.getTd(tid);
             if (__builtin_expect(!receiver, 0)) {
                 ret = -static_cast<int>(Error::InvId);
-                STRACE("  [%d] Bad Receiver", active->tid);
             }
 
             else if (__builtin_expect(receiver->state != kernel::RunState::ReplyBlocked, 0)) {
                 ret = -static_cast<int>(Error::BadItc);
-                STRACE("  [%d] Receiver not ReplyBlocked", active->tid);
             }
             else {
                 auto receiverMsg = (unsigned*)receiver->getArg(3);
@@ -211,9 +200,6 @@ void mainLoop(Scheduler &scheduler, TdManager &tdManager, InterruptController &i
                 auto size = copyMsg(reply, rplen, receiverMsg, receiverMsglen);
                 receiver->setReturn(size);
                 scheduler.readyTask(*receiver);
-                STRACE("  [%d] SendMsg: %x %d ReceiveMsg %x %d",
-                        active->tid, reply, rplen, receiverMsg, receiverMsglen);
-                    STRACE("  [%d] Replied to %d", active->tid, receiver->tid);
             }
             active->setReturn(ret);
             scheduler.readyTask(*active);
@@ -227,12 +213,9 @@ void mainLoop(Scheduler &scheduler, TdManager &tdManager, InterruptController &i
             int rplen = active->getArg(4);
             (void)rplen;
             auto receiver = tdManager.getTd(tid);
-            STRACE("  [%d] int send(tid=%d, msg=0x%08x, msglen=%d, reply=0x%08x, rplen=%d)",
-                    active->tid, tid, msg, msglen, reply, rplen);
             if (__builtin_expect(!receiver, 0)) {
                 active->setReturn(-static_cast<int>(Error::InvId));
                 scheduler.readyTask(*active);
-                STRACE("  [%d] Bad Receiver", active->tid);
             }
             else if (receiver->state == kernel::RunState::ReceiveBlocked) {
                 auto recTid = (ctl::Tid*)receiver->getArg(0);
@@ -245,24 +228,17 @@ void mainLoop(Scheduler &scheduler, TdManager &tdManager, InterruptController &i
 
                 scheduler.readyTask(*receiver);
                 active->state = kernel::RunState::ReplyBlocked;
-                STRACE("  [%d] SendMsg: %x %d ReceiveMsg %x %d",
-                        active->tid, msg, msglen, recMsg, recMsglen);
-                STRACE("  [%d] ReplyBlocked", active->tid);
             }
             else {
                 receiver->pushSender(*active);
-                STRACE("  [%d] SendBlocked", active->tid);
             }
         }
         else if (active->getSyscall() == Syscall::AwaitEvent) {
             auto eventId = (ctl::Event)active->getArg(0);
             int ret = intControl.awaitEvent(active, eventId);
-            if (ret == 0) {
-                STRACE("  [%d] int awaitEvent(eventid=%d) = <BLOCKED>", active->tid, eventId);
-            } else {
+            if (ret != 0) {
                 active->setReturn(ret);
                 scheduler.readyTask(*active);
-                STRACE("  [%d] int awaitEvent(eventid=%d) = %d", active->tid, eventId, ret);
             }
         }
         else if (active->getSyscall() == Syscall::Create) {
@@ -286,36 +262,28 @@ void mainLoop(Scheduler &scheduler, TdManager &tdManager, InterruptController &i
             }
             active->setReturn(ret);
             scheduler.readyTask(*active);
-            STRACE("  [%d] int create(priority=%d, code=%d) = %d",
-                    active->tid, priority, code, ret);
         }
 
         else if (active->getSyscall() == Syscall::MyTid) {
             int ret = active->tid.underlying();
             scheduler.readyTask(*active);
             active->setReturn(ret);
-            STRACE("  [%d] int myTid() = %d", active->tid, ret);
         }
 
         else if (active->getSyscall() == Syscall::MyParentTid) {
             int ret = active->ptid.underlying();
             scheduler.readyTask(*active);
             active->setReturn(ret);
-            STRACE("  [%d] int myParentTid() = %d", active->tid, ret);
         }
 
         else if (active->getSyscall() == Syscall::Pass) {
             scheduler.readyTask(*active);
-            if (!(active->tid == ctl::IDLE_TID)) {
-                STRACE("  [%d] void pass()", active->tid);
-            }
         }
 
         else if (active->getSyscall() == Syscall::Exeunt) {
             active->state = kernel::RunState::Zombie;
-            STRACE("  [%d] void exeunt()", active->tid);
 
-            // Quit when the active task exits.
+            // Quit when the first task exits.
             if (active->tid == ctl::FIRST_TID) {
                 break;
             }
@@ -342,7 +310,6 @@ void mainLoop(Scheduler &scheduler, TdManager &tdManager, InterruptController &i
 
         // TODO: Implement in kernel 4?
         //case SYS_DESTROY: {
-        //    STRACE("  [%d] void destroy()", active->tid);
         //    // TODO
         //    break;
         //}

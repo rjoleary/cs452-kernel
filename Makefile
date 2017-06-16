@@ -16,10 +16,6 @@ CFLAGS  := -c -fPIC -Wall -Werror -mcpu=arm920t -msoft-float --std=gnu++14    \
 # -fPIC: emit position-independent code
 # -Wall: report all warnings
 
-ifeq ($(STRACE_ENABLED),1)
-CFLAGS := $(CFLAGS) -DSTRACE_ENABLED
-endif
-
 ifdef PROF_INTERVAL
 CFLAGS := $(CFLAGS) -DPROF_INTERVAL=$(PROF_INTERVAL)
 endif

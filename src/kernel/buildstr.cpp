@@ -5,9 +5,6 @@
 const char* buildstr() {
     return __TIME__
         " " __DATE__
-#ifdef STRACE_ENABLED
-        " STRACE=" XSTR(STRACE_ENABLED)
-#endif
 #ifdef CACHE_ENABLED
         " CACHE=" XSTR(CACHE_ENABLED)
 #endif

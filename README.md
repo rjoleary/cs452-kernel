@@ -44,7 +44,6 @@ Where `<ARGUMENTS>` may be any combination of the following:
 - `CACHE_ENABLED=1`: Enables the instruction and data caches
 - `OPT_ENABLED=1`: Enables optimizations (`-O2` and `-flto`)
 TODO: Still works?
-- `STRACE_ENABLED=1`: Enables printing debug information from the kernel
 
 
 ## Functionality
@@ -237,16 +236,6 @@ Kernel stack layout: (note that `sp_svc` remains unmodified)
         ∞ +-----+
 
 TODO: How does the stack look usually (thing we lost marks on)
-
-### Strace
-TODO: Does it work?
-
-Additional debug information can be enabled by using `make STRACE_ENABLED=1`
-when building. This will enable a printout of some useful information such as
-the program's memory layout, a build time, as well as additional trace output
-for all system calls. The output is also in a darker color to distinguish it
-from normal output.
-
 
 ### Task Manipulation
 
