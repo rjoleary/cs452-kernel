@@ -1,7 +1,10 @@
 #include <panic.h>
 #include <user/bwio.h>
+#include <user/ts7200.h>
 
 void kernel::detail::panic(unsigned *regs, const char *str, const char *file, int line) {
+    useBusyWait = false;
+    *(volatile unsigned*)(UART2_BASE + UART_CTLR_OFFSET) = UARTEN_MASK;
     bwputstr(COM2, "\r\n!!!!!!!! PANIC !!!!!!!!\r\n");
     bwprintf(COM2, "Error: %s\r\n", str);
     bwprintf(COM2, "Location: %s:%d\r\n", file, line);

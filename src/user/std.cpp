@@ -41,12 +41,17 @@ size_t strlen(const char *s) {
 
 #include <bwio.h>
 #include <task.h>
+#include <ts7200.h>
 
 namespace ctl {
 namespace detail {
 void assert(const char *file, int line) {
     useBusyWait = false;
+    auto uartState = *(volatile unsigned*)(UART2_BASE + UART_CTLR_OFFSET);
+    *(volatile unsigned*)(UART2_BASE + UART_CTLR_OFFSET) = UARTEN_MASK;
     bwprintf(COM2, "Assertion failed in Tid %d, %s:%d\r\n", ctl::myTid(), file, line);
+    useBusyWait = true;
+    *(volatile unsigned*)(UART2_BASE + UART_CTLR_OFFSET) = uartState;
     exeunt();
 }
 }
