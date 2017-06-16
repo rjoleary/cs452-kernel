@@ -159,6 +159,7 @@ void goTrains() {
 void cmdToggleLight(int train) {
     if (train < 1 || 80 < train) {
         bwputstr(COM2, "Error: train number must be between 1 and 80 inclusive\r\n");
+        return;
     }
     Message msg{MsgType::LightToggle, char(train)};
     ASSERT(send(whoIs(ctl::Name{"TrMan"}), msg, ctl::EmptyMessage) == 0);
@@ -167,6 +168,7 @@ void cmdToggleLight(int train) {
 void cmdSetSpeed(int train, int speed) {
     if (train < 1 || 80 < train) {
         bwputstr(COM2, "Error: train number must be between 1 and 80 inclusive\r\n");
+        return;
     }
     if (speed < 0 || 14 < speed) {
         bwputstr(COM2, "Error: speed must be between 0 and 15 inclusive\r\n");
@@ -179,6 +181,7 @@ void cmdSetSpeed(int train, int speed) {
 void cmdReverse(int train) {
     if (train < 1 || 80 < train) {
         bwputstr(COM2, "Error: train number must be between 1 and 80 inclusive\r\n");
+        return;
     }
     Message msg{MsgType::Reverse, char(train)};
     ASSERT(send(whoIs(ctl::Name{"TrMan"}), msg, ctl::EmptyMessage) == 0);
