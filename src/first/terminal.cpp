@@ -6,9 +6,10 @@
 #include <std.h>
 #include <parse.h>
 #include <event.h>
+#include <clock.h>
 
 using namespace ctl;
-/*
+
 // The number of bytes allocated for the command buffer.
 #define MAX_CMDSZ 70
 
@@ -64,13 +65,12 @@ void restorecur() {
 
 void timerMain() {
     int tenths = 0;
+    auto clock = whoIs(Names::ClockServer);
     for (;;) {
-        for (int i = 0; i < 10; i++) {
-            awaitEvent(Event::PeriodicTimer, 0);
-        }
+        delay(clock, 10);
         tenths++;
         savecur();
-        setpos(1, 0);
+        setpos(1, 1);
         bwprintf(COM2, "%02d:%02d.%d", 
             tenths / 10 / 60, // minutes
             tenths / 10 % 60, // seconds
@@ -81,7 +81,7 @@ void timerMain() {
 
 void runTerminal() {
     // Clear display.
-    setpos(0, 0);
+    setpos(1, 1);
     char clear[] = "\033[J";
     bwputstr(COM2, clear);
 
@@ -97,11 +97,12 @@ void runTerminal() {
     // Timer must be higher priority than terminal, otherwise output gets jumbled.
     ASSERT(create(Priority(28), timerMain) >= 0);
 
+
     bool isStopped;
     unsigned cmdsz = 0;
     char cmdbuf[MAX_CMDSZ+1];
 
-    Tid io = whoIs(Names::IoServerUart2);
+    Tid io = whoIs(Names::Uart2Rx);
     ASSERT(io.underlying() >= 0);
     for (;;) {
         int c = io::getc(io, COM2);
@@ -146,4 +147,4 @@ void runTerminal() {
             }
         }
     }
-}*/
+}

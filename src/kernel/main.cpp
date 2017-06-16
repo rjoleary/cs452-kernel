@@ -190,16 +190,25 @@ void mainLoop(Scheduler &scheduler, TdManager &tdManager) {
                     PANIC("Unsupported event type");
                 }
                 auto intHandler = interruptHead;
+                Td *previous = nullptr;
                 while (intHandler) {
-                    if (intHandler->state == RunState::EventBlocked 
-                            && (Event)intHandler->getArg(0) == event) {
+                    if ((Event)intHandler->getArg(0) == event) {
                         intHandler->setReturn(ret);
+
+                        if (previous) {
+                         //   previous->nextReady = intHandler->nextReady;
+                        }
+                        else {
+                        //    interruptHead = intHandler->nextReady;
+                        }
+
                         scheduler.readyTask(*intHandler);
                         //STRACE("  [%d] int awaitEvent(%d) = %d\r\n",
                         //        intHandler->tid, event, 0);
 
                         break;
                     }
+                    previous = intHandler;
                     intHandler = intHandler->nextReady;
                 }
             }
@@ -312,7 +321,9 @@ void mainLoop(Scheduler &scheduler, TdManager &tdManager) {
                         eventId == ctl::Event::Uart1Tx ||
                         eventId == ctl::Event::Uart2Rx ||
                         eventId == ctl::Event::Uart2Tx ) {
-                if (eventId == ctl::Event::Uart2Tx)
+                if (eventId == ctl::Event::Uart1Tx)
+                    *(volatile unsigned *)(UART1_BASE + UART_CTLR_OFFSET) |= TIEN_MASK;
+                else if (eventId == ctl::Event::Uart2Tx)
                     *(volatile unsigned *)(UART2_BASE + UART_CTLR_OFFSET) |= TIEN_MASK;
                 active->state = RunState::EventBlocked;
                 STRACE("  [%d] int awaitEvent(eventid=%d) = <BLOCKED>", active->tid, eventId);

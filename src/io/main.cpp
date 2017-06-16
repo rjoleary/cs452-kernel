@@ -109,7 +109,7 @@ void txMain() {
         txNotifierMain<Server, Ev>) >= 0);
 
     // Buffers for asynchronicity
-    typedef CircularBuffer<char, 512> CharBuffer;
+    typedef CircularBuffer<char, 2048> CharBuffer;
     CharBuffer queue;
     Tid txFull = INVALID_TID;
 
