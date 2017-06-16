@@ -11,16 +11,23 @@ namespace {
 enum class MsgType {
     Register,
     WhoIs,
+    ReverseWhoIs,
 };
 
 struct Message {
     MsgType type;
-    Name name;
+    union {
+        Name name;
+        Tid tid;
+    };
 };
 
 struct Reply {
     Error error;
-    Tid tid;
+    union {
+        Name name;
+        Tid tid;
+    };
 };
 }
 
@@ -46,6 +53,16 @@ Tid whoIs(Name name) {
     return rply.tid;
 }
 
+int reverseWhoIs(Tid tid, Name *name) {
+    Message msg;
+    msg.type = MsgType::ReverseWhoIs;
+    msg.tid = tid;
+    Reply rply;
+    ASSERT(send(NS_TID, msg, rply) == sizeof(rply));
+    *name = rply.name;
+    return -int(rply.error); // TODO: lol type safety
+}
+
 void nsMain() {
     // Map from names to servers.
     struct Entry {
@@ -62,10 +79,13 @@ void nsMain() {
         ASSERT(receive(&tid, msg) == sizeof(msg));
 
         int idx = -1;
-        for (unsigned i = 0; i < mapSize; i++) {
-            if (memcmp(msg.name.data, map[i].name.data, sizeof(msg.name.data)) == 0) {
-                idx = i;
-                break;
+        if (msg.type != MsgType::ReverseWhoIs) {
+            for (unsigned i = 0; i < mapSize; i++) {
+                // TODO: overload comparision
+                if (memcmp(msg.name.data, map[i].name.data, sizeof(msg.name.data)) == 0) {
+                    idx = i;
+                    break;
+                }
             }
         }
 
@@ -86,6 +106,21 @@ void nsMain() {
                 if (idx != -1)  {
                     rply.tid = map[idx].tid;
                 } else  {
+                    rply.error = Error::BadArg;
+                }
+                break;
+            }
+
+            case MsgType::ReverseWhoIs: {
+                for (unsigned i = 0; i < mapSize; i++) {
+                    if (msg.tid == map[i].tid) {
+                        idx = i;
+                        break;
+                    }
+                }
+                if (idx != -1) {
+                    rply.name = map[idx].name;
+                } else {
                     rply.error = Error::BadArg;
                 }
                 break;

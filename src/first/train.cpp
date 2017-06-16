@@ -35,8 +35,8 @@ void trainMain() {
 
     // Register as "TrainXX".
     ctl::Name name{"TrainXX"};
-    name.data[6] = number / 10 % 10 + '0';
-    name.data[1] = number % 10 + '0';
+    name.data[5] = number / 10 % 10 + '0';
+    name.data[6] = number % 10 + '0';
     ASSERT(registerAs(name) == 0);
 
     // Get clock server.

@@ -55,7 +55,21 @@ int registerAs(Name name);
 //
 // Returns:
 //   tid: The task id of the registered task.
+//   -ERR_BADARG: Cannot find the name.
 Tid whoIs(Name name);
+
+// reverseWhoIs - query the nameserver.
+//
+// Description:
+//   reverseWhoIs asks the nameserver for the names of the task that is
+//   registered to the given task id.
+//
+//   reverseWhoIs is actually a wrapper covering a send to the nameserver.
+//
+// Returns:
+//   -ERR_OK: Success
+//   -ERR_BADARG: Cannot find the tid
+int reverseWhoIs(Tid tid, Name *name);
 
 void nsMain();
 }

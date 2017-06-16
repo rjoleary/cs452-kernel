@@ -220,9 +220,11 @@ int parseCmd(const char *cmd) {
             tokenErr("invalid task id", number.token.start - cmdStart + 2, number.token.len);
             return 0;
         }
-        bwputstr(COM2, "TID\tPTID\tPRI\tState\tUser\tSys\r\n");
-        bwprintf(COM2, "%d\t%d\t%d\t%c\t%d%%\t%d%%\r\n",
-            ti.tid, ti.ptid, ti.pri, ti.state, ti.userPercent, ti.sysPercent);
+        ctl::Name name{""};
+        reverseWhoIs(tid, &name);
+        bwputstr(COM2, "TID\tNAME\tPTID\tPRI\tState\tUser\tSys\r\n");
+        bwprintf(COM2, "%d\t%d\t%s\t%d\t%c\t%d%%\t%d%%\r\n",
+            ti.tid, ti.ptid, name.data, ti.pri, ti.state, ti.userPercent, ti.sysPercent);
     } else if (isIdent(t, "taskall")) {
         if (terminateCmd(cmdStart, cmd)) {
             return 0;
@@ -231,8 +233,10 @@ int parseCmd(const char *cmd) {
         for (int tid = 0; tid < NUM_TD; tid++) {
             ctl::TaskInfo ti;
             if (ctl::taskInfo(ctl::Tid(tid), &ti) == 0) {
-                bwprintf(COM2, "%d\t%d\t%d\t%c\t%d%%\t%d%%\r\n",
-                    ti.tid, ti.ptid, ti.pri, ti.state, ti.userPercent, ti.sysPercent);
+                ctl::Name name{""};
+                reverseWhoIs(ctl::Tid(tid), &name);
+                bwprintf(COM2, "%d\t%d\t%s\t%d\t%c\t%d%%\t%d%%\r\n",
+                    ti.tid, ti.ptid, name.data, ti.pri, ti.state, ti.userPercent, ti.sysPercent);
             }
         }
     } else if (isIdent(t, "q")) {
