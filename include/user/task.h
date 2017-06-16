@@ -45,6 +45,24 @@ Tid myTid();
 //   tid: the task id of the task that created the calling task
 Tid myParentTid();
 
+// taskInfo - return subset of the task descriptor.
+//
+// Description:
+//   myParentTid returns a subset of the task descriptor which is useful to
+//   print debug information from user mode.
+//
+// Returns:
+//   0: success
+//   -ERR_INVTID: the task identifier is invalid
+struct TaskInfo {
+    Tid tid, ptid;
+    Priority pri;
+    unsigned userTime, sysTime;
+    char userPercent, sysPercent;
+    char state; // [ARZBE]
+};
+int taskInfo(Tid tid, TaskInfo *taskInfo);
+
 // pass - cease execution, remaining ready to run
 //
 // Description:

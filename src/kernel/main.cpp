@@ -142,11 +142,15 @@ int main() {
 }
 
 void mainLoop(Scheduler &scheduler, TdManager &tdManager, InterruptController &intControl) {
+    unsigned sysTime = 0;
+    unsigned userTime = 0;
     while (1) {
         auto active = scheduler.getNextTask();
         *(volatile unsigned*)(TIMER2_BASE + LDR_OFFSET) = 0xffff;
         active->sp = kernelExit(active->sp);
-        active->userTime += 0xffff - *(volatile unsigned*)(TIMER2_BASE + VAL_OFFSET);
+        unsigned deltaUserTime = 0xffff - *(volatile unsigned*)(TIMER2_BASE + VAL_OFFSET);
+        active->userTime += deltaUserTime;
+        userTime += deltaUserTime;
         *(volatile unsigned*)(TIMER2_BASE + LDR_OFFSET) = 0xffff;
 
         // Handle interrupt.
@@ -323,6 +327,27 @@ void mainLoop(Scheduler &scheduler, TdManager &tdManager, InterruptController &i
             }
         }
 
+        else if (active->getSyscall() == Syscall::TaskInfo) {
+            unsigned ret = 0;
+            Tid tid = ctl::Tid(active->getArg(0));
+            Td *td = tdManager.getTd(tid);
+            if (!td) {
+                ret = -static_cast<int>(Error::InvId);
+            } else {
+                TaskInfo *ti = reinterpret_cast<TaskInfo*>(active->getArg(1));
+                ti->tid         = td->tid;
+                ti->ptid        = td->ptid;
+                ti->pri         = td->pri;
+                ti->userTime    = td->userTime;
+                ti->sysTime     = td->sysTime;
+                ti->userPercent = td->userTime * 100 / userTime;
+                ti->sysPercent  = td->sysTime * 100 / sysTime;
+                ti->state       = interruptToStr[(int)td->state];
+            }
+            active->setReturn(ret);
+            scheduler.readyTask(*active);
+        }
+
         // TODO: Implement in kernel 4?
         //case SYS_DESTROY: {
         //    STRACE("  [%d] void destroy()", active->tid);
@@ -336,6 +361,8 @@ void mainLoop(Scheduler &scheduler, TdManager &tdManager, InterruptController &i
 
         // Only sys time for syscalls is recorded. Time spent processing
         // interrupts is ignored.
-        active->sysTime += 0xffff - *(volatile unsigned*)(TIMER2_BASE + VAL_OFFSET);
+        unsigned deltaSysTime = 0xffff - *(volatile unsigned*)(TIMER2_BASE + VAL_OFFSET);
+        active->sysTime += deltaSysTime;
+        sysTime += deltaSysTime;
     }
 }

@@ -44,6 +44,8 @@ enum class RunState {
     EventBlocked,
 };
 
+const char interruptToStr[] = "ARZBBBE";
+
 // Task descriptor
 struct Td {
     constexpr static auto SyscallIndex = 5;

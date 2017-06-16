@@ -40,7 +40,9 @@ Tid whoIs(Name name) {
     msg.name = name;
     Reply rply;
     ASSERT(send(NS_TID, msg, rply) == sizeof(rply));
-    ASSERT(rply.error == Error::Ok);
+    if (rply.error != Error::Ok) {
+        return Tid(-int(rply.error)); // TODO: lol type safety
+    }
     return rply.tid;
 }
 

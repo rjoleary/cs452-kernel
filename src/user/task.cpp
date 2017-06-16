@@ -15,6 +15,11 @@ Tid myParentTid() {
     SYSCALL0R(kernel::Syscall::MyParentTid)
     return Tid(ret);
 }
+int taskInfo(Tid tid, TaskInfo *a1) {
+    unsigned a0 = tid.underlying();
+    SYSCALL2R(kernel::Syscall::TaskInfo)
+    return ret;
+}
 void pass() {
     SYSCALL0(kernel::Syscall::Pass)
 }

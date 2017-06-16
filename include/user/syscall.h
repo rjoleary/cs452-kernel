@@ -6,6 +6,7 @@ enum class Syscall {
     Create = 0,
     MyTid,
     MyParentTid,
+    TaskInfo,
     Pass,
     Exeunt,
     Destroy,

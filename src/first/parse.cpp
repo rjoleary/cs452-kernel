@@ -2,6 +2,11 @@
 #include <train.h>
 #include <std.h>
 
+#include <task.h>
+#include <ns.h>
+#include <err.h>
+#include <std.h>
+
 void printHelp() {
     bwputstr(COM2,
         "Assignment 0 commands:\r\n"
@@ -11,6 +16,7 @@ void printHelp() {
         "   q                - Quit and return to RedBoot.\r\n"
         "   rv NUMBER        - Reverse the direction of the train.\r\n"
         "   sw NUMBER DIR    - Set switch direction ('S' or 'C').\r\n"
+        "   task (TID|NAME)  - Return info about a task.\r\n"
         "   tr NUMBER SPEED  - Set train speed (0 for stop).\r\n"
     );
 }
@@ -182,6 +188,39 @@ int parseCmd(const char *cmd) {
             return 0;
         }
         //TODO cmdSetSwitch(number.val, dir.start[0]);
+    } else if (isIdent(t, "task")) {
+        ctl::Tid tid;
+        DecimalToken number = nextDec(&cmd);
+        if (terminateCmd(cmdStart, cmd)) {
+            return 0;
+        }
+        if (number.err == 1) {
+            tokenErr("expect argument", number.token.start - cmdStart + 2, number.token.len);
+            return 0;
+        } else if (number.err == 0) {
+            tid = ctl::Tid(number.val); 
+        } else {
+            ctl::Name name;
+            if (number.token.len > sizeof(name.data) - 1) {
+                tokenErr("task name too long", number.token.start - cmdStart + 2, number.token.len);
+                return 0;
+            }
+            memset(name.data, 0, sizeof(name.data));
+            memcpy(name.data, number.token.start, number.token.len);
+            tid = whoIs(name);
+            if (tid.underlying() < 0) {
+                tokenErr("unknown task name", number.token.start - cmdStart + 2, number.token.len);
+                return 0;
+            }
+        }
+        ctl::TaskInfo ti;
+        if (ctl::taskInfo(tid, &ti) != 0) {
+            tokenErr("invalid task id", number.token.start - cmdStart + 2, number.token.len);
+            return 0;
+        }
+        bwputstr(COM2, "TID\tPTID\tPRI\tState\tUser\tSys\r\n");
+        bwprintf(COM2, "%d\t%d\t%d\t%c\t%d%%\t%d%%\r\n",
+            ti.tid, ti.ptid, ti.pri, ti.state, ti.userPercent, ti.sysPercent);
     } else if (isIdent(t, "q")) {
         if (terminateCmd(cmdStart, cmd)) {
             return 0;

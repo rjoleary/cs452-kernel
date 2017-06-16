@@ -2,6 +2,13 @@ typedef decltype(sizeof(0)) size_t;
 
 // Cannot include std.h for these functions to work.
 extern "C" {
+void *memcpy(void *dest, const void *src, size_t n) {
+    for (size_t i = 0; i < n; i++) {
+        *(static_cast<char*>(dest) + i) = *(static_cast<const char*>(src) + i);
+    }
+    return dest;
+}
+
 void *memset(void *s, int c, size_t n) {
     for (size_t i = 0; i < n; i++) {
         *static_cast<char*>(s) = static_cast<char>(c);
