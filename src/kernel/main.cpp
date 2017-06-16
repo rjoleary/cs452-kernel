@@ -7,7 +7,6 @@
 #include <syscall.h>
 #include <task.h>
 #include <user/bwio.h>
-#include <user/math.h>
 #include <user/std.h>
 #include <user/ts7200.h>
 
