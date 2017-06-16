@@ -112,6 +112,8 @@ void trainMain() {
         }
     }
 }
+
+constexpr ctl::Name TrManName = {"TrMan"};
 }
 
 // Manages all the trains.

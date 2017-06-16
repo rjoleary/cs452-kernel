@@ -19,16 +19,19 @@ void InterruptController::clearAll() {
     *(volatile unsigned*)(VIC2Base + VICxIntSelect) = 0;
 }
 
-void InterruptController::awaken(Scheduler &scheduler, const ctl::Event event, int ret) {
+int InterruptController::awaken(Scheduler &scheduler, const ctl::Event event, int ret) {
     const int eventId = static_cast<int>(event);
 
     // Iterate over and awaken all tasks blocked on the event.
     Td *td;
+    int count = 0;
     while ((td = awaitQueues[eventId])) {
         awaitQueues[eventId] = td->nextReady; // Pop.
         td->setReturn(ret);
         scheduler.readyTask(*td);
+        ++count;
     }
+    return count;
 }
 
 InterruptController::InterruptController() {
@@ -86,7 +89,18 @@ void InterruptController::handle(Scheduler &scheduler, TdManager &tdManager) {
         const auto uartStatus = *(volatile unsigned*)(UART1_BASE + UART_INTR_OFFSET);
         if (uartStatus & TIS_MASK) {
             *(volatile unsigned*)(UART1_BASE + UART_CTLR_OFFSET) &= ~TIEN_MASK;
-            awaken(scheduler, ctl::Event::Uart1Tx, 0);
+            if (ctsHigh && ctsLow && awaken(scheduler, ctl::Event::Uart1Tx, 0)) {
+                ctsHigh = ctsLow = false;
+            }
+        }
+        if (uartStatus & MIS_MASK) {
+            if (*(volatile unsigned*)(UART1_BASE + UART_MDMSTS_OFFSET) & 0x1) {
+                if (*(volatile unsigned*)(UART1_BASE + UART_FLAG_OFFSET) & CTS_MASK)
+                    ctsHigh = true;
+                else
+                    ctsLow = true;
+            }
+            *(volatile unsigned*)(UART1_BASE + UART_INTR_OFFSET) = 0;
         }
         if (uartStatus & RIS_MASK) {
             int ret = *(volatile unsigned*)(UART1_BASE + UART_DATA_OFFSET) & 0xff;

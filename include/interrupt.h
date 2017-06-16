@@ -29,13 +29,14 @@ const unsigned
 
 class InterruptController : private ctl::NonCopyable {
     // Maps event ids to a linked list of tasks blocked on that event.
-    Td *awaitQueues[ctl::EVENT_NUM] = {0};
+    Td *awaitQueues[ctl::EVENT_NUM] = {};
+    bool ctsLow = true, ctsHigh = true;
 
     // Clears all interrupts.
     void clearAll();
 
     // Awaken all the tasks blocked on an event.
-    void awaken(Scheduler &scheduler, const ctl::Event event, int ret);
+    int awaken(Scheduler &scheduler, const ctl::Event event, int ret);
 
 public:
     // Initialize the interrupt controller and enable interrupts.
