@@ -6,6 +6,7 @@
 #include <ns.h>
 #include <err.h>
 #include <std.h>
+#include <def.h>
 
 void printHelp() {
     bwputstr(COM2,
@@ -17,6 +18,7 @@ void printHelp() {
         "   rv NUMBER        - Reverse the direction of the train.\r\n"
         "   sw NUMBER DIR    - Set switch direction ('S' or 'C').\r\n"
         "   task (TID|NAME)  - Return info about a task.\r\n"
+        "   taskall          - Return info about all tasks.\r\n"
         "   tr NUMBER SPEED  - Set train speed (0 for stop).\r\n"
     );
 }
@@ -221,6 +223,18 @@ int parseCmd(const char *cmd) {
         bwputstr(COM2, "TID\tPTID\tPRI\tState\tUser\tSys\r\n");
         bwprintf(COM2, "%d\t%d\t%d\t%c\t%d%%\t%d%%\r\n",
             ti.tid, ti.ptid, ti.pri, ti.state, ti.userPercent, ti.sysPercent);
+    } else if (isIdent(t, "taskall")) {
+        if (terminateCmd(cmdStart, cmd)) {
+            return 0;
+        }
+        bwputstr(COM2, "TID\tPTID\tPRI\tState\tUser\tSys\r\n");
+        for (int tid = 0; tid < NUM_TD; tid++) {
+            ctl::TaskInfo ti;
+            if (ctl::taskInfo(ctl::Tid(tid), &ti) == 0) {
+                bwprintf(COM2, "%d\t%d\t%d\t%c\t%d%%\t%d%%\r\n",
+                    ti.tid, ti.ptid, ti.pri, ti.state, ti.userPercent, ti.sysPercent);
+            }
+        }
     } else if (isIdent(t, "q")) {
         if (terminateCmd(cmdStart, cmd)) {
             return 0;

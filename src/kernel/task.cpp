@@ -35,7 +35,6 @@ Td* TdManager::createTd() {
 }
 
 Td* TdManager::getTd(ctl::Tid tid) {
-    return &tds[tid.underlying()];
     // TODO: may be inefficient
     for (int i = 0; i < NUM_TD; i++) {
         if (tds[i].tid == tid) {
