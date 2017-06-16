@@ -122,7 +122,7 @@ void trainManMain() {
         // If this is a train checking in, reply with the queued message.
         if (msg.type == MsgType::CheckIn) {
             if (!train.messages.empty()) {
-                ASSERT(reply(tid, train.messages.pop()));
+                ASSERT(reply(tid, train.messages.pop()) == 0);
                 train.waiting = false;
             } else {
                 train.waiting = true;
@@ -132,21 +132,21 @@ void trainManMain() {
             if (train.tid == ctl::INVALID_TID) {
                 train.tid = ctl::Tid(create(ctl::Priority(20), trainMain));
                 ASSERT(train.tid.underlying() >= 0);
-                ASSERT(send(train.tid, unsigned(msg.train), ctl::EmptyMessage) == sizeof(ctl::EmptyMessage));
+                ASSERT(send(train.tid, unsigned(msg.train), ctl::EmptyMessage) == 0);
             }
 
             // Send the message to the train or queue it.
             if (train.waiting) {
-                ASSERT(reply(tid, msg));
+                ASSERT(reply(train.tid, msg) == 0);
                 train.waiting = false;
             } else {
                 train.messages.push(msg);
             }
 
+            ASSERT(reply(tid, ctl::EmptyMessage) == 0);
         }
     }
 }
-
 
 void stopTrains() {
     bwputc(COM1, 97);
@@ -160,7 +160,8 @@ void cmdToggleLight(int train) {
     if (train < 1 || 80 < train) {
         bwputstr(COM2, "Error: train number must be between 1 and 80 inclusive\r\n");
     }
-    ASSERT(send(whoIs(ctl::Name{"TrMan"}), Message{MsgType::LightToggle, char(train)}, ctl::EmptyMessage));
+    Message msg{MsgType::LightToggle, char(train)};
+    ASSERT(send(whoIs(ctl::Name{"TrMan"}), msg, ctl::EmptyMessage) == 0);
 }
 
 void cmdSetSpeed(int train, int speed) {
@@ -171,12 +172,14 @@ void cmdSetSpeed(int train, int speed) {
         bwputstr(COM2, "Error: speed must be between 0 and 15 inclusive\r\n");
         return;
     }
-    ASSERT(send(whoIs(ctl::Name{"TrMan"}), Message{MsgType::SetSpeed, char(train), char(speed)}, ctl::EmptyMessage));
+    Message msg{MsgType::SetSpeed, char(train), char(speed)};
+    ASSERT(send(whoIs(ctl::Name{"TrMan"}), msg, ctl::EmptyMessage) == 0);
 }
 
 void cmdReverse(int train) {
     if (train < 1 || 80 < train) {
         bwputstr(COM2, "Error: train number must be between 1 and 80 inclusive\r\n");
     }
-    ASSERT(send(whoIs(ctl::Name{"TrMan"}), Message{MsgType::Reverse, char(train)}, ctl::EmptyMessage));
+    Message msg{MsgType::Reverse, char(train)};
+    ASSERT(send(whoIs(ctl::Name{"TrMan"}), msg, ctl::EmptyMessage) == 0);
 }
