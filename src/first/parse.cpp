@@ -223,8 +223,8 @@ int parseCmd(const char *cmd) {
         ctl::Name name{""};
         reverseWhoIs(tid, &name);
         bwputstr(COM2, "TID\tNAME\tPTID\tPRI\tState\tUser\tSys\r\n");
-        bwprintf(COM2, "%d\t%d\t%s\t%d\t%c\t%d%%\t%d%%\r\n",
-            ti.tid, ti.ptid, name.data, ti.pri, ti.state, ti.userPercent, ti.sysPercent);
+        bwprintf(COM2, "%d\t%s\t%d\t%d\t%c\t%d%%\t%d%%\r\n",
+            ti.tid, name.data, ti.ptid, ti.pri, ti.state, ti.userPercent, ti.sysPercent);
     } else if (isIdent(t, "taskall")) {
         if (terminateCmd(cmdStart, cmd)) {
             return 0;
@@ -235,8 +235,8 @@ int parseCmd(const char *cmd) {
             if (ctl::taskInfo(ctl::Tid(tid), &ti) == 0) {
                 ctl::Name name{""};
                 reverseWhoIs(ctl::Tid(tid), &name);
-                bwprintf(COM2, "%d\t%d\t%s\t%d\t%c\t%d%%\t%d%%\r\n",
-                    ti.tid, ti.ptid, name.data, ti.pri, ti.state, ti.userPercent, ti.sysPercent);
+                bwprintf(COM2, "%d\t%s\t%d\t%d\t%c\t%d%%\t%d%%\r\n",
+                    ti.tid, name.data, ti.ptid, ti.pri, ti.state, ti.userPercent, ti.sysPercent);
             }
         }
     } else if (isIdent(t, "q")) {
