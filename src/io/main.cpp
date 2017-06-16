@@ -39,7 +39,7 @@ struct Uart1Traits {
     static constexpr auto flagReg = UART1_BASE + UART_FLAG_OFFSET;
     static void checkModem() {
         // TODO: this doesn't actually check the modem
-        for (volatile int i = 0; i < 10000; i++);
+        for (volatile int i = 0; i < 100000; i++);
     }
 };
 
