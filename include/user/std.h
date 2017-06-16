@@ -1,6 +1,4 @@
-#ifndef USER_STD_H__INCLUDED
-#define USER_STD_H__INCLUDED
-
+#pragma once
 
 #define memcpy  __builtin_memcpy
 #define memset  __builtin_memset
@@ -23,5 +21,3 @@ namespace detail {
 void assert(const char *file, int line);
 }
 }
-
-#endif // USER_STD_H__INCLUDED

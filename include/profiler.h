@@ -1,8 +1,5 @@
-#ifndef PROFILER_H__INCLUDED
-#define PROFILER_H__INCLUDED
+#pragma once
 
 void profilerStart(unsigned ticks);
 void profilerStop();
 void profilerDump();
-
-#endif // PROFILER_H__INCLUDED

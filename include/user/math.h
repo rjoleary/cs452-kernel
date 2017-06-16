@@ -1,5 +1,4 @@
-#ifndef MATH_H__INCLUDED
-#define MATH_H__INCLUDED
+#pragma once
 
 namespace ctl {
 template <typename T>
@@ -12,5 +11,3 @@ constexpr T max(T lhs, T rhs) {
     return lhs < rhs ? rhs : lhs;
 }
 }
-
-#endif

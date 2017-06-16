@@ -1,7 +1,5 @@
 // Functions for controlling the trains.
-
-#ifndef TRAIN_H__INCLUDED
-#define TRAIN_H__INCLUDED
+#pragma once
 
 // Performs the following:
 //  - sets the speed of all trains to 0
@@ -24,5 +22,3 @@ void cmdSetSpeed(int train, int speed);
 
 // train: [1, 80]
 void cmdReverse(int train);
-
-#endif // TRAIN_H__INCLUDED

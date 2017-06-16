@@ -3,9 +3,7 @@
 //
 //   make STRACE_ENABLED=1
 //
-
-#ifndef STRACE_H__INCLUDED
-#define STRACE_H__INCLUDED
+#pragma once
 
 #include <user/bwio.h>
 
@@ -21,6 +19,3 @@
 #else
 #define STRACE(fmt, ...) (void)0
 #endif
-
-
-#endif // STRACE_H__INCLUDED

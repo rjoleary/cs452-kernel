@@ -1,7 +1,5 @@
 // Implementation of swap.
-
-#ifndef SWAP_H__INCLUDED
-#define SWAP_H__INCLUDED
+#pragma once
 
 namespace ctl {
 template <typename T>
@@ -11,5 +9,3 @@ void swap(T &lhs, T &rhs) {
     rhs = temp;
 }
 }
-
-#endif // SWAP_H__INCLUDED

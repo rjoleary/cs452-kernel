@@ -1,5 +1,4 @@
-#ifndef USER_DEF_H__INCLUDED
-#define USER_DEF_H__INCLUDED
+#pragma once
 
 #include "types.h"
 
@@ -14,5 +13,3 @@ constexpr Tid FIRST_TID{0},
           INVALID_TID{-1};
 constexpr Priority FIRST_PRI{15};
 };
-
-#endif // USER_DEF_H__INCLUDED

@@ -1,7 +1,5 @@
 // Name server
-
-#ifndef USER_NS_H__INCLUDED
-#define USER_NS_H__INCLUDED
+#pragma once
 
 #include <task.h>
 
@@ -61,5 +59,3 @@ Tid whoIs(Name name);
 
 void nsMain();
 }
-
-#endif // USER_NS_H__INCLUDED

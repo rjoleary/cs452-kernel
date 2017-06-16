@@ -1,5 +1,4 @@
-#ifndef USER_TYPES_H__INCLUDED
-#define USER_TYPES_H__INCLUDED
+#pragma once
 
 namespace ctl {
 template <typename T, typename Name>
@@ -25,5 +24,3 @@ using Priority = NamedType<unsigned, struct Priority_t>;
 
 constexpr Priority PRIORITY_MIN{0}, PRIORITY_MAX{31};
 }
-
-#endif // USER_TYPES_H__INCLUDED

@@ -1,5 +1,4 @@
 // Inter-task communication
-
 #pragma once
 
 #include "syscall.h"

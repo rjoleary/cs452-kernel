@@ -1,5 +1,4 @@
-#ifndef SCHEDULER_H__INCLUDED
-#define SCHEDULER_H__INCLUDED
+#pragma once
 
 #include <def.h>
 
@@ -27,5 +26,3 @@ public:
     Td* getNextTask();
 };
 }
-
-#endif // SCHEDULER_H__INCLUDED

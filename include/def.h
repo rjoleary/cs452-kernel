@@ -1,7 +1,5 @@
 // This file contains constants global to the kernel.
-
-#ifndef DEF_H__INCLUDED
-#define DEF_H__INCLUDED
+#pragma once
 
 #include <user/def.h>
 
@@ -16,5 +14,3 @@ namespace kernel {
 // The number of available priorities.
 constexpr auto NUM_PRI = ctl::PRIORITY_MAX.underlying() - ctl::PRIORITY_MIN.underlying() + 1;
 }
-
-#endif // DEF_H__INCLUDED

@@ -1,5 +1,4 @@
-#ifndef USER_ERR_H__INCLUDED
-#define USER_ERR_H__INCLUDED
+#pragma once
 
 namespace ctl {
 enum class Error {
@@ -15,5 +14,3 @@ enum class Error {
 
 const char *err2str(int err);
 }
-
-#endif // USER_ERR_H__INCLUDED

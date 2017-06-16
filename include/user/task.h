@@ -1,7 +1,5 @@
 // Task creation.
-
-#ifndef USER_TASK_H__INCLUDED
-#define USER_TASK_H__INCLUDED
+#pragma once
 
 #include "types.h"
 
@@ -86,5 +84,3 @@ void exeunt();
 // TODO: Please see the separate document for destroy. Re-using resources is complicated.
 void destroy();
 }
-
-#endif // USER_TASK_H__INCLUDED

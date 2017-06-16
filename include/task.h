@@ -1,7 +1,5 @@
 // Exports facilities for tasks.
-
-#ifndef TASK_H__INCLUDED
-#define TASK_H__INCLUDED
+#pragma once
 
 #include "types.h"
 #include "def.h"
@@ -105,5 +103,3 @@ public:
     Td* getTd(ctl::Tid tid);
 };
 }
-
-#endif // TASK_H__INCLUDED

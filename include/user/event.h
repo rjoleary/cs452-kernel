@@ -1,7 +1,5 @@
 // Interrupt processing
-
-#ifndef USER_EVENT_H__INCLUDED
-#define USER_EVENT_H__INCLUDED
+#pragma once
 
 namespace ctl {
 // Kernel event on which a usert task may wait.
@@ -49,5 +47,3 @@ const int EVENT_NUM = static_cast<int>(Event::EventNum);
 //   -ERR_CORRUPT: corrupted volatile data.
 int awaitEvent(Event eventid);
 }
-
-#endif // USER_EVENT_H__INCLUDED

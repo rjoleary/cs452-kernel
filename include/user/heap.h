@@ -1,6 +1,6 @@
 // Contains an implementation of a heap.
-
 #pragma once
+
 #include <def.h>
 #include <std.h>
 #include <types.h>

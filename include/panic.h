@@ -1,8 +1,6 @@
 // Calling PANIC(str) will halt the system and dump all the registers and stack
 // to COM2. The first argument, str, can be an informational message.
-
-#ifndef PANIC_H__INCLUDED
-#define PANIC_H__INCLUDED
+#pragma once
 
 #define PANIC(str)                                        \
     do {                                                  \
@@ -31,5 +29,3 @@ namespace detail {
 void panic(unsigned *regs, const char *str, const char *file, int line);
 }
 }
-
-#endif // PANIC_H__INCLUDED

@@ -1,7 +1,5 @@
 // Clock server
-
-#ifndef USER_CLOCK_H__INCLUDED
-#define USER_CLOCK_H__INCLUDED
+#pragma once
 
 #include "types.h"
 
@@ -65,5 +63,3 @@ int time(Tid tid);
 //   -ERR_BADARG: The delay was zero or negative.
 int delayUntil(Tid tid, int ticks);
 }
-
-#endif // USER_CLOCK_H__INCLUDED

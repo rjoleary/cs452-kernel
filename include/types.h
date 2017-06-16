@@ -1,6 +1,3 @@
-#ifndef TYPES_H__INCLUDED
-#define TYPES_H__INCLUDED
+#pragma once
 
 #include "user/types.h"
-
-#endif // TYPES_H__INCLUDED

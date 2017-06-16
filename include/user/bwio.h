@@ -1,9 +1,7 @@
 /*
  * bwio.h
  */
-
-#ifndef USER_BWIO_H__INCLUDED
-#define USER_BWIO_H__INCLUDED
+#pragma once
 
 #include <types.h>
 
@@ -45,5 +43,3 @@ void bwprintf( int channel, const char *format, ... );
 
 extern bool useBusyWait;
 extern ctl::Tid bwioServs[2];
-
-#endif // USER_BWIO_H__INCLUDED

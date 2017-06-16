@@ -1,5 +1,4 @@
-#ifndef USER_SYSCALL_H__INCLUDED
-#define USER_SYSCALL_H__INCLUDED
+#pragma once
 
 namespace kernel {
 enum class Syscall {
@@ -122,5 +121,3 @@ enum class Syscall {
         : "r5"                                     \
         , "memory"                                 \
     );
-
-#endif // USER_SYSCALL_H__INCLUDED

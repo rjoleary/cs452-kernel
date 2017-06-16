@@ -1,5 +1,4 @@
-#ifndef SYSCALL_H__INCLUDED
-#define SYSCALL_H__INCLUDED
+#pragma once
 
 #include <user/syscall.h>
 
@@ -11,5 +10,3 @@ void kernelEntry(void);
 // switches to it. The new stack pointer is returned.
 unsigned * kernelExit(void *sp);
 }
-
-#endif // SYCALL_H__INCLUDED
