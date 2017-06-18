@@ -106,7 +106,7 @@ void clockMain() {
             }
 
             case MsgType::DelayUntil: {
-                if (counter <= msg.ticks) {
+                if (msg.ticks <= counter) {
                     ~reply(tid, EmptyMessage);
                     break;
                 }

@@ -1,3 +1,4 @@
+#include <def.h>
 #include <task.h>
 #include <ns.h>
 #include <bwio.h>
@@ -23,10 +24,7 @@ static const char prompt[] = "% ";
 
 void printLayout() {
     bwputstr(COM2,
-        "00:00.0   STOP   Built ??:??:?? ??? ?? ????\r\n"
-        "                                           \r\n"
-        "Longest loop: 0 us                         \r\n"
-        "Current loop: 0 us                         \r\n"
+        "00:00.0   STOP   Idle Time: 0%             \r\n"
         "                                           \r\n"
         "Sensor triggers          Switches          \r\n"
         "  ________                  1-U   12-U     \r\n"
@@ -64,14 +62,16 @@ void restorecur() {
 }
 
 void timerMain() {
+    ~registerAs(Name{"Timer"});
+
     int tenths = 0;
     auto clock = whoIs(names::ClockServer).asValue();
     for (;;) {
         tenths++;
-        ~delayUntil(clock, tenths);
+        ~delayUntil(clock, tenths * 10);
         savecur();
         setpos(1, 1);
-        bwprintf(COM2, "%02d:%02d.%d", 
+        bwprintf(COM2, "%02d:%02d.%d",
             tenths / 10 / 60, // minutes
             tenths / 10 % 60, // seconds
             tenths % 10); // tenths of a second
@@ -80,7 +80,27 @@ void timerMain() {
     }
 }
 
+void idleCounterMain() {
+    ~registerAs(Name{"Counter"});
+
+    int seconds = 0;
+    auto clock = whoIs(names::ClockServer).asValue();
+    for (;;) {
+        seconds++;
+        ~delayUntil(clock, seconds * 100);
+        savecur();
+        setpos(1, 29);
+        ctl::TaskInfo ti;
+        ASSERT(ctl::taskInfo(IDLE_TID, &ti) == ctl::Error::Ok);
+        bwprintf(COM2, "    \b\b\b\b%d%%", ti.userPercent);
+        restorecur();
+        ~io::flush(whoIs(names::Uart2TxServer).asValue());
+    }
+}
+
 void runTerminal() {
+    ~registerAs(Name{"Term"});
+
     // Reset special formatting.
     bwputstr(COM2, "\033[0m");
 
@@ -97,9 +117,9 @@ void runTerminal() {
     restorecur();
     bwputstr(COM2, prompt);
 
-    // Create timer.
-    // Timer must be higher priority than terminal, otherwise output gets jumbled.
+    // Create timer and idle task counter.
     ~create(Priority(28), timerMain);
+    ~create(Priority(28), idleCounterMain);
 
     bool isStopped = true;
     unsigned cmdsz = 0;
