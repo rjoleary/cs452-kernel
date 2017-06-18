@@ -8,6 +8,7 @@
 #include <parse.h>
 #include <event.h>
 #include <clock.h>
+#include <sensor.h>
 
 using namespace ctl;
 
@@ -121,14 +122,16 @@ void runTerminal() {
     ~create(Priority(28), timerMain);
     ~create(Priority(28), idleCounterMain);
 
+    // Create sensors task.
+    ~create(Priority(29), sensorsMain);
+
     bool isStopped = false;
     unsigned cmdsz = 0;
     char cmdbuf[MAX_CMDSZ+1];
 
-    Tid tx = whoIs(names::Uart2TxServer).asValue();
     Tid rx = whoIs(names::Uart2RxServer).asValue();
     for (;;) {
-        ~io::flush(tx);
+        flush(COM2);
         // TODO: don't assert on corrupt data
         int c = io::getc(rx).asValue();
 
