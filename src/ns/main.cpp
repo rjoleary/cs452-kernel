@@ -72,6 +72,11 @@ void nsMain() {
     Entry map[NUM_TD];
     unsigned mapSize = 0;
 
+    // Register self.
+    map[0].name = Name{"NS"};
+    map[0].tid = myTid();
+    mapSize++;
+
     for (;;) {
         Tid tid;
         Message msg;
