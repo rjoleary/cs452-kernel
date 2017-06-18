@@ -42,7 +42,7 @@ struct Uart1Traits {
         // TODO: this doesn't actually check the modem
         for (volatile int i = 0; i < 100000; i++);
     }
-    static constexpr auto taskBufferSize = 2;
+    static constexpr auto taskBufferSize = 8;
     static constexpr auto flushOnNewline = false;
 };
 

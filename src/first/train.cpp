@@ -25,7 +25,6 @@ struct alignas(4) Message {
 };
 
 // Manages a single train.
-// TODO: data framing
 void trainMain() {
     // Receive train number from the train man.
     unsigned number;
@@ -56,16 +55,25 @@ void trainMain() {
         switch (rply.type) {
             case MsgType::LightOn: {
                 speed = speed & LIGHT_MASK;
+                bwputc(COM1, speed);
+                bwputc(COM1, number);
+                flush(COM1);
                 break;
             }
 
             case MsgType::LightOff: {
                 speed = speed & ~LIGHT_MASK;
+                bwputc(COM1, speed);
+                bwputc(COM1, number);
+                flush(COM1);
                 break;
             }
 
             case MsgType::LightToggle: {
                 speed = speed ^ LIGHT_MASK;
+                bwputc(COM1, speed);
+                bwputc(COM1, number);
+                flush(COM1);
                 break;
             }
 
@@ -73,21 +81,28 @@ void trainMain() {
                 speed = (speed & ~SPEED_MASK) | (rply.speed & SPEED_MASK);
                 bwputc(COM1, speed);
                 bwputc(COM1, number);
+                flush(COM1);
                 break;
             }
 
             case MsgType::Reverse: {
-                // Stop
-                bwputc(COM1, speed & ~SPEED_MASK);
-                bwputc(COM1, number);
-                // 200 milliseconds for each train speed
-                ~ctl::delay(clockServer, 20);
-                // Reverse
-                bwputc(COM1, speed | SPEED_MASK);
-                bwputc(COM1, number);
+                if (speed & SPEED_MASK) {
+                    // Stop
+                    bwputc(COM1, speed & ~SPEED_MASK);
+                    bwputc(COM1, number);
+                    flush(COM1);
+                    // 200 milliseconds for each train speed
+                    ~ctl::delay(clockServer, 20 * speed);
+                    // Reverse
+                    bwputc(COM1, speed | SPEED_MASK);
+                    bwputc(COM1, number);
+                    flush(COM1);
+                    ~ctl::delay(clockServer, 10 * speed);
+                }
                 // Set speed
                 bwputc(COM1, speed);
                 bwputc(COM1, number);
+                flush(COM1);
                 break;
             }
             
@@ -148,10 +163,12 @@ void trainManMain() {
 
 void stopTrains() {
     bwputc(COM1, 97);
+    flush(COM1);
 }
 
 void goTrains() {
     bwputc(COM1, 96);
+    flush(COM1);
 }
 
 void cmdToggleLight(int train) {
@@ -169,7 +186,7 @@ void cmdSetSpeed(int train, int speed) {
         return;
     }
     if (speed < 0 || 14 < speed) {
-        bwputstr(COM2, "Error: speed must be between 0 and 15 inclusive\r\n");
+        bwputstr(COM2, "Error: speed must be between 0 and 14 inclusive\r\n");
         return;
     }
     Message msg{MsgType::SetSpeed, char(train), char(speed)};

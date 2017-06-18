@@ -76,7 +76,7 @@ void timerMain() {
             tenths / 10 % 60, // seconds
             tenths % 10); // tenths of a second
         restorecur();
-        ~io::flush(whoIs(names::Uart2TxServer).asValue());
+        flush(COM2);
     }
 }
 
@@ -94,7 +94,7 @@ void idleCounterMain() {
         ASSERT(ctl::taskInfo(IDLE_TID, &ti) == ctl::Error::Ok);
         bwprintf(COM2, "    \b\b\b\b%d%%", ti.userPercent);
         restorecur();
-        ~io::flush(whoIs(names::Uart2TxServer).asValue());
+        flush(COM2);
     }
 }
 
@@ -121,7 +121,7 @@ void runTerminal() {
     ~create(Priority(28), timerMain);
     ~create(Priority(28), idleCounterMain);
 
-    bool isStopped = true;
+    bool isStopped = false;
     unsigned cmdsz = 0;
     char cmdbuf[MAX_CMDSZ+1];
 

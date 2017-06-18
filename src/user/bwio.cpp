@@ -100,6 +100,16 @@ int bwputc( int channel, char c ) {
 	return 0;
 }
 
+void flush(int channel) {
+    if (!useBusyWait) {
+        static ctl::Tid bwioServs[2] = {
+                ~whoIs(ctl::names::Uart1TxServer),
+                ~whoIs(ctl::names::Uart2TxServer),
+        };
+        ~io::flush(bwioServs[channel]);
+    }
+}
+
 char c2x( char ch ) {
 	if ( (ch <= 9) ) return '0' + ch;
 	return 'a' + ch - 10;

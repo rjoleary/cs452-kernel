@@ -29,6 +29,8 @@ int bwsetspeed( int channel, int speed );
 
 int bwputc( int channel, char c );
 
+void flush( int channel );
+
 int bwgetc( int channel );
 
 int bwputx( int channel, char c );

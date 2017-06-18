@@ -41,7 +41,7 @@ ctl::ErrorOr<void> putc(ctl::Tid tid, char ch);
 //
 //   Buffers are also flushed for two other reasons:
 //
-//     1. The buffer becomes full. This is 2 bytes for COM1 and 64 bytes for
+//     1. The buffer becomes full. This is 8 bytes for COM1 and 64 bytes for
 //        COM2.
 //     2. The newline character is printed. This only applies to COM2.
 //
