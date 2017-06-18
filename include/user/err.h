@@ -14,6 +14,22 @@ enum class Error {
     Unkn,
 };
 
+
+// Convert error to string.
+inline const char *errorToString(Error err) {
+    switch (err) {
+        case Error::Ok:      return "ok";
+        case Error::BadArg:  return "bad argument";
+        case Error::NoRes:   return "no resource available";
+        case Error::Trunc:   return "truncated";
+        case Error::InvId:   return "invalid id";
+        case Error::BadItc:  return "could not complete inter-task communcation";
+        case Error::Corrupt: return "corrupted volatile data";
+        case Error::Unkn:
+        default:             return "unknown error";
+    }
+}
+
 // Note that negative values of T are considered error.
 template <typename T>
 class ErrorOr {
@@ -75,17 +91,7 @@ public:
 
     // Convert error to string.
     const char *asErrorString() const {
-        switch (asError()) {
-            case Error::Ok:      return "ok";
-            case Error::BadArg:  return "bad argument";
-            case Error::NoRes:   return "no resource available";
-            case Error::Trunc:   return "truncated";
-            case Error::InvId:   return "invalid id";
-            case Error::BadItc:  return "could not complete inter-task communcation";
-            case Error::Corrupt: return "corrupted volatile data";
-            case Error::Unkn:
-            default:             return "unknown error";
-        }
+        return errorToString(asError());
     }
 };
 static_assert(sizeof(ErrorOr<Tid>) == sizeof(Tid));
@@ -140,17 +146,7 @@ public:
 
     // Convert error to string.
     const char *asErrorString() const {
-        switch (asError()) {
-            case Error::Ok:      return "ok";
-            case Error::BadArg:  return "bad argument";
-            case Error::NoRes:   return "no resource available";
-            case Error::Trunc:   return "truncated";
-            case Error::InvId:   return "invalid id";
-            case Error::BadItc:  return "could not complete inter-task communcation";
-            case Error::Corrupt: return "corrupted volatile data";
-            case Error::Unkn:
-            default:             return "unknown error";
-        }
+        return errorToString(asError());
     }
 };
 static_assert(sizeof(ErrorOr<void>) == 4);
