@@ -64,13 +64,11 @@ ErrorOr<void> send(Tid tid, const T &msg, U &reply) {
     void *a3 = isEmptyRpl ? nullptr : &reply;
     int a4 = isEmptyRpl ? 0 : sizeof(U);
     int err = detail::send(a0, a1, a2, a3, a4);
-    if (isEmptyRpl && err > 0) {
-        return ErrorOr<void>::fromError(Error::BadItc);
+    if ((err == sizeof(reply)) || (isEmptyRpl && err == 0)) {
+        return ErrorOr<void>::fromOk();
     }
-    if (err >= 0 && err != sizeof(reply)) {
-        return ErrorOr<void>::fromError(Error::BadItc);
-    }
-    return ErrorOr<void>::fromError(static_cast<Error>(err));
+    err = err > 0 ? 0 : err;
+    return ErrorOr<void>::fromInt(err);
 }
 
 // receive - receive a message from a task.
@@ -110,13 +108,11 @@ ErrorOr<void> receive(Tid *a0, T &msg) {
     void *a1 = isEmpty ? nullptr : &msg;
     int a2 = isEmpty ? 0 : sizeof(T);
     int err = detail::receive(a0, a1, a2);
-    if (isEmpty && err > 0) {
-        return ErrorOr<void>::fromError(Error::BadItc);
+    if ((err == sizeof(msg)) || (isEmpty && err == 0)) {
+        return ErrorOr<void>::fromOk();
     }
-    if (err >= 0 && err != sizeof(msg)) {
-        return ErrorOr<void>::fromError(Error::BadItc);
-    }
-    return ErrorOr<void>::fromError(static_cast<Error>(err));
+    err = err > 0 ? 0 : err;
+    return ErrorOr<void>::fromInt(err);
 }
 
 // reply - reply to a message.
@@ -148,6 +144,6 @@ ErrorOr<void> reply(Tid tid, const T &msg) {
     int a0 = tid.underlying();
     const void *a1 = isEmpty ? nullptr : &msg;
     int a2 = isEmpty ? 0 : sizeof(T);
-    return ErrorOr<void>::fromError(static_cast<Error>(-detail::reply(a0, a1, a2)));
+    return ErrorOr<void>::fromInt(detail::reply(a0, a1, a2));
 }
 }

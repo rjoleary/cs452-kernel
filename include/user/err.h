@@ -53,7 +53,9 @@ public:
 
     // Return the value or assert.
     T asValue() const {
-        ASSERT(!isError());
+        if (isError()) {
+            assert(asErrorString());
+        }
         return *reinterpret_cast<const T*>(&data);
     }
 
@@ -107,6 +109,12 @@ public:
         return ret;
     }
 
+    static const ErrorOr<void> fromInt(int value) {
+        ErrorOr<void> ret;
+        ret.data = static_cast<Error>(value < 0 ? -value : value);
+        return ret;
+    }
+
     // Return true if value is an error.
     bool isError() const {
         return data != Error::Ok;
@@ -114,7 +122,9 @@ public:
 
     // Return the value or assert.
     void asValue() const {
-        ASSERT(!isError());
+        if (isError()) {
+            assert(asErrorString());
+        }
     }
 
     // Return the error.

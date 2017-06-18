@@ -9,17 +9,17 @@
 extern "C"
 void fast_memcpy(unsigned *dest, const unsigned *source, int num);
 
-#define ASSERT(pred) do {               \
-    if (__builtin_expect(!(pred), 0)) { \
-        ctl::detail::assert(__FILE__, __LINE__);     \
-    }                                   \
+#define STR2(x) #x
+#define STR(x) STR2(x)
+#define ASSERT(pred) do {                        \
+    if (__builtin_expect(!(pred), 0)) {          \
+        ctl::assert(__FILE__ ":" STR(__LINE__)); \
+    }                                            \
 } while (false)
 
 namespace ctl {
 using size_t = decltype(sizeof(0));
-namespace detail {
-void assert(const char *file, int line);
-}
+void assert(const char *description);
 
 template <typename T>
 void swap(T &lhs, T &rhs) {
