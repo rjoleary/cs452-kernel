@@ -25,42 +25,42 @@ struct Message {
 struct Reply {
     Error error;
     union {
-        Name name;
-        Tid tid;
+        Name name; // whoIs
+        Tid tid; // reverseWhoIs
     };
 };
 }
 
-int registerAs(Name name) {
+ErrorOr<void> registerAs(Name name) {
     Message msg;
     msg.type = MsgType::Register;
     msg.name = name;
 
     Reply rply;
-    ASSERT(send(NS_TID, msg, rply) == sizeof(rply));
-    return -static_cast<int>(rply.error);
+    ~send(NS_TID, msg, rply);
+    return ErrorOr<void>::fromError(rply.error);
 }
 
-Tid whoIs(Name name) {
+ErrorOr<Tid> whoIs(Name name) {
     Message msg;
     msg.type = MsgType::WhoIs;
     msg.name = name;
     Reply rply;
-    ASSERT(send(NS_TID, msg, rply) == sizeof(rply));
-    if (rply.error != Error::Ok) {
-        return Tid(-int(rply.error)); // TODO: lol type safety
-    }
-    return rply.tid;
+    ~send(NS_TID, msg, rply);
+    return ErrorOr<Tid>::fromBoth(rply.error, rply.tid);
 }
 
-int reverseWhoIs(Tid tid, Name *name) {
+ErrorOr<void> reverseWhoIs(Tid tid, Name *name) {
     Message msg;
     msg.type = MsgType::ReverseWhoIs;
     msg.tid = tid;
     Reply rply;
-    ASSERT(send(NS_TID, msg, rply) == sizeof(rply));
+    ~send(NS_TID, msg, rply);
+    if (rply.error != Error::Ok) {
+        return ErrorOr<void>::fromError(rply.error);
+    }
     *name = rply.name;
-    return -int(rply.error); // TODO: lol type safety
+    return ErrorOr<void>::fromOk();
 }
 
 void nsMain() {
@@ -76,7 +76,7 @@ void nsMain() {
         Tid tid;
         Message msg;
         Reply rply = {Error::Ok};
-        ASSERT(receive(&tid, msg) == sizeof(msg));
+        ~receive(&tid, msg);
 
         int idx = -1;
         if (msg.type != MsgType::ReverseWhoIs) {
@@ -131,7 +131,7 @@ void nsMain() {
             }
         }
 
-        ASSERT(reply(tid, rply) == 0);
+        ~reply(tid, rply);
     }
 }
 }

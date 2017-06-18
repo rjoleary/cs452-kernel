@@ -3,6 +3,7 @@
 
 #include "syscall.h"
 #include "types.h"
+#include "err.h"
 #include <type_traits>
 
 namespace ctl {
@@ -48,9 +49,9 @@ inline int send (int a0, const void *a1, int a2, void *a3, int a4) {
 }
 }
 template <typename T, typename U>
-int send(Tid tid, const T &msg, const U &reply) = delete;
+ErrorOr<void> send(Tid tid, const T &msg, const U &reply) = delete;
 template <typename T, typename U>
-int send(Tid tid, const T &msg, U &reply) {
+ErrorOr<void> send(Tid tid, const T &msg, U &reply) {
     constexpr bool isEmptyMsg = std::is_same<std::decay_t<T>, EmptyMessage_t>::value;
     constexpr bool isEmptyRpl = std::is_same<std::decay_t<U>, EmptyMessage_t>::value;
     static_assert(alignof(T) >= alignof(unsigned) || isEmptyMsg, "Unaligned send msg");
@@ -62,7 +63,14 @@ int send(Tid tid, const T &msg, U &reply) {
     int a2 = isEmptyMsg ? 0 : sizeof(T);
     void *a3 = isEmptyRpl ? nullptr : &reply;
     int a4 = isEmptyRpl ? 0 : sizeof(U);
-    return detail::send(a0, a1, a2, a3, a4);
+    int err = detail::send(a0, a1, a2, a3, a4);
+    if (isEmptyRpl && err > 0) {
+        return ErrorOr<void>::fromError(Error::BadItc);
+    }
+    if (err >= 0 && err != sizeof(reply)) {
+        return ErrorOr<void>::fromError(Error::BadItc);
+    }
+    return ErrorOr<void>::fromError(static_cast<Error>(err));
 }
 
 // receive - receive a message from a task.
@@ -86,6 +94,7 @@ int send(Tid tid, const T &msg, U &reply) {
 //   >-1: The size of the message received, which is less than or equal to the
 //        size of the message buffer supplied. Longer messages are truncated.
 //   -ERR_TRUNC: The message is truncated.
+//   -ERR_BADITC
 
 namespace detail {
 inline int receive(Tid *a0, void *a1, int a2) {
@@ -94,13 +103,20 @@ inline int receive(Tid *a0, void *a1, int a2) {
 }
 }
 template <typename T>
-int receive(Tid *a0, T &msg) {
+ErrorOr<void> receive(Tid *a0, T &msg) {
     constexpr bool isEmpty = std::is_same<std::decay_t<T>, EmptyMessage_t>::value;
     static_assert(alignof(T) >= alignof(unsigned) || isEmpty, "Unaligned receive");
     static_assert((sizeof(T) % sizeof(unsigned)) == 0 || isEmpty, "Bad receive size");
     void *a1 = isEmpty ? nullptr : &msg;
     int a2 = isEmpty ? 0 : sizeof(T);
-    return detail::receive(a0, a1, a2);
+    int err = detail::receive(a0, a1, a2);
+    if (isEmpty && err > 0) {
+        return ErrorOr<void>::fromError(Error::BadItc);
+    }
+    if (err >= 0 && err != sizeof(msg)) {
+        return ErrorOr<void>::fromError(Error::BadItc);
+    }
+    return ErrorOr<void>::fromError(static_cast<Error>(err));
 }
 
 // reply - reply to a message.
@@ -125,13 +141,13 @@ inline int reply(int a0, const void *a1, int a2) {
 }
 
 template <typename T>
-int reply(Tid tid, const T &msg) {
+ErrorOr<void> reply(Tid tid, const T &msg) {
     constexpr bool isEmpty = std::is_same<std::decay_t<T>, EmptyMessage_t>::value;
     static_assert(alignof(T) >= alignof(unsigned) || isEmpty, "Unaligned reply");
     static_assert((sizeof(T) % sizeof(unsigned)) == 0 || isEmpty, "Bad reply size");
     int a0 = tid.underlying();
     const void *a1 = isEmpty ? nullptr : &msg;
     int a2 = isEmpty ? 0 : sizeof(T);
-    return detail::reply(a0, a1, a2);
+    return ErrorOr<void>::fromError(static_cast<Error>(-detail::reply(a0, a1, a2)));
 }
 }

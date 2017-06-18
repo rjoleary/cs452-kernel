@@ -74,10 +74,10 @@ bool useBusyWait = true;
 int bwputc( int channel, char c ) {
 	if (!useBusyWait) {
 		static ctl::Tid bwioServs[2] = {
-                        whoIs(ctl::names::Uart1TxServer),
-                        whoIs(ctl::names::Uart2TxServer),
+                        ~whoIs(ctl::names::Uart1TxServer),
+                        ~whoIs(ctl::names::Uart2TxServer),
                 };
-		io::putc(bwioServs[channel], channel, c);
+		io::putc(bwioServs[channel], c);
 		return 0;
 	}
 

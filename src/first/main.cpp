@@ -25,15 +25,15 @@ void nsMain();
 void clockMain();
 
 void firstMain() {
-    ASSERT(Tid(create(Priority(1), nsMain)) == NS_TID);
-    ASSERT(Tid(create(PRIORITY_MIN, idleMain)) == IDLE_TID);
-    ASSERT(ctl::registerAs(Name{"First"}) == 0);
-    ASSERT(create(Priority(PRIORITY_MAX.underlying() - 2), io::uart2TxMain) >= 0);
-    ASSERT(create(Priority(PRIORITY_MAX.underlying() - 2), io::uart2RxMain) >= 0);
-    ASSERT(create(Priority(PRIORITY_MAX.underlying() - 2), io::uart1TxMain) >= 0);
-    ASSERT(create(Priority(PRIORITY_MAX.underlying() - 2), io::uart1RxMain) >= 0);
-    ASSERT(create(Priority(PRIORITY_MAX.underlying() - 2), clockMain) >= 0);
-    ASSERT(create(Priority(22), trainManMain) >= 0);
+    ASSERT(create(Priority(1), nsMain).asValue() == NS_TID);
+    ASSERT(create(PRIORITY_MIN, idleMain).asValue() == IDLE_TID);
+    ~ctl::registerAs(Name{"First"});
+    ~create(Priority(PRIORITY_MAX.underlying() - 2), io::uart2TxMain);
+    ~create(Priority(PRIORITY_MAX.underlying() - 2), io::uart2RxMain);
+    ~create(Priority(PRIORITY_MAX.underlying() - 2), io::uart1TxMain);
+    ~create(Priority(PRIORITY_MAX.underlying() - 2), io::uart1RxMain);
+    ~create(Priority(PRIORITY_MAX.underlying() - 2), clockMain);
+    ~create(Priority(22), trainManMain);
 
     goTrains();
     runTerminal();

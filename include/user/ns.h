@@ -2,6 +2,7 @@
 #pragma once
 
 #include <task.h>
+#include <err.h>
 
 namespace ctl{
 
@@ -36,7 +37,7 @@ constexpr Name Uart2TxServer{"Uart2Tx"};
 // Returns:
 //   -ERR_OK: Success.
 //   -ERR_INVID: The nameserver task id inside the wrapper is invalid.
-int registerAs(Name name);
+ErrorOr<void> registerAs(Name name);
 
 // whoIs - query the nameserver.
 //
@@ -56,7 +57,7 @@ int registerAs(Name name);
 // Returns:
 //   tid: The task id of the registered task.
 //   -ERR_BADARG: Cannot find the name.
-Tid whoIs(Name name);
+ErrorOr<Tid> whoIs(Name name);
 
 // reverseWhoIs - query the nameserver.
 //
@@ -69,7 +70,7 @@ Tid whoIs(Name name);
 // Returns:
 //   -ERR_OK: Success
 //   -ERR_BADARG: Cannot find the tid
-int reverseWhoIs(Tid tid, Name *name);
+ErrorOr<void> reverseWhoIs(Tid tid, Name *name);
 
 void nsMain();
 }

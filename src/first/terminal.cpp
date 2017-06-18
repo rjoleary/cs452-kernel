@@ -65,10 +65,10 @@ void restorecur() {
 
 void timerMain() {
     int tenths = 0;
-    auto clock = whoIs(names::ClockServer);
+    auto clock = whoIs(names::ClockServer).asValue();
     for (;;) {
         tenths++;
-        delayUntil(clock, tenths);
+        ~delayUntil(clock, tenths);
         // TODO: two printers currently interferes
         /*savecur();
         setpos(1, 1);
@@ -99,17 +99,17 @@ void runTerminal() {
 
     // Create timer.
     // Timer must be higher priority than terminal, otherwise output gets jumbled.
-    ASSERT(create(Priority(28), timerMain) >= 0);
+    ~create(Priority(28), timerMain);
 
     bool isStopped = true;
     unsigned cmdsz = 0;
     char cmdbuf[MAX_CMDSZ+1];
 
-    Tid io = whoIs(names::Uart2RxServer);
+    Tid io = whoIs(names::Uart2RxServer).asValue();
     ASSERT(io.underlying() >= 0);
     for (;;) {
-        int c = io::getc(io, COM2);
-        ASSERT(c >= 0);
+        // TODO: don't assert on corrupt data
+        int c = io::getc(io).asValue();
 
         switch (c) {
         case QUIT_CHAR: // quit

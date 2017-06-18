@@ -2,6 +2,7 @@
 #pragma once
 
 #include "types.h"
+#include "err.h"
 
 namespace ctl {
 // delay - wait for a given amount of time.
@@ -22,7 +23,7 @@ namespace ctl {
 //   -ERR_OK: Success.
 //   -ERR_INVID: The clock server task id is invalid.
 //   -ERR_BADARG: The delay was zero or negative.
-int delay(Tid tid, int ticks);
+ErrorOr<void> delay(Tid tid, int ticks);
 
 // time - give the time since clock server start up.
 //
@@ -39,7 +40,7 @@ int delay(Tid tid, int ticks);
 // Returns:
 //   >-1: The time in ticks since the clock server initialized.
 //   -ERR_INVID: The clock server task id is invalid.
-int time(Tid tid);
+ErrorOr<int> time(Tid tid);
 
 // delayUntil - wait until a time.
 //
@@ -61,5 +62,5 @@ int time(Tid tid);
 //   -ERR_OK: Success.
 //   -ERR_INVID: The clock server task id is invalid.
 //   -ERR_BADARG: The delay was zero or negative.
-int delayUntil(Tid tid, int ticks);
+ErrorOr<void> delayUntil(Tid tid, int ticks);
 }

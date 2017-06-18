@@ -209,14 +209,14 @@ int parseCmd(const char *cmd) {
             }
             memset(name.data, 0, sizeof(name.data));
             memcpy(name.data, number.token.start, number.token.len);
-            tid = whoIs(name);
+            tid = whoIs(name).asValue();
             if (tid.underlying() < 0) {
                 tokenErr("unknown task name", number.token.start - cmdStart + 2, number.token.len);
                 return 0;
             }
         }
         ctl::TaskInfo ti;
-        if (ctl::taskInfo(tid, &ti) != 0) {
+        if (ctl::taskInfo(tid, &ti) != ctl::Error::Ok) {
             tokenErr("invalid task id", number.token.start - cmdStart + 2, number.token.len);
             return 0;
         }
@@ -232,7 +232,7 @@ int parseCmd(const char *cmd) {
         bwputstr(COM2, "TID\tNAME\tPTID\tPRI\tState\tUser\tSys\r\n");
         for (int tid = 0; tid < NUM_TD; tid++) {
             ctl::TaskInfo ti;
-            if (ctl::taskInfo(ctl::Tid(tid), &ti) == 0) {
+            if (ctl::taskInfo(ctl::Tid(tid), &ti) == ctl::Error::Ok) {
                 ctl::Name name{""};
                 reverseWhoIs(ctl::Tid(tid), &name);
                 bwprintf(COM2, "%d\t%s\t%d\t%d\t%c\t%d%%\t%d%%\r\n",

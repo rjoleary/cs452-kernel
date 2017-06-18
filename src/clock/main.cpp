@@ -38,66 +38,57 @@ struct DelayDataComp {
 };
 }
 
-int delay(Tid tid, int ticks) {
+ErrorOr<void> delay(Tid tid, int ticks) {
     ASSERT(ticks > 0);
 
     Message msg;
     msg.type = MsgType::Delay;
     msg.ticks = ticks;
-    int err = send(tid, msg, EmptyMessage);
-    if (err == -static_cast<int>(Error::InvId)) {
-        return err;
-    }
-    ASSERT(err == 0);
-    return static_cast<int>(Error::Ok);
+    auto err = send(tid, msg, EmptyMessage);
+    ASSERT(!err.isError() || err.asError() == Error::InvId);
+    return err;
 }
 
-int time(Tid tid) {
+ErrorOr<int> time(Tid tid) {
     Message msg;
     msg.type = MsgType::Time;
     Reply rply;
-    int err = send(tid, msg, rply);
-    if (err == -static_cast<int>(Error::InvId)) {
-        return err;
-    }
-    ASSERT(err == sizeof(rply));
-    return rply.ticks;
+    auto err = send(tid, msg, rply);
+    ASSERT(!err.isError() || err.asError() == Error::InvId);
+    return err.replace(rply.ticks);
 }
 
-int delayUntil(Tid tid, int ticks) {
+ErrorOr<void> delayUntil(Tid tid, int ticks) {
     ASSERT(ticks > 0);
 
     Message msg;
     msg.type = MsgType::DelayUntil;
     msg.ticks = ticks;
-    int err = send(tid, msg, EmptyMessage);
-    if (err == -static_cast<int>(Error::InvId)) {
-        return err;
-    }
-    ASSERT(err == 0);
-    return static_cast<int>(Error::Ok);
+    auto err = send(tid, msg, EmptyMessage);
+    ASSERT(!err.isError() || err.asError() == Error::InvId);
+    return err;
 }
 
 void clockMain() {
     int counter = 0;
-    ASSERT(registerAs(names::ClockServer) == 0);
+    ~registerAs(names::ClockServer);
     Heap<NUM_TD, DelayData, DelayDataComp> minheap;
 
     void clockNotifier();
-    ASSERT(create(Priority(30), clockNotifier) >= 0);
+    ~create(Priority(30), clockNotifier);
 
     for (;;) {
         Tid tid;
         Message msg;
-        ASSERT(receive(&tid, msg) == sizeof(msg));
+        ~receive(&tid, msg);
 
         switch (msg.type) {
             case MsgType::Notify: {
                 counter++;
-                ASSERT(reply(tid, EmptyMessage) == 0);
+                ~reply(tid, EmptyMessage);
                 while (!minheap.empty() && minheap.peek().tick <= counter) {
                     const auto &data = minheap.pop();
-                    ASSERT(reply(data.tid, EmptyMessage) == 0);
+                    ~reply(data.tid, EmptyMessage);
                 }
                 break;
             }
@@ -110,13 +101,13 @@ void clockMain() {
             case MsgType::Time: {
                 Reply rply;
                 rply.ticks = counter;
-                ASSERT(reply(tid, rply) == 0);
+                ~reply(tid, rply);
                 break;
             }
 
             case MsgType::DelayUntil: {
                 if (counter <= msg.ticks) {
-                    ASSERT(reply(tid, EmptyMessage) == 0);
+                    ~reply(tid, EmptyMessage);
                     break;
                 }
                 minheap.push({msg.ticks, tid});
@@ -131,11 +122,11 @@ void clockMain() {
 }
 
 void clockNotifier() {
-    auto clockTid = Tid(whoIs(names::ClockServer));
+    auto clockTid = whoIs(names::ClockServer).asValue();
     Message notify{MsgType::Notify};
     for (;;) {
         ASSERT(awaitEvent(Event::PeriodicTimer) >= 0);
-        ASSERT(send(clockTid, notify, EmptyMessage) == 0);
+        ~send(clockTid, notify, EmptyMessage);
     }
 }
 }

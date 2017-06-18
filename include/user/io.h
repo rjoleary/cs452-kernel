@@ -1,6 +1,7 @@
 // Input/Output
 #pragma once
 
+#include "err.h"
 #include "types.h"
 
 namespace io {
@@ -13,7 +14,7 @@ namespace io {
 //   How communication errors are handled is implementation-dependent.
 //
 //   getc is actually a wrapper for a send to the appropriate server.
-int getc(ctl::Tid tid, int uart);
+ctl::ErrorOr<int> getc(ctl::Tid tid);
 
 // putc - transmit a character from the given UART.
 //
@@ -29,5 +30,5 @@ int getc(ctl::Tid tid, int uart);
 // Returns:
 //   -ERR_OK: Success.
 //   -ERR_INVID: The server task id is not the task id of an existing task.
-int putc(ctl::Tid tid, int uart, char ch);
+ctl::ErrorOr<void> putc(ctl::Tid tid, char ch);
 }

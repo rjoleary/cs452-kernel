@@ -2,6 +2,6 @@
 #include <std.h>
 
 void idleMain() {
-    ASSERT(ctl::registerAs(ctl::Name{"Idle"}) == 0);
+    ~ctl::registerAs(ctl::Name{"Idle"});
     for (;;);
 }

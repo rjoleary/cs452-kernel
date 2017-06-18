@@ -2,10 +2,10 @@
 #include <task.h>
 
 namespace ctl {
-int create(Priority pri, void (*a1)()) {
+ErrorOr<Tid> create(Priority pri, void (*a1)()) {
     int a0 = pri.underlying();
     SYSCALL2R(kernel::Syscall::Create)
-    return ret;
+    return ErrorOr<Tid>::fromInt(ret);
 }
 Tid myTid() {
     SYSCALL0R(kernel::Syscall::MyTid)
@@ -15,10 +15,10 @@ Tid myParentTid() {
     SYSCALL0R(kernel::Syscall::MyParentTid)
     return Tid(ret);
 }
-int taskInfo(Tid tid, TaskInfo *a1) {
+Error taskInfo(Tid tid, TaskInfo *a1) {
     unsigned a0 = tid.underlying();
     SYSCALL2R(kernel::Syscall::TaskInfo)
-    return ret;
+    return static_cast<Error>(ret);
 }
 void pass() {
     SYSCALL0(kernel::Syscall::Pass)

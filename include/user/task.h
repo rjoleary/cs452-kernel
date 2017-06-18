@@ -1,6 +1,7 @@
 // Task creation.
 #pragma once
 
+#include "err.h"
 #include "types.h"
 
 namespace ctl {
@@ -21,7 +22,7 @@ namespace ctl {
 //   task id.
 //   -ERR_BADARG: the priority is invalid.
 //   -ERR_NORES: the kernel is out of task decriptors.
-int create(Priority priority, void (*code)());
+ErrorOr<Tid> create(Priority priority, void (*code)());
 
 // myTid - return my task id.
 //
@@ -58,7 +59,7 @@ struct TaskInfo {
     char userPercent, sysPercent;
     char state; // [ARZBE]
 };
-int taskInfo(Tid tid, TaskInfo *taskInfo);
+Error taskInfo(Tid tid, TaskInfo *taskInfo);
 
 // pass - cease execution, remaining ready to run
 //
