@@ -69,14 +69,14 @@ void timerMain() {
     for (;;) {
         tenths++;
         ~delayUntil(clock, tenths);
-        // TODO: two printers currently interferes
-        /*savecur();
+        savecur();
         setpos(1, 1);
         bwprintf(COM2, "%02d:%02d.%d", 
             tenths / 10 / 60, // minutes
             tenths / 10 % 60, // seconds
             tenths % 10); // tenths of a second
-        restorecur();*/
+        restorecur();
+        ~io::flush(whoIs(names::Uart2TxServer).asValue());
     }
 }
 
