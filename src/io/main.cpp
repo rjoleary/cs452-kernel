@@ -60,6 +60,11 @@ struct Uart2Traits {
 
 template <typename T>
 void txNotifierMain() {
+    // Register
+    Name name = T::txServer;
+    name.data[0] = 'N';
+    ~registerAs(name);
+
     auto serverTid = whoIs(T::txServer).asValue();
     Message message{MsgType::NotifyTx};
     for (;;) {
@@ -79,6 +84,11 @@ void txNotifierMain() {
 
 template <typename T>
 void rxNotifierMain() {
+    // Register
+    Name name = T::rxServer;
+    name.data[0] = 'N';
+    ~registerAs(name);
+
     auto serverTid = whoIs(T::rxServer).asValue();
     Message message{MsgType::NotifyRx};
     for (;;) {

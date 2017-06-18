@@ -122,6 +122,7 @@ void clockMain() {
 }
 
 void clockNotifier() {
+    ~registerAs(Name{"NTimer"});
     auto clockTid = whoIs(names::ClockServer).asValue();
     Message notify{MsgType::Notify};
     for (;;) {
