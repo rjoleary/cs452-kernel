@@ -105,11 +105,12 @@ void runTerminal() {
     unsigned cmdsz = 0;
     char cmdbuf[MAX_CMDSZ+1];
 
-    Tid io = whoIs(names::Uart2RxServer).asValue();
-    ASSERT(io.underlying() >= 0);
+    Tid tx = whoIs(names::Uart2TxServer).asValue();
+    Tid rx = whoIs(names::Uart2RxServer).asValue();
     for (;;) {
+        ~io::flush(tx);
         // TODO: don't assert on corrupt data
-        int c = io::getc(io).asValue();
+        int c = io::getc(rx).asValue();
 
         switch (c) {
         case QUIT_CHAR: // quit

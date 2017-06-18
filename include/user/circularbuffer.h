@@ -18,7 +18,7 @@ public:
         return data;
     }
     void push(const Data &data) {
-        if (size != MaxSize) {
+        if (!full()) {
             entries[end] = data;
             end = (end + 1) % MaxSize;
             size++;
@@ -26,6 +26,9 @@ public:
     }
     bool empty() const {
         return size == 0;
+    }
+    bool full() const {
+        return size == MaxSize;
     }
 };
 }

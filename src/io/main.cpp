@@ -19,6 +19,7 @@ enum class MsgType {
     NotifyTx,
     GetC,
     PutC,
+    Flush,
 };
 
 struct Message {
@@ -41,6 +42,8 @@ struct Uart1Traits {
         // TODO: this doesn't actually check the modem
         for (volatile int i = 0; i < 100000; i++);
     }
+    static constexpr auto taskBufferSize = 2;
+    static constexpr auto flushOnNewline = false;
 };
 
 struct Uart2Traits {
@@ -51,6 +54,8 @@ struct Uart2Traits {
     static constexpr auto dataReg = UART2_BASE + UART_DATA_OFFSET;
     static constexpr auto flagReg = UART2_BASE + UART_FLAG_OFFSET;
     static void checkModem() {}
+    static constexpr auto taskBufferSize = 64;
+    static constexpr auto flushOnNewline = true;
 };
 
 template <typename T>
@@ -107,6 +112,14 @@ ErrorOr<void> putc(Tid tid, char ch) {
     return err;
 }
 
+ErrorOr<void> flush(Tid tid) {
+    Message msg;
+    msg.type = MsgType::Flush;
+    auto err = send(tid, msg, EmptyMessage);
+    ASSERT(!err.isError() || err.asError() == Error::InvId);
+    return err;
+}
+
 // Handles TX interrupt, used by putc
 template <typename T>
 void txMain() {
@@ -116,9 +129,13 @@ void txMain() {
     // Create notifier.
     ~create(Priority(PRIORITY_MAX.underlying()-1), txNotifierMain<T>);
 
-    // Buffers for asynchronicity
-    typedef CircularBuffer<char, 2048> CharBuffer;
-    CharBuffer queue;
+    // Per-task buffers for atomicity.
+    CircularBuffer<char, T::taskBufferSize> buffers[NUM_TD];
+
+    // Buffer for asynchronicity.
+    CircularBuffer<char, 1024> queue;
+
+    // Value for blocking tx notifier.
     Tid txFull = INVALID_TID;
 
     for (;;) {
@@ -138,13 +155,38 @@ void txMain() {
             }
 
             case MsgType::PutC: {
-                ~reply(tid, EmptyMessage);
-                if (txFull == INVALID_TID) {
-                    queue.push(msg.data);
-                } else {
-                    ~reply(txFull, Reply{msg.data});
-                    txFull = INVALID_TID;
+                int idx = tid.underlying();
+                
+                // Add to buffer.
+                buffers[idx].push(msg.data);
+
+                // Check if buffer needs flushing.
+                if (buffers[idx].full() || (T::flushOnNewline && msg.data == '\n')) {
+                    while (!buffers[idx].empty()) {
+                        if (txFull == INVALID_TID) {
+                            queue.push(buffers[idx].pop());
+                        } else {
+                            ~reply(txFull, Reply{buffers[idx].pop()});
+                            txFull = INVALID_TID;
+                        }
+                    }
                 }
+
+                ~reply(tid, EmptyMessage);
+                break;
+            }
+
+            case MsgType::Flush: {
+                int idx = tid.underlying();
+                while (!buffers[idx].empty()) {
+                    if (txFull == INVALID_TID) {
+                        queue.push(buffers[idx].pop());
+                    } else {
+                        ~reply(txFull, Reply{buffers[idx].pop()});
+                        txFull = INVALID_TID;
+                    }
+                }
+                ~reply(tid, EmptyMessage);
                 break;
             }
 
