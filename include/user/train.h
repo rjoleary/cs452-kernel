@@ -1,11 +1,6 @@
 // Functions for controlling the trains.
 #pragma once
 
-// Performs the following:
-//  - sets the speed of all trains to 0
-//  - sends go
-void initTrains();
-
 void stopTrains();
 void goTrains();
 

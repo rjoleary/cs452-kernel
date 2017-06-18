@@ -33,9 +33,9 @@ void firstMain() {
     ~create(Priority(PRIORITY_MAX.underlying() - 2), io::uart1TxMain);
     ~create(Priority(PRIORITY_MAX.underlying() - 2), io::uart1RxMain);
     ~create(Priority(PRIORITY_MAX.underlying() - 2), clockMain);
-    ~create(Priority(22), trainManMain);
     bwioServs[0] = ~whoIs(ctl::names::Uart1TxServer);
     bwioServs[1] = ~whoIs(ctl::names::Uart2TxServer);
+    ~create(Priority(22), trainManMain);
 
     goTrains();
     runTerminal();

@@ -92,13 +92,13 @@ void trainMain() {
                     bwputc(COM1, number);
                     flush(COM1);
                     // 200 milliseconds for each train speed
-                    ~ctl::delay(clockServer, 20 * speed);
-                    // Reverse
-                    bwputc(COM1, speed | SPEED_MASK);
-                    bwputc(COM1, number);
-                    flush(COM1);
-                    ~ctl::delay(clockServer, 10 * speed);
+                    ~ctl::delay(clockServer, 20 * (speed & SPEED_MASK));
                 }
+                // Reverse
+                bwputc(COM1, speed | SPEED_MASK);
+                bwputc(COM1, number);
+                flush(COM1);
+                ~ctl::delay(clockServer, 1);
                 // Set speed
                 bwputc(COM1, speed);
                 bwputc(COM1, number);
@@ -118,7 +118,7 @@ constexpr ctl::Name TrManName = {"TrMan"};
 
 // Manages all the trains.
 void trainManMain() {
-    ~ctl::registerAs(ctl::Name{"TrMan"});
+    ~ctl::registerAs(TrManName);
 
     // Maps trains to their Tids.
     // Indexing: train #1 is at index 0
@@ -179,7 +179,7 @@ void cmdToggleLight(int train) {
         return;
     }
     Message msg{MsgType::LightToggle, char(train)};
-    ~send(whoIs(ctl::Name{"TrMan"}).asValue(), msg, ctl::EmptyMessage);
+    ~send(whoIs(TrManName).asValue(), msg, ctl::EmptyMessage);
 }
 
 void cmdSetSpeed(int train, int speed) {
@@ -192,7 +192,7 @@ void cmdSetSpeed(int train, int speed) {
         return;
     }
     Message msg{MsgType::SetSpeed, char(train), char(speed)};
-    ~send(whoIs(ctl::Name{"TrMan"}).asValue(), msg, ctl::EmptyMessage);
+    ~send(whoIs(TrManName).asValue(), msg, ctl::EmptyMessage);
 }
 
 void cmdReverse(int train) {
@@ -201,5 +201,5 @@ void cmdReverse(int train) {
         return;
     }
     Message msg{MsgType::Reverse, char(train)};
-    ~send(whoIs(ctl::Name{"TrMan"}).asValue(), msg, ctl::EmptyMessage);
+    ~send(whoIs(TrManName).asValue(), msg, ctl::EmptyMessage);
 }

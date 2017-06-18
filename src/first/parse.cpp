@@ -1,6 +1,7 @@
 #include <bwio.h>
 #include <train.h>
 #include <std.h>
+#include <switch.h>
 
 #include <task.h>
 #include <ns.h>
@@ -189,7 +190,7 @@ int parseCmd(const char *cmd) {
         if (terminateCmd(cmdStart, cmd)) {
             return 0;
         }
-        //TODO cmdSetSwitch(number.val, dir.start[0]);
+        cmdSetSwitch(number.val, dir.start[0]);
     } else if (isIdent(t, "task")) {
         ctl::Tid tid;
         DecimalToken number = nextDec(&cmd);

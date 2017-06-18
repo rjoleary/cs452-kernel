@@ -40,6 +40,9 @@ struct Uart1Traits {
     static constexpr auto flagReg = UART1_BASE + UART_FLAG_OFFSET;
     static constexpr auto taskBufferSize = 8;
     static constexpr auto flushOnNewline = false;
+    static bool cts() { 
+        return *(volatile unsigned*)(flagReg) & CTS_MASK;
+    }
 };
 
 struct Uart2Traits {
@@ -51,6 +54,7 @@ struct Uart2Traits {
     static constexpr auto flagReg = UART2_BASE + UART_FLAG_OFFSET;
     static constexpr auto taskBufferSize = 64;
     static constexpr auto flushOnNewline = true;
+    static bool cts() { return true; }
 };
 
 template <typename T>
@@ -67,7 +71,7 @@ void txNotifierMain() {
         ~send(serverTid, message, toPrint);
         for (;;) {
             if (awaitEvent(T::txEvent) >= 0) {
-                if (!(*(volatile unsigned*)(T::flagReg) & TXFF_MASK)) {
+                if (!(*(volatile unsigned*)(T::flagReg) & TXFF_MASK) && T::cts()) {
                     *(volatile unsigned*)(T::dataReg) = toPrint.data;
                     break;
                 }

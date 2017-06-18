@@ -89,16 +89,22 @@ void InterruptController::handle(Scheduler &scheduler, TdManager &tdManager) {
         const auto uartStatus = *(volatile unsigned*)(UART1_BASE + UART_INTR_OFFSET);
         if (uartStatus & TIS_MASK) {
             *(volatile unsigned*)(UART1_BASE + UART_CTLR_OFFSET) &= ~TIEN_MASK;
+            
             if (ctsHigh && ctsLow && awaken(scheduler, ctl::Event::Uart1Tx, 0)) {
                 ctsHigh = ctsLow = false;
             }
         }
         if (uartStatus & MIS_MASK) {
             if (*(volatile unsigned*)(UART1_BASE + UART_MDMSTS_OFFSET) & 0x1) {
-                if (*(volatile unsigned*)(UART1_BASE + UART_FLAG_OFFSET) & CTS_MASK)
+                if (*(volatile unsigned*)(UART1_BASE + UART_FLAG_OFFSET) & CTS_MASK) {
                     ctsHigh = true;
-                else
+                }
+                else {
                     ctsLow = true;
+                }
+                if (ctsHigh && ctsLow && awaken(scheduler, ctl::Event::Uart1Tx, 0)) {
+                    ctsHigh = ctsLow = false;
+                }
             }
             *(volatile unsigned*)(UART1_BASE + UART_INTR_OFFSET) = 0;
         }

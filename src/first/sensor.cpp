@@ -5,7 +5,7 @@
 #include <io.h>
 #include <clock.h>
 
-#define NUM_SENSOR_MODULES 5
+constexpr int NUM_SENSOR_MODULES = 5;
 
 void setpos(unsigned, unsigned);
 void savecur();
