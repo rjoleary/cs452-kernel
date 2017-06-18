@@ -209,11 +209,12 @@ int parseCmd(const char *cmd) {
             }
             memset(name.data, 0, sizeof(name.data));
             memcpy(name.data, number.token.start, number.token.len);
-            tid = whoIs(name).asValue();
-            if (tid.underlying() < 0) {
+            auto resp = whoIs(name);
+            if (resp.isError()) {
                 tokenErr("unknown task name", number.token.start - cmdStart + 2, number.token.len);
                 return 0;
             }
+            tid = resp.asValue();
         }
         ctl::TaskInfo ti;
         if (ctl::taskInfo(tid, &ti) != ctl::Error::Ok) {
@@ -222,14 +223,14 @@ int parseCmd(const char *cmd) {
         }
         ctl::Name name{""};
         reverseWhoIs(tid, &name);
-        bwputstr(COM2, "TID\tNAME\tPTID\tPRI\tState\tUser\tSys\r\n");
+        bwputstr(COM2, "TID\tNAME\tPTID\tPRI\tSTATE\tUSER\tSYS\r\n");
         bwprintf(COM2, "%d\t%s\t%d\t%d\t%c\t%d%%\t%d%%\r\n",
             ti.tid, name.data, ti.ptid, ti.pri, ti.state, ti.userPercent, ti.sysPercent);
     } else if (isIdent(t, "taskall")) {
         if (terminateCmd(cmdStart, cmd)) {
             return 0;
         }
-        bwputstr(COM2, "TID\tNAME\tPTID\tPRI\tState\tUser\tSys\r\n");
+        bwputstr(COM2, "TID\tNAME\tPTID\tPRI\tSTATE\tUSER\tSYS\r\n");
         for (int tid = 0; tid < NUM_TD; tid++) {
             ctl::TaskInfo ti;
             if (ctl::taskInfo(ctl::Tid(tid), &ti) == ctl::Error::Ok) {
