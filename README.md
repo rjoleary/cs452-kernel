@@ -155,6 +155,15 @@ indicate failure. The error codes are:
 The `const char *errorToString(Error err)` function converts these error codes to human
 readable strings.
 
+We use a special error handling class called `ErrorOr` that holds a value or an
+error. This way, we can easily check that the returned value is valid by
+overloading the `~` binary operator. Internally, `ErrorOr` holds an integer. We
+cast whatever value it holds (as long as it can fit) into this integer. Errors
+are negative while valid values are positive. This way, we can cast to the
+stored value or to the stored error, but not both at any given time. We assert
+if we try to cast into a value if there is an error stored, letting us easily
+check all returned function calls.
+
 
 ### Task Descriptor and States
 
