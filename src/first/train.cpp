@@ -98,7 +98,8 @@ void trainMain() {
                 bwputc(COM1, speed | SPEED_MASK);
                 bwputc(COM1, number);
                 flush(COM1);
-                ~ctl::delay(clockServer, 1);
+                // With this delay, the reverse is sometimes dropped.
+                ~ctl::delay(clockServer, 10);
                 // Set speed
                 bwputc(COM1, speed);
                 bwputc(COM1, number);

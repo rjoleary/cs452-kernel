@@ -185,5 +185,5 @@ void runTerminal() {
 Return:
     // TODO: Only quit when all flying transactions are done
     // May burn out solenoid if quit too quickly
-    delay(clock, 350);
+    delay(clock, 40);
 }
