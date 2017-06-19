@@ -11,11 +11,16 @@ Date: June 14, 2017
 
 ## Overview
 
-The coldwell kernel implements preemptive multitasking for the ARM 920T CPU.
-Tasks may be created, run and exited from. Tasks may await a timer event which
-periodically fires every 10ms. Additionally, a constant time scheduler is
-implemented with support for up to 32 distinct priorities. UART IO is provided,
-as well as a name server and interrupt handling system.
+The Coldwell Kernel implements preemptive multitasking for the ARM 920T CPU.
+Tasks may be created, run and exited from. Inter-task communication uses is
+based on three synchornous primitives: send, receive and reply. Tasks may await
+a periodic 10ms timer event or block on UART events. Additionally, a constant
+time scheduler is implemented with support for up to 32 distinct priorities.
+
+A variety of servers are provided including serial IO, a timer and a train
+manager. Upon starting the kernel, the user is prompted with a user interface
+for controlling the trains. The kernel is stable and is tested to run for over
+40 minutes.
 
 
 ## Logo
