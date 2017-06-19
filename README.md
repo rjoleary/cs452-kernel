@@ -43,7 +43,7 @@ for controlling the trains. The kernel is stable and is tested to run for over
 
 ## Checksums
 
-Git hash: TODO
+Git hash: f09f101470cbd9eeb045df448e87411852d8c0e3
 
 
 ## Running
