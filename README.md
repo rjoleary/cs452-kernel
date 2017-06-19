@@ -45,7 +45,7 @@ Git hash: TODO
 
 In RedBoot, run the following:
 
-    > load -b 0x00218000 -h 10.15.167.5 TODO
+    > load -b 0x00218000 -h 10.15.167.5 "ARM/rj2olear/k4.elf"
     > go
 
 
