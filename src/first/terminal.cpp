@@ -19,8 +19,8 @@ using namespace ctl;
 // Character to quit and return to RedBoot: CTRL+D
 #define QUIT_CHAR 0x04
 
-// Character for stop: ESC
-#define STOP_CHAR 0x1b
+// Character for stop: TAB
+#define STOP_CHAR '\t'
 
 static const char prompt[] = "% ";
 
@@ -131,7 +131,7 @@ void runTerminal() {
     ~create(Priority(29), switchMan);
     setupSwitches();
 
-    //bool isStopped = false;
+    bool isStopped = false;
     unsigned cmdsz = 0;
     char cmdbuf[MAX_CMDSZ+1];
 
@@ -145,7 +145,7 @@ void runTerminal() {
         switch (c) {
         case QUIT_CHAR: // quit
             goto Return;
-            /* TODO: Works but is buggy, most weird inputs ruin train
+            
         case STOP_CHAR: // emergency stop
             savecur();
             setpos(1, 11);
@@ -159,7 +159,6 @@ void runTerminal() {
             restorecur();
             isStopped = !isStopped;
             break;
-            */
         case '\b': // backspace
             if (cmdsz) { // prevent underflow
                 cmdsz--;
