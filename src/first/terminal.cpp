@@ -9,6 +9,7 @@
 #include <event.h>
 #include <clock.h>
 #include <sensor.h>
+#include <switch.h>
 
 using namespace ctl;
 
@@ -25,7 +26,7 @@ static const char prompt[] = "% ";
 
 void printLayout() {
     bwputstr(COM2,
-        "00:00.0   STOP   Idle Time: 0%             \r\n"
+        "00:00.0          Idle Time: 0%             \r\n"
         "                                           \r\n"
         "Sensor triggers          Switches          \r\n"
         "  ________                  1-U   12-U     \r\n"
@@ -100,6 +101,7 @@ void idleCounterMain() {
 }
 
 void runTerminal() {
+    // TODO: Doesn't work
     ~registerAs(Name{"Term"});
 
     // Reset special formatting.
@@ -125,11 +127,16 @@ void runTerminal() {
     // Create sensors task.
     ~create(Priority(29), sensorsMain);
 
-    bool isStopped = false;
+    // Create switch task
+    ~create(Priority(29), switchMan);
+    setupSwitches();
+
+    //bool isStopped = false;
     unsigned cmdsz = 0;
     char cmdbuf[MAX_CMDSZ+1];
 
     Tid rx = whoIs(names::Uart2RxServer).asValue();
+    auto clock = whoIs(names::ClockServer).asValue();
     for (;;) {
         flush(COM2);
         // TODO: don't assert on corrupt data
@@ -137,7 +144,8 @@ void runTerminal() {
 
         switch (c) {
         case QUIT_CHAR: // quit
-            return;
+            goto Return;
+            /* TODO: Works but is buggy, most weird inputs ruin train
         case STOP_CHAR: // emergency stop
             savecur();
             setpos(1, 11);
@@ -151,6 +159,7 @@ void runTerminal() {
             restorecur();
             isStopped = !isStopped;
             break;
+            */
         case '\b': // backspace
             if (cmdsz) { // prevent underflow
                 cmdsz--;
@@ -162,7 +171,7 @@ void runTerminal() {
             bwputc(COM2, '\n');
             cmdbuf[cmdsz] = '\0'; // null-terminate
             if (parseCmd(cmdbuf)) {
-                return;
+                goto Return;
             }
             cmdsz = 0;
             bwputstr(COM2, prompt);
@@ -174,4 +183,8 @@ void runTerminal() {
             }
         }
     }
+Return:
+    // TODO: Only quit when all flying transactions are done
+    // May burn out solenoid if quit too quickly
+    delay(clock, 350);
 }

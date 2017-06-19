@@ -175,12 +175,12 @@ int parseCmd(const char *cmd) {
     } else if (isIdent(t, "sw")) {
         DecimalToken number = nextDec(&cmd);
         if (number.err) {
-            tokenErr("invalid train number", number.token.start - cmdStart + 2, number.token.len);
+            tokenErr("invalid switch number", number.token.start - cmdStart + 2, number.token.len);
             return 0;
         }
         Token dir = nextToken(&cmd);
         if (dir.len == 0) {
-            bwputstr(COM2, "Error: expected a direction");
+            bwputstr(COM2, "Error: expected a direction\r\n");
             return 0;
         }
         if (!isIdent(dir, "C") && !isIdent(dir, "S")) {
