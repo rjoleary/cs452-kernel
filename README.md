@@ -395,21 +395,6 @@ at compile time the size of the array needed to hold all program registrations
 and it makes lookup and insertion constant time.
 
 
-### Fast memcpy
-
-To minimize latency for copying data we implemented a nontrivial memcpy
-function. The main difference compared to the original "copy one byte at a
-time" is that it tries to copy as many bytes in a single instruction as
-possible. To accomplish this, we first assume all copied data is 4 byte
-aligned. This is possible through the templated `send`/`receive`/`reply`
-functions, as now the compiler can enforce proper alignment of the data types
-used. Next, we use a custom memcpy that copies up to 32 bytes at a time through
-`ldm` and `stm` commands. The instructions stand for "load multiple" and "store
-multiple". We use them to copy up to 8 registers in one go (32 bytes). This
-way, there is barely any differences between the 4 byte and 64 byte performance
-tests.
-
-
 ### Priorities
 
 The priorities of all tasks can be conveniently found by entering the command
@@ -443,6 +428,8 @@ Here is the general pattern on how priorities are organized:
 
 
 ### Interrupts
+
+TODO: this is wrong
 
 We are using vectored interrupts. During kernel initialization, we enable and
 prioritize all the interrupts we care about. When a task syscalls 
@@ -490,8 +477,6 @@ the current tick is equal to the soonest waiting task we pop as many tasks off
 as we can and notify them. We use a minheap as it has `O(log n)` push and pop
 while maintaining a priority queue and due to ease of implementation.
 
-TODO k4/ uart info
-
 ### Parsing
 
 The parsing code is found in `src/first/parse.cpp`. Parsing involves applying
@@ -514,11 +499,29 @@ for error messages. For example:
       ^^^^^^^^^
     Error: invalid command name
 
+
+### Fast memcpy
+
+To minimize latency for copying data we implemented a nontrivial memcpy
+function. The main difference compared to the original "copy one byte at a
+time" is that it tries to copy as many bytes in a single instruction as
+possible. To accomplish this, we first assume all copied data is 4 byte
+aligned. This is possible through the templated `send`/`receive`/`reply`
+functions, as now the compiler can enforce proper alignment of the data types
+used. Next, we use a custom memcpy that copies up to 32 bytes at a time through
+`ldm` and `stm` commands. The instructions stand for "load multiple" and "store
+multiple". We use them to copy up to 8 registers in one go (32 bytes). This
+way, there is barely any differences between the 4 byte and 64 byte performance
+tests.
+
+
 ## Bugs
 
 - If you enter too many commands, the terminal scrolls out and makes the
   interface look like a mess. It helps if you make the terminal window very
   tall.
+- There is a relatively long pause before entering and exiting the prompt. This
+  ensures the switches have powered off, but can probably be more streamlined.
 
 ## List of files
 
