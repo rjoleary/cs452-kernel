@@ -120,31 +120,55 @@ Makefile:
   `src/first` and the include directory is `include/user`.
 
 
+### Style Guide
+
+Naming conventions:
+
+- Defines / macros: `UPPER_SNAKE_CASE`
+- Enum values: `UPPER_SNAKE_CASE`
+- Enums: `UpperCamelCase`
+- Functions: `lowerCamelCase`
+- Types: `UpperCamelCase`
+- Variables: `lowerCamelCase`
+
+Consequentially, the `exit` syscall interferes with the GCC `exit` builtin. For
+this reason, the exit syscall has been renamed to `exeunt`.
+
+
 ### Error Codes
 
 All error codes are specified by the `Error` enumeration. By convention,
 syscalls return a non-negative value for success, and a negative error code to
 indicate failure. The error codes are:
 
-- (0) `ERR_OK`: no error
-- (1) `ERR_BADARG`: bad argument
-- (2) `ERR_NORES`: no resource available
-- (3) `ERR_TRUNC`: truncated
-- (4) `ERR_INVID`: invalid id
-- (5) `ERR_BADITC`: could not complete inter-task communication
-- (6) `ERR_CORRUPT`: corrupted volatile data
-- (7) `ERR_UNKN`: unknown error
+- (0) `Error::Ok`: no error
+- (1) `Error::BadArg`: bad argument
+- (2) `Error::NoRes`: no resource available
+- (3) `Error::Trunc`: truncated
+- (4) `Error::InvId`: invalid id
+- (5) `Error::BadItc`: could not complete inter-task communication
+- (6) `Error::Corrupt`: corrupted volatile data
+- (7) `Error::Unkn`: unknown error
 
-The `const char *err2str(int err)` function converts these error codes to human
+The `const char *errorToString(Error err)` function converts these error codes to human
 readable strings.
 
 
 ### Task Descriptor and States
 
-The task descriptor is quite self explanatory, it holds all the bookkeeping
-information for any given task. There are pointers to other tasks which are used
-for various intrusive lists. These lists are the ready queue and the sender
-queue.
+The definition of the task descriptor can be found in `include/task.h`. Each
+task descriptor contains the following fields:
+
+- `Tid tid`: task id (-1 if td is unallocated)
+- `Tid ptid`: parent's task id
+- `Priority pri`: priority, 0 to 31
+- `struct Td *nextReady, sendEnd`: next TD in the ready queue, or NULL
+- `struct Td *sendReady`: next TD in the send queue, or NULL. This pointer is
+  reused for the interrupt queue.
+- `Runstate state`: current run state
+- `unsigned *sp`: current stack pointer
+- `unsigned long long userTime`: number of 508 kHz ticks spent in this task
+- `unsigned long long sysTime`: number of 508 kHz ticks spent in the kernel
 
 These are the possible states of a task:
 
@@ -153,14 +177,26 @@ These are the possible states of a task:
 - `Ready`:  The task is ready to be scheduled and activated.
 - `Zombie`: The task has exited and will never again run, but still retains its
   memory resources.
-- `SendBlocked`: The task has executed Receive, and is waiting for a task to 
-  send to it.
-- `ReceiveBlocked`: The task has executed Send, and is waiting for the message
-  to be received.
-- `ReplyBlocked`: The task have executed Send and its message has been received,
-  but it has not received a reply.
-- `EventBlocked`: The task has executed `awaitEvent`, but the event on which it
-  is waiting has not occurred.
+- `SendBlocked`: The task has executed `receive()`, and is waiting for a task
+  to send to it.
+- `ReceiveBlocked`: The task has executed `send()`, and is waiting for the
+  message to be received.
+- `ReplyBlocked`: The task have executed `send()` and its message has been
+  received, but it has not received a reply.
+- `EventBlocked`: The task has executed `awaitEvent()`, but the event on which
+  it is waiting has not occurred.
+
+New tasks start in the `READY` state. The possible transitions are:
+
+- `Ready -> Active`: The task has been scheduled.
+- `Active -> Ready`: The task has been preempted.
+- `Active -> Zombie`: The task has called `exeunt()`.
+- `Active -> SendBlocked -> Ready`: The task called `receive()` and is blocked until a
+  matching `send()`.
+- `Active -> ReceiveBlocked -> Ready`: The task called `send()` and is blocked until a
+  matching `receive()` and subsequent `reply()`.
+- `Active -> EventBlocked -> Ready`: The task called `awaitEvent()` and is
+  blocked on an event.
 
 
 ### Scheduling
@@ -185,6 +221,66 @@ pointer per task.
 An idle task exists that runs at the lowest priority. Since we measure the time
 spend in any given user task, we can use the idle task's running time as a
 metric of how much time is spent waiting on events.
+
+
+### System Calls
+
+The following are declared in `include/user/task.h` and can be included via
+`#include <task.h>`:
+
+- `ErrorOr<Tid> Create(Priority priority, void (*code)());` instantiates a task with
+  the given priority and entry point. If the priority is higher than the active
+  task's priority, the new task will begin execution immediately. If the
+  priority is outside of the valid range, `-ERR_BADARG` is returned. If the
+  kernel runs out of task descriptors, `-ERR_NORES` is returned. Currently,
+  task descriptors are not recycled, so a maximum of 32 tasks may be created
+  ever including the idle and first tasks.
+- `Tid MyTid();` returns the task id of the calling task.
+- `Tid myParentTid();` returns the task if of the calling task's parent.
+- `Error taskInfo(Tid tid, TaskInfo *taskInfo);` fills in a `TaskInfo` struct
+  for the given tid. The struct contains the tid, parent tid, priority, user
+  time percentage, system time percentage and task state. This is used by the
+  `task` and `taskall` commands
+- `void pass();` ceases execution of the calling task, but leaves it in the
+  ready state. This syscall enables cooperative multitasking.
+- `void exeunt();` terminates execution of the task forever. This syscall
+  does not return. Currently, task descriptors are not recycled.
+
+The following are declared in `include/user/itc.h` and can be included via
+`#include <itc.h>`:
+
+- `ErrorOr<void> send(Tid tid, const T &msg, U &reply)` send an arbitrary
+  message to a tid and get an arbitrary reply.
+- `ErrorOr<void> receive(Tid *tid, T &msg)` receive an arbitrary message from a
+  task.
+- `ErrorOr<void> reply(Tid tid, const T &msg)` reply to a message from the
+  given task.
+
+The following are declared in `include/user/event.h` and can be included via
+`#include <event.h>`:
+
+- `int awaitEvent(Event eventid)`: wait for an external event.
+- The `eventid` may be any of the following: `PeriodicTimer` - fires every
+  10ms, `Uart1Rx`/`Uart2Rx` - fires on UART receive, or `Uart1Tx`/`Uart1Rx` -
+  fires on UART transmit.
+
+
+### Memory layout
+
+The memory layout is as follows:
+
+    0x00218000 - 0x00218014: data (global variables)
+    0x00218014 - 0x00238020: bss (data initialized to zero)
+      0x00218020 - 0x00238020: 32 user stacks, each 4096 bytes
+    0x00238020 - 0x00244c30: text (program code and readonly data)
+    0x00244c30 - 0x01fdcdfc: kernel stack
+
+Most of the memory right now is allocated to the kernel. In the future, we hope
+on making more and larger user stacks.
+
+To prevent stack overflow, the source code is compiled with the
+`-Wstack-usage=4096`. This generates a compile-time warning if the stack
+starting at any function can ever exceed 4096 bytes.
 
 
 ### Context Switching
@@ -269,8 +365,6 @@ Kernel stack layout: (note that `sp_svc` remains unmodified)
         ↓ |     |
         ∞ +-----+
 
-TODO: How does the stack look usually (thing we lost marks on)
-
 ### Task Manipulation
 
 A new task can be created using `create`. There is a current hard limit of 32
@@ -307,10 +401,10 @@ To minimize latency for copying data we implemented a nontrivial memcpy
 function. The main difference compared to the original "copy one byte at a
 time" is that it tries to copy as many bytes in a single instruction as
 possible. To accomplish this, we first assume all copied data is 4 byte
-aligned. This is possible through the templated `send`/`receive`/`reply` functions,
-as now the compiler can enforce proper alignment of the data types used. Next,
-we use a custom memcpy that copies up to 32 bytes at a time through `ldm` and
-`stm` commands. The instructions stand for "load multiple" and "store
+aligned. This is possible through the templated `send`/`receive`/`reply`
+functions, as now the compiler can enforce proper alignment of the data types
+used. Next, we use a custom memcpy that copies up to 32 bytes at a time through
+`ldm` and `stm` commands. The instructions stand for "load multiple" and "store
 multiple". We use them to copy up to 8 registers in one go (32 bytes). This
 way, there is barely any differences between the 4 byte and 64 byte performance
 tests.
@@ -318,17 +412,34 @@ tests.
 
 ### Priorities
 
-The first user task that bootstraps all others starts with a priority of 15,
-which is in the middle of all priorities (0 being lowest, 31 being highest).
-Then, the nameserver is created with a priority of 31. The reason the
-nameserver has such a high priority is we do not anticipate that it will be
-used too often, so having it respond quickly is not an issue. On top of this,
-we do not want to have a high priority task being blocked by a lower one
-(priority inversion) just because the nameserver is taking a long time to
-respond. Therefore, we went to the logical extreme of setting it to the highest
-priority, so that no task (low or high) will have to wait on the nameserver.
+The priorities of all tasks can be conveniently found by entering the command
+`taskall` and reading the `PRI` column. For reference, here is the output
+organized by priority:
 
-TODO add pris of everything else
+- (0) Idle task
+- (1) Name server
+- (15) First task
+- (22) Train manager
+- (28) Timer, Counter
+- (29) Uart2Tx Server, Uart2Rx Server, Uart1Tx Server, Uart1Rx Server, Sensor,
+  Switch Server
+- (30) Uart2Tx Notifier, Uart2Rx Notifier, Uart1Tx Notifier, Uart1Rx Notifier,
+  Timer Notifier, Switch Notifier
+
+Here is the general pattern on how priorities are organized:
+
+- All the notifier have a higher priority (30) than all else because they
+  interact with the hardware and thus have stricter real-time requirements.
+- The servers for these notifiers are at the next priority (29) because they
+  directly interact with the notifiers.
+- The first task (contains the terminal), train manager, timer (prints the
+  timer) and counter (prints the idle time) all perform actions which interact
+  with the user. The user has slow response time, so these these priorities are
+  lower.
+- Most tasks will cache the result from the nameserver, thus it is only a
+  concern at statup.
+- Finally, the idle task must be the lowest priority task because it never
+  blocks.
 
 
 ### Interrupts
@@ -394,10 +505,10 @@ Token information is accessible throughout stage 2 and 3 to give context arrows
 for error messages. For example:
 
     % tr 45 3 nonesense
-	      ^^^^^^^^^
+              ^^^^^^^^^
     Error: too many arguments
     % tr 101 4
-	 ^^^
+         ^^^
     Error: invalid train number
     % nonesense 45 3
       ^^^^^^^^^
