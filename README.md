@@ -27,7 +27,7 @@ as well as a name server and interrupt handling system.
          _\_\/_/  \_\/_/_    /   /  / /   / \  /   / /_   /   /
           / /\ \__/ /\ \    /__ /__/ /__ /__/ /_/_/ /___ /__ /__
              _\/__\/_
-             _/\  /\_       Well, our hearts are cold...
+             _/\  /\_       For stickers and glory!
              /\    /\
 
 
@@ -199,6 +199,44 @@ New tasks start in the `READY` state. The possible transitions are:
   matching `receive()` and subsequent `reply()`.
 - `Active -> EventBlocked -> Ready`: The task called `awaitEvent()` and is
   blocked on an event.
+
+
+### Task List
+
+The `task` command list information regarding a single task. For example:
+
+    % task First
+    TID     NAME    PTID    PRI     STATE   USER    SYS
+    0       First   0       15      A       0%      0%
+    % task 2
+    TID     NAME    PTID    PRI     STATE   USER    SYS
+    2       Idle    0       0       R       99%     0%
+
+Similarily, the `taskall` command lists all the tasks.
+
+Here is a list of all the tasks:
+
+- `First`: The first task which initializes the system and displays user
+  prompt.
+- `NS`: The nameserver which provides the `registerAs`/`whoIs`/`reverseWhoIs`
+  interface.
+- `Idle`: Runs when no other task is ready.
+- `Uart2Tx`/`Uart2Rx`/`Uart1Tx`/`Uart1Rx`: These are the serial servers. These
+  handle the `putc`/`getc`/`flush` messages and buffer the data before sending
+  the their respective notifiers.
+- `Nart2Tx`/`Nart2Rx`/`Nart1Tx`/`Nart1Rx`: These are notifiers for their
+  respective serial servers.
+- `Clock` and `NTimer`: This is the clock server and notifier which provides the
+  `delay`/`time`/`delayUntil` interface.
+- `TrMan`: This is the train manager. It buffers commands to the trains and
+  creates new tasks for trains when the train is new. It provides provides
+  several functions: `void cmdToggleLight(int train)`,
+  `void cmdSetSpeed(int train, int speed)`, `void cmdReverse(int train)`.
+- `TrainXY`: One of the train tasks created by the train man. These tasks are
+  created on the fly and block on the train man for new commands.
+- `Timer` and `Counter`: These print the timer and idle time to the terminal.
+- `Sensor`: Polls the sensors for new input and prints to the terminal.
+- `SSwitch` and `NSwitch`: Server and notifier for the train switch controller.
 
 
 ### Scheduling
@@ -411,7 +449,7 @@ organized by priority:
 - (29) Uart2Tx Server, Uart2Rx Server, Uart1Tx Server, Uart1Rx Server, Sensor,
   Switch Server
 - (30) Uart2Tx Notifier, Uart2Rx Notifier, Uart1Tx Notifier, Uart1Rx Notifier,
-  Timer Notifier, Switch Notifier
+  Clock Notifier, Switch Notifier
 
 Here is the general pattern on how priorities are organized:
 
@@ -519,6 +557,7 @@ tests.
   tall.
 - There is a relatively long pause before entering and exiting the prompt. This
   ensures the switches have powered off, but can probably be more streamlined.
+- Corrupt data from the UART is treated like regular data.
 
 ## List of files
 
