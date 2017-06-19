@@ -5,10 +5,6 @@ void stopTrains();
 void goTrains();
 
 // train: [1, 80]
-// time is measured in milliseconds
-void updateTrain(int train, unsigned time);
-
-// train: [1, 80]
 void cmdToggleLight(int train);
 
 // train: [1, 80]
