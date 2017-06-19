@@ -541,6 +541,16 @@ the current tick is equal to the soonest waiting task we pop as many tasks off
 as we can and notify them. We use a minheap as it has `O(log n)` push and pop
 while maintaining a priority queue and due to ease of implementation.
 
+
+### Circular Buffer
+
+A circular buffer is implemented for Plain Old Data types (in reality trivial
+types, less restrictive). It is implemented as a template so that it can be
+reused for the many buffering needs of the user/kernel tasks. The size is also
+dynamic in this sense, so the buffers are not restricted to a certain size
+(the sizes are still static however).
+
+
 ### Parsing
 
 The parsing code is found in `src/first/parse.cpp`. Parsing involves applying
