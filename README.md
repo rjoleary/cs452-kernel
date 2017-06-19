@@ -431,20 +431,15 @@ Here is the general pattern on how priorities are organized:
 
 ### Interrupts
 
-TODO: this is wrong
+We use non-vectored interrupts to handle events. Events are an abstraction layer
+over interrupts that let tasks listen to specific sequences of interrupts. For
+example, the UART 1 Tx event only fires when a proper high-low-high CTS bit
+sequence has been achieved. Similarily, since there is only one interrupt per
+UART the event abstraction lets us have multiple tasks awaiting on in essence
+one interrupts.
 
-We are using vectored interrupts. During kernel initialization, we enable and
-prioritize all the interrupts we care about. When a task syscalls 
-`awaitEvent()`, the pointer to the task descriptor is stored in the vectored
-interrupt address for the interrupt source.
-
-When the interrupt occurs, we retrieve the task pointer from the interrupt
-vector. To determine the interrupt type, we retrieve the first argument, `r0`,
-of the blocked task (which has been pushed to the stack).
-
-We make the assumption that only one task will register to an event at a time,
-which is fine because we use the notifier-server-consumer pattern.
-
+To support multiple tasks per event, we use an intrusive linked list. This way,
+multiple tasks can await on the same event if necessary.
 
 ### Clock
 
