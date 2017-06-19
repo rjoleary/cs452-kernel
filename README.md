@@ -9,11 +9,24 @@ Date: June 14, 2017
 
 ## Overview
 
-The coldwell kernel implements multitasking for the ARM 920T CPU. Tasks may be
-created, run and exited from. Tasks may await a timer event which periodically
-fires every 10ms. Additionally, a constant time scheduler is implemented with
-support for up to 32 distinct priorities. UART IO is provided, as well as a name
-server and interrupt handling system.
+The coldwell kernel implements preemptive multitasking for the ARM 920T CPU.
+Tasks may be created, run and exited from. Tasks may await a timer event which
+periodically fires every 10ms. Additionally, a constant time scheduler is
+implemented with support for up to 32 distinct priorities. UART IO is provided,
+as well as a name server and interrupt handling system.
+
+
+## Logo
+
+
+            _\/    \/_
+             _\/__\/_
+              /\__/\          ___ ___      _          __
+         _\_\/_/  \_\/_/_    /   /  / /   / \  /   / /_   /   /
+          / /\ \__/ /\ \    /__ /__/ /__ /__/ /_/_/ /___ /__ /__
+             _\/__\/_
+             _/\  /\_       Well, our hearts are cold...
+             /\    /\
 
 
 ## Download Path
@@ -43,17 +56,38 @@ Where `<ARGUMENTS>` may be any combination of the following:
 
 - `CACHE_ENABLED=1`: Enables the instruction and data caches
 - `OPT_ENABLED=1`: Enables optimizations (`-O2` and `-flto`)
-TODO: Still works?
 
 
-## Functionality
+## Interface
 
-    tr train[0-80] speed[0-14]
-    rv train[0-80]
-    sw switch[0-255] direction [C,S]
-    q
+The following convenient features can be found on the user interface:
 
-## Description
+- Clock display in tenths of a second
+- GO/STOP, toggle with Tab key
+- Percent user time spent in the idle task compared to other tasks
+- Top 10 most recent sensor triggers
+- 22 switch states
+- Command prompt
+
+
+## Commands
+
+Enter instructions at the `%` prompt. The available instructions are:
+
+- `com i [BYTE...]` - Send arbitrary bytes over COMi.
+- `help` - Display this help information.
+- `li NUMBER` - Toggle train lights.
+- `q` - Quit and return to RedBoot.
+- `rv NUMBER` - Reverse the direction of the train.
+- `sw NUMBER DIR` - Set switch direction ('S' or 'C').
+- `task (TID|NAME)` - Return info about a task.
+- `taskall` - Return info about all tasks.
+- `tr NUMBER SPEED` - Set train speed (0 for stop).
+
+Additionally, the Tab will stop all trains in case of emergency.
+
+
+## Kernel Structure
 
 ### Language
 
@@ -267,13 +301,13 @@ at compile time the size of the array needed to hold all program registrations
 and it makes lookup and insertion constant time.
 
 
-### memcpy
+### Fast memcpy
 
 To minimize latency for copying data we implemented a nontrivial memcpy
 function. The main difference compared to the original "copy one byte at a
 time" is that it tries to copy as many bytes in a single instruction as
 possible. To accomplish this, we first assume all copied data is 4 byte
-aligned. This is possible through the templated `send/receive/reply` functions,
+aligned. This is possible through the templated `send`/`receive`/`reply` functions,
 as now the compiler can enforce proper alignment of the data types used. Next,
 we use a custom memcpy that copies up to 32 bytes at a time through `ldm` and
 `stm` commands. The instructions stand for "load multiple" and "store
@@ -347,7 +381,91 @@ while maintaining a priority queue and due to ease of implementation.
 
 TODO k4/ uart info
 
+### Parsing
+
+The parsing code is found in `src/first/parse.cpp`. Parsing involves applying
+the following stages on each command entered in the prompt:
+
+1. Tokenize the next token in the input string.
+2. If the token is expected to be a decimal number, parse to an `int`.
+3. Apply domain constraints such as train numbers must be between 1 and 80.
+
+Token information is accessible throughout stage 2 and 3 to give context arrows
+for error messages. For example:
+
+    % tr 45 3 nonesense
+	      ^^^^^^^^^
+    Error: too many arguments
+    % tr 101 4
+	 ^^^
+    Error: invalid train number
+    % nonesense 45 3
+      ^^^^^^^^^
+    Error: invalid command name
 
 ## Bugs
 
-- No known bugs.
+- If you enter too many commands, the terminal scrolls out and makes the
+  interface look like a mess. It helps if you make the terminal window very
+  tall.
+
+## List of files
+
+    .gitignore
+    Makefile
+    README.md
+    bench.txt
+    include/def.h
+    include/interrupt.h
+    include/panic.h
+    include/profiler.h
+    include/scheduler.h
+    include/syscall.h
+    include/task.h
+    include/user/bwio.h
+    include/user/circularbuffer.h
+    include/user/clock.h
+    include/user/def.h
+    include/user/err.h
+    include/user/event.h
+    include/user/heap.h
+    include/user/io.h
+    include/user/itc.h
+    include/user/ns.h
+    include/user/parse.h
+    include/user/sensor.h
+    include/user/std.h
+    include/user/switch.h
+    include/user/syscall.h
+    include/user/task.h
+    include/user/train.h
+    include/user/ts7200.h
+    include/user/types.h
+    logo.txt
+    makeall.sh
+    orex.ld
+    src/clock/main.cpp
+    src/first/main.cpp
+    src/first/parse.cpp
+    src/first/sensor.cpp
+    src/first/switch.cpp
+    src/first/terminal.cpp
+    src/first/train.cpp
+    src/idle/main.cpp
+    src/io/main.cpp
+    src/kernel/buildstr.cpp
+    src/kernel/interrupt.cpp
+    src/kernel/main.cpp
+    src/kernel/panic.cpp
+    src/kernel/profiler.cpp
+    src/kernel/profiler_irq.s
+    src/kernel/scheduler.cpp
+    src/kernel/syscall.s
+    src/kernel/task.cpp
+    src/ns/main.cpp
+    src/user/bwio.cpp
+    src/user/event.cpp
+    src/user/fast_memcpy.s
+    src/user/itc.cpp
+    src/user/std.cpp
+    src/user/task.cpp
