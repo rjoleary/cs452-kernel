@@ -481,12 +481,32 @@ Here is the general pattern on how priorities are organized:
 We use non-vectored interrupts to handle events. Events are an abstraction layer
 over interrupts that let tasks listen to specific sequences of interrupts. For
 example, the UART 1 Tx event only fires when a proper high-low-high CTS bit
-sequence has been achieved. Similarily, since there is only one interrupt per
+sequence has been achieved. Similarly, since there is only one interrupt per
 UART the event abstraction lets us have multiple tasks awaiting on in essence
 one interrupts.
 
 To support multiple tasks per event, we use an intrusive linked list. This way,
 multiple tasks can await on the same event if necessary.
+
+
+### IO
+
+There are three messages for serial IO (they can be found in
+`include/user/io.h`). The `tid` corresponds to the serial serial server which can
+be obtained by querying the nameserver.
+
+- `ErrorOr<int> getc(Tid tid)`: Returns a character from the UART interface or
+  an error if there is corrupt data.
+- `ErrorOr<void> putc(Tid tid, char c)`: Print a character to the UART interface.
+- `ErrorOr<void> flush(Tid)`: Force a flush of the putc buffer.
+
+`putc` does not write to the UART controller immediately. To ensure atomicity,
+the io server implements per-task buffers. The `flush` function flushes the
+buffer for the current task. Buffers are also flushed for two other reasons:
+
+1. The buffer becomes full. This is 8 bytes for COM1 and 64 bytes for COM2.
+2. The newline character is printed. This only applies to COM2.
+
 
 ### Clock
 
