@@ -170,6 +170,7 @@ void runTerminal() {
             bwputc(COM2, '\n');
             cmdbuf[cmdsz] = '\0'; // null-terminate
             if (parseCmd(cmdbuf)) {
+                flush(COM2);
                 goto Return;
             }
             cmdsz = 0;
@@ -185,5 +186,6 @@ void runTerminal() {
 Return:
     // TODO: Only quit when all flying transactions are done
     // May burn out solenoid if quit too quickly
+    bwputstr(COM2, "Waiting for switches...\r\n");
     delay(clock, 350);
 }
