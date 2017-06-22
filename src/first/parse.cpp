@@ -12,9 +12,10 @@
 void printHelp() {
     bwputstr(COM2,
         "Assignment 0 commands:\r\n"
-        "   com i [BYTE...]  - Send arbitrary byte over COMi.\r\n" // extra command
-        "   help             - Display this help information.\r\n" // extra command
-        "   li NUMBER        - Toggle train lights.\r\n"           // extra command
+        "   cal NUMBER       - stop train on the next trigger.\r\n"
+        "   com i [BYTE...]  - Send arbitrary byte over COMi.\r\n"
+        "   help             - Display this help information.\r\n"
+        "   li NUMBER        - Toggle train lights.\r\n"
         "   q                - Quit and return to RedBoot.\r\n"
         "   rv NUMBER        - Reverse the direction of the train.\r\n"
         "   sw NUMBER DIR    - Set switch direction ('S' or 'C').\r\n"
@@ -115,6 +116,16 @@ int parseCmd(const char *cmd) {
     Token t = nextToken(&cmd);
     if (t.len == 0) {
         return 0;
+    } else if (isIdent(t, "cal")) {
+        DecimalToken number = nextDec(&cmd);
+        if (number.err) {
+            tokenErr("invalid train number", number.token.start - cmdStart + 2, number.token.len);
+            return 0;
+        }
+        if (terminateCmd(cmdStart, cmd)) {
+            return 0;
+        }
+        //cmdCalibrate(number.val);
     } else if (isIdent(t, "com")) {
         DecimalToken com = nextDec(&cmd);
         if (com.err || (com.val != 1 && com.val != 2)) {
