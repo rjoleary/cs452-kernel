@@ -78,7 +78,7 @@ void cmdSetSwitch(int sw, char dir) {
         bwputstr(COM2, "Error: switch number must be [1..18] or [153..156]\r\n");
         return;
     }
-    auto ss = whoIs(SwitchServ).asValue();
+    static auto ss = whoIs(SwitchServ).asValue();
     
     ~send(ss, Message{MsgType::Update, sw, dir}, ctl::EmptyMessage);
 }

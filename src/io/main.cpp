@@ -71,7 +71,9 @@ void txNotifierMain() {
         ~send(serverTid, message, toPrint);
         for (;;) {
             if (awaitEvent(T::txEvent) >= 0) {
-                if (!(*(volatile unsigned*)(T::flagReg) & TXFF_MASK) && T::cts()) {
+                if (!(*(volatile unsigned*)(T::flagReg) & TXBUSY_MASK)
+                        && !(*(volatile unsigned*)(T::flagReg) & TXFF_MASK)
+                        && T::cts()) {
                     *(volatile unsigned*)(T::dataReg) = toPrint.data;
                     break;
                 }
@@ -146,6 +148,17 @@ void txMain() {
     // Value for blocking tx notifier.
     Tid txFull = INVALID_TID;
 
+    auto pushData = [&](int idx) {
+        while (!buffers[idx].empty()) {
+            if (txFull == INVALID_TID) {
+                queue.push(buffers[idx].pop());
+            } else {
+                ~reply(txFull, Reply{buffers[idx].pop()});
+                txFull = INVALID_TID;
+            }
+        }
+    };
+
     for (;;) {
         Tid tid;
         Message msg;
@@ -170,14 +183,7 @@ void txMain() {
 
                 // Check if buffer needs flushing.
                 if (buffers[idx].full() || (T::flushOnNewline && msg.data == '\n')) {
-                    while (!buffers[idx].empty()) {
-                        if (txFull == INVALID_TID) {
-                            queue.push(buffers[idx].pop());
-                        } else {
-                            ~reply(txFull, Reply{buffers[idx].pop()});
-                            txFull = INVALID_TID;
-                        }
-                    }
+                    pushData(idx);
                 }
 
                 ~reply(tid, EmptyMessage);
@@ -186,14 +192,7 @@ void txMain() {
 
             case MsgType::Flush: {
                 int idx = tid.underlying();
-                while (!buffers[idx].empty()) {
-                    if (txFull == INVALID_TID) {
-                        queue.push(buffers[idx].pop());
-                    } else {
-                        ~reply(txFull, Reply{buffers[idx].pop()});
-                        txFull = INVALID_TID;
-                    }
-                }
+                pushData(idx);
                 ~reply(tid, EmptyMessage);
                 break;
             }

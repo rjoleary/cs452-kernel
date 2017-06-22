@@ -98,7 +98,7 @@ void trainMain() {
                 bwputc(COM1, speed | SPEED_MASK);
                 bwputc(COM1, number);
                 flush(COM1);
-                // With this delay, the reverse is sometimes dropped.
+                // Without this delay, sometimes train does not reverse
                 ~ctl::delay(clockServer, 10);
                 // Set speed
                 bwputc(COM1, speed);
@@ -179,8 +179,9 @@ void cmdToggleLight(int train) {
         bwputstr(COM2, "Error: train number must be between 1 and 80 inclusive\r\n");
         return;
     }
+    static auto trManServ = whoIs(TrManName).asValue();
     Message msg{MsgType::LightToggle, char(train)};
-    ~send(whoIs(TrManName).asValue(), msg, ctl::EmptyMessage);
+    ~send(trManServ, msg, ctl::EmptyMessage);
 }
 
 void cmdSetSpeed(int train, int speed) {
@@ -192,8 +193,9 @@ void cmdSetSpeed(int train, int speed) {
         bwputstr(COM2, "Error: speed must be between 0 and 14 inclusive\r\n");
         return;
     }
+    static auto trManServ = whoIs(TrManName).asValue();
     Message msg{MsgType::SetSpeed, char(train), char(speed)};
-    ~send(whoIs(TrManName).asValue(), msg, ctl::EmptyMessage);
+    ~send(trManServ, msg, ctl::EmptyMessage);
 }
 
 void cmdReverse(int train) {
@@ -201,6 +203,7 @@ void cmdReverse(int train) {
         bwputstr(COM2, "Error: train number must be between 1 and 80 inclusive\r\n");
         return;
     }
+    static auto trManServ = whoIs(TrManName).asValue();
     Message msg{MsgType::Reverse, char(train)};
-    ~send(whoIs(TrManName).asValue(), msg, ctl::EmptyMessage);
+    ~send(trManServ, msg, ctl::EmptyMessage);
 }
