@@ -151,7 +151,7 @@ void sensorsMain() {
 
                 // Trigger tasks
                 while (!triggerBlocked.empty()) {
-                    ~reply(triggerBlocked.pop(), ctl::EmptyMessage);
+                    ~reply(triggerBlocked.pop(), sensors);
                 }
 
                 prevSensors = sensors;
@@ -162,9 +162,9 @@ void sensorsMain() {
 }
 
 void getSensors(Sensors *sensors) {
-    ~send(whoIs(SensorServ).asValue(), MsgType::GetSensors, *sensors);
+    ~send(whoIs(SensorServ).asValue(), Message{MsgType::GetSensors}, *sensors);
 }
 
-void waitTrigger() {
-    ~send(whoIs(SensorServ).asValue(), MsgType::WaitTrigger, ctl::EmptyMessage);
+void waitTrigger(Sensors *sensors) {
+    ~send(whoIs(SensorServ).asValue(), Message{MsgType::WaitTrigger}, *sensors);
 }

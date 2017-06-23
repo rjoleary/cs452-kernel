@@ -13,4 +13,4 @@ void sensorsMain();
 void getSensors(Sensors *sensors);
 
 // Block calling task until any sensor is triggered.
-void waitTrigger();
+void waitTrigger(Sensors *sensors);

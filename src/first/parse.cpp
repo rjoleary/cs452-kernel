@@ -3,6 +3,7 @@
 #include <std.h>
 #include <switch.h>
 #include <sensor.h>
+#include <initializer_list>
 
 #include <task.h>
 #include <ns.h>
@@ -123,10 +124,23 @@ int parseCmd(const char *cmd) {
             tokenErr("invalid train number", number.token.start - cmdStart + 2, number.token.len);
             return 0;
         }
+        DecimalToken speed = nextDec(&cmd);
+        if (speed.err) {
+            tokenErr("invalid train speed", speed.token.start - cmdStart + 2, speed.token.len);
+            return 0;
+        }
         if (terminateCmd(cmdStart, cmd)) {
             return 0;
         }
-        waitTrigger();
+        for (auto i : {11, 12, 14, 15, 9, 9, 7, 6}) {
+            cmdSetSwitch(i, 'S');
+        }
+        Sensors sensors;
+        cmdSetSpeed(number.val, speed.val);
+        waitTrigger(&sensors);
+        while (!(sensors.values[2] & (1 << 14))) {
+            waitTrigger(&sensors);
+        }
         cmdSetSpeed(number.val, 0);
     } else if (isIdent(t, "com")) {
         DecimalToken com = nextDec(&cmd);
