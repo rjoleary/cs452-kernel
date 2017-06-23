@@ -67,7 +67,7 @@ ErrorOr<void> send(Tid tid, const T &msg, U &reply) {
     if ((err == sizeof(reply)) || (isEmptyRpl && err == 0)) {
         return ErrorOr<void>::fromOk();
     }
-    err = err > 0 ? 0 : err;
+    err = err > 0 ? -static_cast<int>(Error::Trunc) : err;
     return ErrorOr<void>::fromInt(err);
 }
 
@@ -111,7 +111,7 @@ ErrorOr<void> receive(Tid *a0, T &msg) {
     if ((err == sizeof(msg)) || (isEmpty && err == 0)) {
         return ErrorOr<void>::fromOk();
     }
-    err = err > 0 ? 0 : err;
+    err = err > 0 ? -static_cast<int>(Error::Trunc) : err;
     return ErrorOr<void>::fromInt(err);
 }
 

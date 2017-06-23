@@ -12,17 +12,17 @@ class CircularBuffer {
     size_t begin = 0, end = 0, size = 0;
 public:
     const Data& pop() {
+        ASSERT(!empty());
         Data &data = entries[begin];
         begin = (begin + 1) % MaxSize;
         size--;
         return data;
     }
     void push(const Data &data) {
-        if (!full()) {
-            entries[end] = data;
-            end = (end + 1) % MaxSize;
-            size++;
-        }
+        ASSERT(!full());
+        entries[end] = data;
+        end = (end + 1) % MaxSize;
+        size++;
     }
     bool empty() const {
         return size == 0;

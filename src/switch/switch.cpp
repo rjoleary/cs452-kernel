@@ -123,6 +123,15 @@ void setupSwitches() {
     cmdSetSwitch(154, 'S');
     cmdSetSwitch(155, 'C');
     cmdSetSwitch(156, 'S');
+
+    cmdSetSwitch(11, 'S');
+    cmdSetSwitch(12, 'S');
+    cmdSetSwitch(14, 'S');
+    cmdSetSwitch(15, 'S');
+    cmdSetSwitch(9, 'S');
+    cmdSetSwitch(8, 'S');
+    cmdSetSwitch(7, 'S');
+    cmdSetSwitch(6, 'S');
 }
 
 void cmdSetSwitch(int sw, char dir) {
@@ -143,7 +152,7 @@ void switchMan() {
     ~create(ctl::Priority(30), notifMain);
     auto notifier = ctl::INVALID_TID;
 
-    ctl::CircularBuffer<Message, NumSwitches> queue;
+    ctl::CircularBuffer<Message, NumSwitches*2> queue;
     for (;;) {
         ctl::Tid tid;
         Message msg;

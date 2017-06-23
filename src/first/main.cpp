@@ -29,12 +29,12 @@ void firstMain() {
     ASSERT(create(PRIORITY_MIN, idleMain).asValue() == IDLE_TID);
     ~ctl::registerAs(Name{"First"});
     ~create(Priority(PRIORITY_MAX.underlying() - 2), io::uart2TxMain);
+    bwioServs[1] = ~whoIs(ctl::names::Uart2TxServer);
     ~create(Priority(PRIORITY_MAX.underlying() - 2), io::uart2RxMain);
     ~create(Priority(PRIORITY_MAX.underlying() - 2), io::uart1TxMain);
+    bwioServs[0] = ~whoIs(ctl::names::Uart1TxServer);
     ~create(Priority(PRIORITY_MAX.underlying() - 2), io::uart1RxMain);
     ~create(Priority(PRIORITY_MAX.underlying() - 2), clockMain);
-    bwioServs[0] = ~whoIs(ctl::names::Uart1TxServer);
-    bwioServs[1] = ~whoIs(ctl::names::Uart2TxServer);
     ~create(Priority(22), trainManMain);
 
     goTrains();
