@@ -54,7 +54,7 @@ void printUpdate(const Sensors &prevSensors, const Sensors &sensors, unsigned &s
         for (int j = 0; j < 16; j++) {
             if ((prevSensors.values[i] ^ sensors.values[i]) & (1 << j)) {
                 savecur();
-                setpos(4 + startOfTriggers, 3);
+                setpos(4 + startOfTriggers, 40);
                 startOfTriggers = (startOfTriggers + 1) % 11;
                 bwprintf(COM2, "%c%d ", 'a' + i, j + 1);
                 if (sensors.values[i] & (1 << j)) {
@@ -68,7 +68,7 @@ void printUpdate(const Sensors &prevSensors, const Sensors &sensors, unsigned &s
         }
     }
     savecur();
-    setpos(4 + startOfTriggers, 3);
+    setpos(4 + startOfTriggers, 40);
     bwputstr(COM2, "_______");
     restorecur();
     flush(COM2);

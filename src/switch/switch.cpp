@@ -51,13 +51,57 @@ inline int toIdx(int sw) {
         return sw - 153 + 18;
 }
 
-void updateGui(int sw, char dir) {
-    int idx = toIdx(sw);
-    int x = idx%11 + 4;
-    int y = 31 + idx/11*7;
+const struct {
+    char row, col;
+    char curved, straight;
+} LAYOUT_POS[] = {
+    // 1-6
+    {11, 5,  '-',  '\\'},
+    {13, 7,  '-',  '\\'},
+    {15, 9,  '\\', '-'},
+    {3,  5,  '-',  '/'},
+    {15, 24, '/',  '-'},
+    {13, 14, '\\', '-'},
+
+    // 7-12
+    {13, 26, '/', '-'},
+    {11, 31, '-', '/'},
+    {3,  31, '-', '\\'},
+    {3,  23, '/', '-'},
+    {1,  11, '/', '-'},
+    {1,  7,  '/', '-'},
+
+    // 13-18
+    {3,  17, '\\', '-'},
+    {3,  9,  '-',  '/'},
+    {11, 9,  '-',  '\\'},
+    {11, 17, '/',  '-'},
+    {11, 23, '\\', '-'},
+    {15, 16, '\\', '-'},
+
+    // 153-156
+    {8, 20, '#', '|'},
+    {8, 20, '#', '|'},
+    {6, 20, '#', '|'},
+    {6, 20, '#', '|'},
+};
+
+void updateGui(int sw, char dir, const char *states) {
+    const int idx = toIdx(sw);
+    const auto &layoutPos = LAYOUT_POS[idx];
+
+    char c = dir == 'C' ? layoutPos.curved : layoutPos.straight;
+    if ((sw == 153 || sw == 154) && (states[toIdx(153)] != states[toIdx(154)])) {
+        c = states[toIdx(154)] == 'C' ? '\\' : '/';
+    } else if ((sw == 155 || sw == 156) && (states[toIdx(155)] != states[toIdx(156)])) {
+        c = states[toIdx(154)] == 'C' ? '\\' : '/';
+    }
+
     savecur();
-    setpos(x, y);
-    bwputc(COM2, dir);
+    bwputstr(COM2, "\033[1m"); // bold
+    setpos(layoutPos.row + 2, layoutPos.col);
+    bwputc(COM2, c);
+    bwputstr(COM2, "\033[0m"); // unbold
     restorecur();
     flush(COM2);
 }
@@ -103,7 +147,7 @@ void switchMan() {
                     ~reply(notifier, msg);
                     notifier = ctl::INVALID_TID;
                     states[toIdx(msg.sw)] = msg.dir;
-                    updateGui(msg.sw, msg.dir);
+                    updateGui(msg.sw, msg.dir, states);
                 }
                 else {
                     queue.push(msg);
@@ -119,7 +163,7 @@ void switchMan() {
                 const auto& msgToSend = queue.pop();
                 ~reply(tid, msgToSend);
                 states[toIdx(msgToSend.sw)] = msgToSend.dir;
-                updateGui(msgToSend.sw, msgToSend.dir);
+                updateGui(msgToSend.sw, msgToSend.dir, states);
             }
             break;
         }
