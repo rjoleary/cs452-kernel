@@ -2,6 +2,7 @@
 #include <train.h>
 #include <std.h>
 #include <switch.h>
+#include <sensor.h>
 
 #include <task.h>
 #include <ns.h>
@@ -125,7 +126,8 @@ int parseCmd(const char *cmd) {
         if (terminateCmd(cmdStart, cmd)) {
             return 0;
         }
-        //cmdCalibrate(number.val);
+        waitTrigger();
+        cmdSetSpeed(number.val, 0);
     } else if (isIdent(t, "com")) {
         DecimalToken com = nextDec(&cmd);
         if (com.err || (com.val != 1 && com.val != 2)) {
