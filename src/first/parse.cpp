@@ -132,14 +132,19 @@ int parseCmd(const char *cmd) {
         if (terminateCmd(cmdStart, cmd)) {
             return 0;
         }
-        for (auto i : {11, 12, 14, 15, 9, 9, 7, 6}) {
-            cmdSetSwitch(i, 'S');
-        }
-        Sensors sensors;
         cmdSetSpeed(number.val, speed.val);
-        waitTrigger(&sensors);
-        while (!(sensors.values[2] & (1 << 14))) {
+        for (;;) {
+            Sensors sensors;
             waitTrigger(&sensors);
+            if (sensors.values[2] & (1 << 14)) {
+                break;
+            }
+            for (int i = 0; i < NUM_SENSOR_MODULES; i++) {
+                for (int j = 0; j < 16; j++) {
+                    bwprintf(COM2, "%c%d ", 'a' + i, j + 1);
+                    flush(COM2);
+                }
+            }
         }
         cmdSetSpeed(number.val, 0);
     } else if (isIdent(t, "com")) {
