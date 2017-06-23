@@ -1,3 +1,4 @@
+#include <def.h>
 #include <bwio.h>
 #include <sensor.h>
 #include <ts7200.h>
@@ -5,21 +6,19 @@
 #include <io.h>
 #include <clock.h>
 #include <itc.h>
+#include <circularbuffer.h>
 
-constexpr int NUM_SENSOR_MODULES = 5;
-
+// TODO: include declarations from header file
 void setpos(unsigned, unsigned);
 void savecur();
 void restorecur();
 
 namespace {
-struct Sensors {
-    // One bit array per module.
-    unsigned short values[NUM_SENSOR_MODULES] = {0};
-};
-
 enum class MsgType {
-    Recv, Timer
+    Recv,
+    Timer,
+    GetSensors,
+    WaitTrigger,
 };
 
 struct Message {
@@ -85,6 +84,8 @@ void sensorsMain() {
     Sensors prevSensors;
     unsigned startOfTriggers = 0;
 
+    ctl::CircularBuffer<ctl::Tid, NUM_TD> triggerBlocked;
+
     for (;;) {
         int dataRead = 0, timeoutsRecv = 0;
         Sensors sensors;
@@ -123,20 +124,47 @@ void sensorsMain() {
                     dataRead++;
                     break;
                 }
-                case MsgType::Timer:
-                    reply(tid, ctl::EmptyMessage);
+
+                case MsgType::Timer: {
+                    ~reply(tid, ctl::EmptyMessage);
                     timeoutsRecv++;
                     break;
+                }
+
+                case MsgType::GetSensors: {
+                    ~reply(tid, prevSensors);
+                    break;
+                }
+
+                case MsgType::WaitTrigger: {
+                    triggerBlocked.push(tid);
+                    break;
+                }
             }
         }
         if (dataRead < 10) continue;
 
         for (int i = 0; i < NUM_SENSOR_MODULES; i++) {
             if ((prevSensors.values[i] ^ sensors.values[i]) != 0) {
+                // Print sensors
                 printUpdate(prevSensors, sensors, startOfTriggers);
+
+                // Trigger tasks
+                while (!triggerBlocked.empty()) {
+                    ~reply(triggerBlocked.pop(), ctl::EmptyMessage);
+                }
+
                 prevSensors = sensors;
                 break;
             }
         }
     }
+}
+
+void getSensors(Sensors *sensors) {
+    ~send(whoIs(SensorServ).asValue(), MsgType::GetSensors, *sensors);
+}
+
+void waitTrigger() {
+    ~send(whoIs(SensorServ).asValue(), MsgType::WaitTrigger, ctl::EmptyMessage);
 }
