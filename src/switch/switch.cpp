@@ -92,9 +92,17 @@ void updateGui(int sw, char dir, const char *states) {
 
     char c = dir == 'C' ? layoutPos.curved : layoutPos.straight;
     if ((sw == 153 || sw == 154) && (states[toIdx(153)] != states[toIdx(154)])) {
-        c = states[toIdx(154)] == 'C' ? '\\' : '/';
+        if (states[toIdx(153)] == 'C') {
+            c = '/';
+        } else if (states[toIdx(154)] == 'C') {
+            c = '\\';
+        }
     } else if ((sw == 155 || sw == 156) && (states[toIdx(155)] != states[toIdx(156)])) {
-        c = states[toIdx(154)] == 'C' ? '\\' : '/';
+        if (states[toIdx(155)] == 'C') {
+            c = '/';
+        } else if (states[toIdx(156)] == 'C') {
+            c = '\\';
+        }
     }
 
     savecur();
