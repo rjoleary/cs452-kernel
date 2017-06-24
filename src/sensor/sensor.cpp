@@ -13,6 +13,8 @@ void setpos(unsigned, unsigned);
 void savecur();
 void restorecur();
 
+extern const char *LAYOUT;
+
 namespace {
 enum class MsgType {
     Recv,
@@ -49,6 +51,119 @@ void timeoutNotif() {
     }
 }
 
+const struct {
+    char row, col;
+    char character;
+} LAYOUT_POS[] = {
+    // A1-A16
+    {1, 5, '<'},
+    {1, 5, '>'},
+    {5, 7, '^'},
+    {5, 7, 'v'},
+    {3, 19, '>'},
+    {3, 19, '<'},
+    {13, 5, '<'},
+    {13, 5, '>'},
+    {11, 3, '<'},
+    {11, 3, '>'},
+    {9, 3, '>'},
+    {9, 3, '<'},
+    {3, 3, '>'},
+    {3, 3, '<'},
+    {5, 3, '<'},
+    {5, 3, '>'},
+
+    // B1-B16
+    {1, 5, '<'},
+    {1, 5, '>'},
+    {5, 7, '^'},
+    {5, 7, 'v'},
+    {3, 19, '>'},
+    {3, 19, '<'},
+    {13, 5, '<'},
+    {13, 5, '>'},
+    {11, 3, '<'},
+    {11, 3, '>'},
+    {9, 3, '>'},
+    {9, 3, '<'},
+    {3, 3, '>'},
+    {3, 3, '<'},
+    {5, 3, '<'},
+    {5, 3, '>'},
+
+    // C1-C16
+    {1, 5, '<'},
+    {1, 5, '>'},
+    {5, 7, '^'},
+    {5, 7, 'v'},
+    {3, 19, '>'},
+    {3, 19, '<'},
+    {13, 5, '<'},
+    {13, 5, '>'},
+    {11, 3, '<'},
+    {11, 3, '>'},
+    {9, 3, '>'},
+    {9, 3, '<'},
+    {3, 3, '>'},
+    {3, 3, '<'},
+    {5, 3, '<'},
+    {5, 3, '>'},
+
+    // D1-D16
+    {1, 5, '<'},
+    {1, 5, '>'},
+    {5, 7, '^'},
+    {5, 7, 'v'},
+    {3, 19, '>'},
+    {3, 19, '<'},
+    {13, 5, '<'},
+    {13, 5, '>'},
+    {11, 3, '<'},
+    {11, 3, '>'},
+    {9, 3, '>'},
+    {9, 3, '<'},
+    {3, 3, '>'},
+    {3, 3, '<'},
+    {5, 3, '<'},
+    {5, 3, '>'},
+
+    // E1-E16
+    {1, 5, '<'},
+    {1, 5, '>'},
+    {5, 7, '^'},
+    {5, 7, 'v'},
+    {3, 19, '>'},
+    {3, 19, '<'},
+    {13, 5, '<'},
+    {13, 5, '>'},
+    {11, 3, '<'},
+    {11, 3, '>'},
+    {9, 3, '>'},
+    {9, 3, '<'},
+    {3, 3, '>'},
+    {3, 3, '<'},
+    {5, 3, '<'},
+    {5, 3, '>'},
+
+    // F1-F16
+    {1, 5, '<'},
+    {1, 5, '>'},
+    {5, 7, '^'},
+    {5, 7, 'v'},
+    {3, 19, '>'},
+    {3, 19, '<'},
+    {13, 5, '<'},
+    {13, 5, '>'},
+    {11, 3, '<'},
+    {11, 3, '>'},
+    {9, 3, '>'},
+    {9, 3, '<'},
+    {3, 3, '>'},
+    {3, 3, '<'},
+    {5, 3, '<'},
+    {5, 3, '>'},
+};
+
 void printUpdate(const Sensors &prevSensors, const Sensors &sensors, unsigned &startOfTriggers) {
     for (int i = 0; i < NUM_SENSOR_MODULES; i++) {
         for (int j = 0; j < 16; j++) {
@@ -72,6 +187,25 @@ void printUpdate(const Sensors &prevSensors, const Sensors &sensors, unsigned &s
     bwputstr(COM2, "_______");
     restorecur();
     flush(COM2);
+
+    for (int i = 0; i < NUM_SENSOR_MODULES; i++) {
+        for (int j = 0; j < 16; j++) {
+            if ((prevSensors.values[i] ^ sensors.values[i]) & (1 << j)) {
+                auto layout = LAYOUT_POS[i*16+j];
+                savecur();
+                setpos(2 + layout.row, layout.col);
+                if (sensors.values[i] & (1 << j)) {
+                    bwputstr(COM2, "\033[36m");
+                    bwputc(COM2, layout.character);
+                    bwputstr(COM2, "\033[0m");
+                } else {
+                    bwputc(COM2, LAYOUT[(layout.row+1)*36+layout.col-1]);
+                }
+                restorecur();
+                flush(COM2);
+            }
+        }
+    }
 }
 }
 
