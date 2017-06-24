@@ -9,26 +9,33 @@ template <typename Data, size_t MaxSize>
 class CircularBuffer {
     static_assert(std::is_trivial<Data>::value, "Data must be trivial");
     Data entries[MaxSize];
-    size_t begin = 0, end = 0, size = 0;
+    size_t begin = 0, end = 0, size_ = 0;
 public:
     const Data& pop() {
         ASSERT(!empty());
         Data &data = entries[begin];
         begin = (begin + 1) % MaxSize;
-        size--;
+        size_--;
         return data;
     }
     void push(const Data &data) {
         ASSERT(!full());
         entries[end] = data;
         end = (end + 1) % MaxSize;
-        size++;
+        size_++;
     }
     bool empty() const {
-        return size == 0;
+        return size_ == 0;
     }
     bool full() const {
-        return size == MaxSize;
+        return size_ == MaxSize;
+    }
+    size_t size() const {
+        return size_;
+    }
+    const Data& front() {
+        ASSERT(!empty());
+        return entries[begin];
     }
 };
 }

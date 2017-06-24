@@ -46,7 +46,7 @@ void timeoutNotif() {
     auto clock = whoIs(ctl::names::ClockServer).asValue();
     Message msg {MsgType::Timer};
     for (;;) {
-        delay(clock, 1);
+        delay(clock, 2);
         send(server, msg, ctl::EmptyMessage);
     }
 }
@@ -226,7 +226,7 @@ void sensorsMain() {
         // Send command
         bwputc(COM1, 0x85);
         flush(COM1);
-        while (dataRead < 10 && timeoutsRecv < 11) {
+        while (dataRead < 10 && timeoutsRecv < 6) {
             ctl::Tid tid;
             Message msg;
             ~receive(&tid, msg);
@@ -256,6 +256,7 @@ void sensorsMain() {
                             (c & (1 << 7)) >> 7;
                     }
                     dataRead++;
+                    timeoutsRecv = 0;
                     break;
                 }
 
@@ -276,7 +277,10 @@ void sensorsMain() {
                 }
             }
         }
-        if (dataRead < 10) continue;
+        if (dataRead < 10) {
+            bwprintf(COM2, "Restarted sensor reading\r\n");
+            continue;
+        }
 
         for (int i = 0; i < NUM_SENSOR_MODULES; i++) {
             if ((prevSensors.values[i] ^ sensors.values[i]) != 0) {

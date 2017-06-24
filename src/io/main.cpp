@@ -43,6 +43,29 @@ struct Uart1Traits {
     static bool cts() { 
         return *(volatile unsigned*)(flagReg) & CTS_MASK;
     }
+
+    struct BlkInfo {
+        Tid tid;
+        size_t size;
+    };
+
+    CircularBuffer<BlkInfo, NUM_TD> blkInfo;
+    unsigned sentData = 0;
+    void sent() {
+        sentData++;
+        if (blkInfo.front().size == sentData) {
+            ~reply(blkInfo.pop().tid, EmptyMessage);
+            sentData = 0;
+        }
+    }
+    void flushed(Tid tid, size_t size) {
+        if (size != 0)
+            blkInfo.push({tid, size});
+    }
+    void respond(Tid tid, bool flushed) {
+        if (!flushed)
+            ~reply(tid, EmptyMessage);
+    }
 };
 
 struct Uart2Traits {
@@ -55,6 +78,10 @@ struct Uart2Traits {
     static constexpr auto taskBufferSize = 64;
     static constexpr auto flushOnNewline = true;
     static bool cts() { return true; }
+
+    void sent() {}
+    void flushed(Tid, size_t) {}
+    void respond(Tid tid, bool) { ~reply(tid, EmptyMessage); }
 };
 
 template <typename T>
@@ -145,15 +172,17 @@ void txMain() {
     // Buffer for asynchronicity.
     CircularBuffer<char, 1024> queue;
 
+    T trait;
+
     // Value for blocking tx notifier.
     Tid txFull = INVALID_TID;
-
     auto pushData = [&](int idx) {
         while (!buffers[idx].empty()) {
             if (txFull == INVALID_TID) {
                 queue.push(buffers[idx].pop());
             } else {
                 ~reply(txFull, Reply{buffers[idx].pop()});
+                trait.sent();
                 txFull = INVALID_TID;
             }
         }
@@ -170,6 +199,7 @@ void txMain() {
                     txFull = tid;
                 } else {
                     ~reply(tid, Reply{queue.pop()});
+                    trait.sent();
                 }
 
                 break;
@@ -181,19 +211,23 @@ void txMain() {
                 // Add to buffer.
                 buffers[idx].push(msg.data);
 
+                bool flushed = false;
                 // Check if buffer needs flushing.
                 if (buffers[idx].full() || (T::flushOnNewline && msg.data == '\n')) {
+                    trait.flushed(tid, buffers[idx].size());
                     pushData(idx);
+                    flushed = true;
                 }
 
-                ~reply(tid, EmptyMessage);
+                trait.respond(tid, flushed);
                 break;
             }
 
             case MsgType::Flush: {
                 int idx = tid.underlying();
+                trait.flushed(tid, buffers[idx].size());
                 pushData(idx);
-                ~reply(tid, EmptyMessage);
+                trait.respond(tid, true);
                 break;
             }
 

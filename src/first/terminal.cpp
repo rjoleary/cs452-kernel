@@ -131,19 +131,22 @@ void runTerminal() {
     ~create(Priority(28), timerMain);
     ~create(Priority(28), idleCounterMain);
 
-    // Create sensors task.
-    ~create(Priority(29), sensorsMain);
-
     // Create switch task
     ~create(Priority(29), switchMan);
     setupSwitches();
+
+    auto clock = whoIs(names::ClockServer).asValue();
+    // Delay for switches to finish initializing
+    delay(clock, 600);
+
+    // Create sensors task.
+    ~create(Priority(29), sensorsMain);
 
     bool isStopped = false;
     unsigned cmdsz = 0;
     char cmdbuf[MAX_CMDSZ+1];
 
     Tid rx = whoIs(names::Uart2RxServer).asValue();
-    auto clock = whoIs(names::ClockServer).asValue();
     for (;;) {
         flush(COM2);
         // TODO: don't assert on corrupt data
