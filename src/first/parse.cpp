@@ -136,14 +136,8 @@ int parseCmd(const char *cmd) {
         for (;;) {
             Sensors sensors;
             waitTrigger(&sensors);
-            if (sensors.values[2] & (1 << 14)) {
+            if (sensors.values[2] & (1 << 13)) {
                 break;
-            }
-            for (int i = 0; i < NUM_SENSOR_MODULES; i++) {
-                for (int j = 0; j < 16; j++) {
-                    bwprintf(COM2, "%c%d ", 'a' + i, j + 1);
-                    flush(COM2);
-                }
             }
         }
         cmdSetSpeed(number.val, 0);
