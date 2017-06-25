@@ -50,8 +50,6 @@ void printLayout() {
     bwputstr(COM2, LAYOUT);
 }
 
-
-
 // Set position of cursor to (row, col).
 void setpos(unsigned row, unsigned col) {
     char str[] = "\033[%d;%dH";
@@ -119,13 +117,12 @@ void runTerminal() {
     char clear[] = "\033[J";
     bwputstr(COM2, clear);
 
+    goTrains();
+
     // Print initial text.
     printLayout();
-    savecur();
     setpos(1, 11);
     bwputstr(COM2, "\033[32m GO \033[37m");
-    restorecur();
-    bwputstr(COM2, prompt);
 
     // Create timer and idle task counter.
     ~create(Priority(28), timerMain);
@@ -145,6 +142,8 @@ void runTerminal() {
     bool isStopped = false;
     unsigned cmdsz = 0;
     char cmdbuf[MAX_CMDSZ+1];
+    setpos(35, 1);
+    bwputstr(COM2, prompt);
 
     Tid rx = whoIs(names::Uart2RxServer).asValue();
     for (;;) {
@@ -176,14 +175,16 @@ void runTerminal() {
             }
             break;
         case '\r': // enter
-            bwputc(COM2, '\r');
-            bwputc(COM2, '\n');
+            setpos(21,1);
+            bwputstr(COM2, "\033[J");
+            flush(COM2);
             cmdbuf[cmdsz] = '\0'; // null-terminate
             if (parseCmd(cmdbuf)) {
                 flush(COM2);
                 goto Return;
             }
             cmdsz = 0;
+            setpos(35,1);
             bwputstr(COM2, prompt);
             break;
         default:
@@ -197,5 +198,5 @@ Return:
     // TODO: Only quit when all flying transactions are done
     // May burn out solenoid if quit too quickly
     bwputstr(COM2, "Waiting for switches...\r\n");
-    delay(clock, 350);
+    delay(clock, 150);
 }

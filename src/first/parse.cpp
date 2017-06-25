@@ -11,9 +11,12 @@
 #include <std.h>
 #include <def.h>
 
+// forward declare
+void setpos(unsigned row, unsigned col);
+
 void printHelp() {
     bwputstr(COM2,
-        "Assignment 0 commands:\r\n"
+        "Commands:\r\n"
         "   cal NUMBER       - stop train on the next trigger.\r\n"
         "   com i [BYTE...]  - Send arbitrary byte over COMi.\r\n"
         "   help             - Display this help information.\r\n"
@@ -27,16 +30,16 @@ void printHelp() {
     );
 }
 
-typedef struct {
+struct Token {
     const char *start;
     unsigned len;
-} Token;
+};
 
-typedef struct {
+struct DecimalToken {
     Token token;
     int val;
     unsigned err; // 0 - success, 1 - error
-} DecimalToken;
+};
 
 // Retrieve the next token from char*.
 Token nextToken(const char **cmd) {
@@ -80,6 +83,7 @@ DecimalToken nextDec(const char **cmd) {
 
 // Print error message relating to a bad parse.
 void tokenErr(const char *msg, int start, int len) {
+    setpos(36, 1);
     if (len) {
         int i;
         for (i = 0; i < start; i++) {

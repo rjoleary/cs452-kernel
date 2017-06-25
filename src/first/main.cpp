@@ -37,7 +37,6 @@ void firstMain() {
     ~create(Priority(PRIORITY_MAX.underlying() - 2), clockMain);
     ~create(Priority(22), trainManMain);
 
-    goTrains();
     runTerminal();
 }
 }
