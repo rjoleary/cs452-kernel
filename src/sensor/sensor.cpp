@@ -165,10 +165,10 @@ const struct {
 };
 
 void printUpdate(const Sensors &prevSensors, const Sensors &sensors, unsigned &startOfTriggers) {
-    savecur();
     for (int i = 0; i < NUM_SENSOR_MODULES; i++) {
         for (int j = 0; j < NUM_SENSORS_PER_MODULE; j++) {
             if (sensors(i, j) != prevSensors(i, j)) {
+                savecur();
                 setpos(4 + startOfTriggers, 40);
                 startOfTriggers = (startOfTriggers + 1) % 11;
                 bwprintf(COM2, "%c%d ", 'a' + i, j + 1);
@@ -177,18 +177,22 @@ void printUpdate(const Sensors &prevSensors, const Sensors &sensors, unsigned &s
                 } else {
                     bwputstr(COM2, "OFF  ");
                 }
+                restorecur();
                 flush(COM2);
             }
         }
     }
+    savecur();
     setpos(4 + startOfTriggers, 40);
     bwputstr(COM2, "_______");
+    restorecur();
     flush(COM2);
 
     for (int i = 0; i < NUM_SENSOR_MODULES; i++) {
         for (int j = 0; j < NUM_SENSORS_PER_MODULE; j++) {
             if (sensors(i, j) != prevSensors(i, j)) {
                 auto layout = LAYOUT_POS[i*NUM_SENSORS_PER_MODULE+j];
+                savecur();
                 setpos(2 + layout.row, layout.col);
                 if (sensors(i, j)) {
                     bwputstr(COM2, "\033[36m");
@@ -197,11 +201,11 @@ void printUpdate(const Sensors &prevSensors, const Sensors &sensors, unsigned &s
                 } else {
                     bwputc(COM2, LAYOUT[(layout.row+1)*36+layout.col-1]);
                 }
+                restorecur();
+                flush(COM2);
             }
         }
     }
-    restorecur();
-    flush(COM2);
 }
 }
 
