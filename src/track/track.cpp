@@ -16,8 +16,37 @@ void setpos(unsigned, unsigned);
 namespace {
 constexpr ctl::Name TrackServName = {"TrackM"};
 
-void sensorNotifierMain() {
+enum class MsgType {
+    Sensor, Switch
+};
 
+struct Message {
+    MsgType type;
+    union {
+        struct {
+            char module, number;
+        } sensor;
+        struct {
+            char sw, state;
+        } trunout;
+    };
+};
+
+void sensorNotifierMain() {
+    auto serv = whoIs(TrackServName).asValue();
+    Message msg = {MsgType::Sensor};
+    for (;;) {
+        auto sens = waitTrigger();
+        for (int i = 0; i < NUM_SENSOR_MODULES; ++i) {
+            for (int j = 0; j < NUM_SENSORS_PER_MODULE; ++j) {
+                if (sens(i, j)) {
+                    msg.sensor.module = i;
+                    msg.sensor.number = j;
+                    ~send(serv, msg, ctl::EmptyMessage);
+                }
+            }
+        }
+    }
 }
 
 void switchNotifierMain() {
@@ -33,31 +62,36 @@ void trackMain() {
     ~create(ctl::Priority(26), switchNotifierMain);
 
     for (;;) {
-        auto sens = waitTrigger();
-        for (int i = 0; i < NUM_SENSOR_MODULES; ++i) {
-            for (int j = 0; j < NUM_SENSORS_PER_MODULE; ++j) {
-                if (sens(i, j)) {
-                    const auto &currNode = nodes[i*NUM_SENSORS_PER_MODULE + j];
-                    savecur();
-                    bwprintf(COM2, "\033[40;1H\033[JCurrent node: %s\r\n",
-                            currNode.name);
-                    
-                    bwprintf(COM2, "\033[41;1HPath until next sensor:\r\n");
-                    auto curr = currNode.edge[DIR_AHEAD].dest;
-                    int i = 42;
-                    int dist = curr->edge[DIR_AHEAD].dist;
-                    while (curr->type != NODE_SENSOR && curr->type != NODE_EXIT) {
-                        bwprintf(COM2, "\033[%d;1H%s\r\n", i++, curr->name);
-                        curr = curr->edge[DIR_AHEAD].dest;
-                        dist += curr->edge[DIR_AHEAD].dist;
-                    }
-                    bwprintf(COM2, "\033[%d;1H%s\r\n", i++, curr->name);
-                    bwprintf(COM2, "\033[%d;1HDistance: %d\r\n", i++, dist);
+        ctl::Tid tid;
+        Message msg;
+        ~receive(&tid, msg);
+        switch (msg.type) {
+            case MsgType::Sensor: {
+                ~reply(tid, ctl::EmptyMessage);
+                const auto &currNode = 
+                    nodes[msg.sensor.module*NUM_SENSORS_PER_MODULE + msg.sensor.number];
+                savecur();
+                bwprintf(COM2, "\033[40;1H\033[JCurrent node: %s\r\n",
+                        currNode.name);
 
-                    restorecur();
-                    flush(COM2);
+                bwprintf(COM2, "\033[41;1HPath until next sensor:\r\n");
+                auto next = currNode.edge[DIR_AHEAD].dest;
+                int i = 42;
+                int dist = currNode.edge[DIR_AHEAD].dist;
+                while (next->type != NODE_SENSOR && next->type != NODE_EXIT) {
+                    bwprintf(COM2, "\033[%d;1H%s\r\n", i++, next->name);
+                    dist += next->edge[DIR_AHEAD].dist;
+                    next = next->edge[DIR_AHEAD].dest;
                 }
+                bwprintf(COM2, "\033[%d;1H%s\r\n", i++, next->name);
+                bwprintf(COM2, "\033[%d;1HDistance: %d\r\n", i++, dist);
+
+                restorecur();
+                flush(COM2);
+                break;
             }
+            case MsgType::Switch:
+                break;
         }
     }
 }
