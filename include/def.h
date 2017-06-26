@@ -6,7 +6,7 @@
 // Size of individual user stacks in bytes.
 #ifndef STACK_SZ
 #warning Stack size should be defined in Makefile.
-#define STACK_SZ 4096
+#define STACK_SZ 8192
 #endif
 
 namespace kernel {

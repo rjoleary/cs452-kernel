@@ -138,9 +138,8 @@ int parseCmd(const char *cmd) {
         }
         cmdSetSpeed(number.val, speed.val);
         for (;;) {
-            Sensors sensors;
-            waitTrigger(&sensors);
-            if (sensors.values[2] & (1 << 13)) {
+            auto sensors = waitTrigger();
+            if (sensors(2, 13)) {
                 break;
             }
         }

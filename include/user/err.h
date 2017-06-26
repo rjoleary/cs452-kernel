@@ -34,7 +34,7 @@ inline const char *errorToString(Error err) {
 template <typename T>
 class ErrorOr {
     // Must be size 4 to fit in syscall return value.
-    static_assert(sizeof(T) == 4);
+    static_assert(sizeof(T) == 4, "ErrorOr needs size of 4");
     int data;
 
     ErrorOr() {}
@@ -94,7 +94,7 @@ public:
         return errorToString(asError());
     }
 };
-static_assert(sizeof(ErrorOr<Tid>) == sizeof(Tid));
+static_assert(sizeof(ErrorOr<Tid>) == sizeof(Tid), "ErrorOr<Tid> != Tid");
 
 // For functions returning void.
 template <>
@@ -149,7 +149,7 @@ public:
         return errorToString(asError());
     }
 };
-static_assert(sizeof(ErrorOr<void>) == 4);
+static_assert(sizeof(ErrorOr<void>) == 4, "ErrorOr<void> not size 4");
 
 // Shortcut for asValue.
 template <typename T>

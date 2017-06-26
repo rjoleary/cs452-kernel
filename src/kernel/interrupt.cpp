@@ -76,7 +76,7 @@ int InterruptController::awaitEvent(Td *td, const ctl::Event event) {
     return 0;
 }
 
-void InterruptController::handle(Scheduler &scheduler, TdManager &tdManager) {
+void InterruptController::handle(Scheduler &scheduler) {
     const auto vic1Status = *(volatile unsigned*)(VIC1Base + VICxIRQStatus);
     const auto vic2Status = *(volatile unsigned*)(VIC2Base + VICxIRQStatus);
 

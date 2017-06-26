@@ -1,12 +1,13 @@
 export PATH := /u3/rj2olear/gcc-arm-eabi-6/bin:$(PATH)
 
-STACK_SZ ?= 4096
+STACK_SZ ?= 8192
 
 XCC     := arm-none-eabi-g++
 AS      := arm-none-eabi-as
 LD      := arm-none-eabi-g++
 OBJDUMP := arm-none-eabi-objdump
-CFLAGS  := -c -fPIC -Wall -Werror -mcpu=arm920t -msoft-float --std=gnu++14    \
+CFLAGS  := -c -fPIC -Wall -Wextra -Wno-missing-field-initializers -Werror        \
+	-Wpedantic -mcpu=arm920t -msoft-float --std=gnu++14    \
     -nostdlib -nostartfiles -ffreestanding -fno-exceptions -fno-unwind-tables \
     -fno-rtti -fno-threadsafe-statics -Wstack-usage=$(STACK_SZ)               \
     -DSTACK_SZ=$(STACK_SZ)

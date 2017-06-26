@@ -10,6 +10,7 @@
 #include <clock.h>
 #include <sensor.h>
 #include <switch.h>
+#include <track.h>
 
 using namespace ctl;
 
@@ -125,11 +126,11 @@ void runTerminal() {
     bwputstr(COM2, "\033[32m GO \033[37m");
 
     // Create timer and idle task counter.
-    ~create(Priority(28), timerMain);
-    ~create(Priority(28), idleCounterMain);
+    ~create(Priority(20), timerMain);
+    ~create(Priority(20), idleCounterMain);
 
     // Create switch task
-    ~create(Priority(29), switchMan);
+    ~create(Priority(25), switchMan);
     setupSwitches();
 
     auto clock = whoIs(names::ClockServer).asValue();
@@ -137,7 +138,10 @@ void runTerminal() {
     delay(clock, 600);
 
     // Create sensors task.
-    ~create(Priority(29), sensorsMain);
+    ~create(Priority(25), sensorsMain);
+
+    // Create track manager task.
+    ~create(Priority(25), trackMain);
 
     bool isStopped = false;
     unsigned cmdsz = 0;

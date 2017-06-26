@@ -40,6 +40,7 @@ struct Uart1Traits {
     static constexpr auto flagReg = UART1_BASE + UART_FLAG_OFFSET;
     static constexpr auto taskBufferSize = 8;
     static constexpr auto flushOnNewline = false;
+    static constexpr auto notifPri = 30;
     static bool cts() { 
         return *(volatile unsigned*)(flagReg) & CTS_MASK;
     }
@@ -77,6 +78,7 @@ struct Uart2Traits {
     static constexpr auto flagReg = UART2_BASE + UART_FLAG_OFFSET;
     static constexpr auto taskBufferSize = 64;
     static constexpr auto flushOnNewline = true;
+    static constexpr auto notifPri = 28;
     static bool cts() { return true; }
 
     void sent() {}
@@ -164,7 +166,7 @@ void txMain() {
     ~registerAs(T::txServer);
 
     // Create notifier.
-    ~create(Priority(PRIORITY_MAX.underlying()-1), txNotifierMain<T>);
+    ~create(Priority(T::notifPri), txNotifierMain<T>);
 
     // Per-task buffers for atomicity.
     CircularBuffer<char, T::taskBufferSize> buffers[NUM_TD];
@@ -244,7 +246,7 @@ void rxMain() {
     ~registerAs(T::rxServer);
 
     // Create notifier.
-    ~create(Priority(PRIORITY_MAX.underlying()-1), rxNotifierMain<T>);
+    ~create(Priority(T::notifPri), rxNotifierMain<T>);
 
     // Buffers for asynchronicity
     typedef CircularBuffer<char, 512> CharBuffer;

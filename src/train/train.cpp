@@ -147,7 +147,7 @@ void trainManMain() {
         } else {
             // Create new task for the train if one does not exist.
             if (train.tid == ctl::INVALID_TID) {
-                train.tid = create(ctl::Priority(20), trainMain).asValue();
+                train.tid = create(ctl::Priority(26), trainMain).asValue();
                 ~send(train.tid, unsigned(msg.train), ctl::EmptyMessage);
             }
 

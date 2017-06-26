@@ -11,5 +11,5 @@ constexpr Tid FIRST_TID{0},
           NS_TID{1},
           IDLE_TID{2},
           INVALID_TID{-1};
-constexpr Priority FIRST_PRI{15};
-};
+constexpr Priority FIRST_PRI{10};
+}

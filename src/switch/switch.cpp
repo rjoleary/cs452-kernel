@@ -14,7 +14,7 @@ namespace {
 constexpr ctl::Name SwitchServ = {"SSwitch"};
 
 enum class MsgType {
-    Ready, Update
+    Ready, Update, GetData, WaitChange
 };
 
 struct Message {
@@ -42,13 +42,6 @@ void notifMain() {
         bwputc(COM1, 32);
         flush(COM1);
     }
-}
-
-inline int toIdx(int sw) {
-    if (1 <= sw && sw <= 18)
-        return sw - 1;
-    else
-        return sw - 153 + 18;
 }
 
 const struct {
@@ -86,21 +79,21 @@ const struct {
     {6, 20, '#', '|'},
 };
 
-void updateGui(int sw, char dir, const char *states) {
-    const int idx = toIdx(sw);
+void updateGui(int sw, char dir, const SwitchState &ss) {
+    const int idx = ss.toIdx(sw);
     const auto &layoutPos = LAYOUT_POS[idx];
 
     char c = dir == 'C' ? layoutPos.curved : layoutPos.straight;
-    if ((sw == 153 || sw == 154) && (states[toIdx(153)] != states[toIdx(154)])) {
-        if (states[toIdx(153)] == 'C') {
+    if ((sw == 153 || sw == 154) && (ss[153] != ss[154])) {
+        if (ss[153] == 'C') {
             c = '/';
-        } else if (states[toIdx(154)] == 'C') {
+        } else if (ss[154] == 'C') {
             c = '\\';
         }
-    } else if ((sw == 155 || sw == 156) && (states[toIdx(155)] != states[toIdx(156)])) {
-        if (states[toIdx(155)] == 'C') {
+    } else if ((sw == 155 || sw == 156) && (ss[155] != ss[156])) {
+        if (ss[155] == 'C') {
             c = '/';
-        } else if (states[toIdx(156)] == 'C') {
+        } else if (ss[156] == 'C') {
             c = '\\';
         }
     }
@@ -145,26 +138,34 @@ void cmdSetSwitch(int sw, char dir) {
 }
 
 void switchMan() {
-    constexpr auto NumSwitches = 22;
     ~ctl::registerAs(SwitchServ);
-    char states[NumSwitches];
-    for (int i = 0; i < NumSwitches; ++i) states[i] = 'U';
-    ~create(ctl::Priority(30), notifMain);
+    SwitchState ss;
+    for (int i = 0; i < NumSwitches; ++i) ss.states[i] = 'U';
+    ~create(ctl::Priority(26), notifMain);
     auto notifier = ctl::INVALID_TID;
 
     ctl::CircularBuffer<Message, NumSwitches*2> queue;
+    ctl::CircularBuffer<ctl::Tid, NUM_TD> waiting;
+
+    auto notifyNotifier = [&](ctl::Tid notif, const Message &msg) {
+        ~reply(notif, msg);
+        ss[msg.sw] = msg.dir;
+        updateGui(msg.sw, msg.dir, ss);
+        while (!waiting.empty()) {
+            ~reply(waiting.pop(), ctl::EmptyMessage);
+        }
+    };
+
     for (;;) {
         ctl::Tid tid;
         Message msg;
         ~receive(&tid, msg);
         switch (msg.type) {
         case MsgType::Update:
-            if (states[toIdx(msg.sw)] != msg.dir) {
+            if (ss[msg.sw] != msg.dir) {
                 if (!(notifier == ctl::INVALID_TID)) {
-                    ~reply(notifier, msg);
+                    notifyNotifier(notifier, msg);
                     notifier = ctl::INVALID_TID;
-                    states[toIdx(msg.sw)] = msg.dir;
-                    updateGui(msg.sw, msg.dir, states);
                 }
                 else {
                     queue.push(msg);
@@ -178,12 +179,30 @@ void switchMan() {
             }
             else {
                 const auto& msgToSend = queue.pop();
-                ~reply(tid, msgToSend);
-                states[toIdx(msgToSend.sw)] = msgToSend.dir;
-                updateGui(msgToSend.sw, msgToSend.dir, states);
+                notifyNotifier(tid, msgToSend);
             }
+            break;
+        case MsgType::GetData: 
+            ~reply(tid, ss);
+            break;
+        case MsgType::WaitChange:
+            waiting.push(tid);
             break;
         }
     }
+}
+
+SwitchState getSwitchData() {
+    auto switchServTid = whoIs(SwitchServ).asValue();
+    SwitchState ss;
+    ~send(switchServTid, Message{MsgType::GetData}, ss);
+    return ss;
+}
+
+SwitchState waitSwitchChange() {
+    auto switchServTid = whoIs(SwitchServ).asValue();
+    SwitchState ss;
+    ~send(switchServTid, Message{MsgType::WaitChange}, ss);
+    return ss;
 }
 

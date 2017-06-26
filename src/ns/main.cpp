@@ -132,6 +132,7 @@ void nsMain() {
             }
 
             default: {
+                bwprintf(COM2, "Unknown message type %d\r\n", msg.type);
                 ASSERT(false);
             }
         }

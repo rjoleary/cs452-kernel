@@ -167,12 +167,12 @@ const struct {
 void printUpdate(const Sensors &prevSensors, const Sensors &sensors, unsigned &startOfTriggers) {
     savecur();
     for (int i = 0; i < NUM_SENSOR_MODULES; i++) {
-        for (int j = 0; j < 16; j++) {
-            if ((prevSensors.values[i] ^ sensors.values[i]) & (1 << j)) {
+        for (int j = 0; j < NUM_SENSORS_PER_MODULE; j++) {
+            if (sensors(i, j) != prevSensors(i, j)) {
                 setpos(4 + startOfTriggers, 40);
                 startOfTriggers = (startOfTriggers + 1) % 11;
                 bwprintf(COM2, "%c%d ", 'a' + i, j + 1);
-                if (sensors.values[i] & (1 << j)) {
+                if (sensors(i, j)) {
                     bwputstr(COM2, "ON   ");
                 } else {
                     bwputstr(COM2, "OFF  ");
@@ -186,11 +186,11 @@ void printUpdate(const Sensors &prevSensors, const Sensors &sensors, unsigned &s
     flush(COM2);
 
     for (int i = 0; i < NUM_SENSOR_MODULES; i++) {
-        for (int j = 0; j < 16; j++) {
-            if ((prevSensors.values[i] ^ sensors.values[i]) & (1 << j)) {
-                auto layout = LAYOUT_POS[i*16+j];
+        for (int j = 0; j < NUM_SENSORS_PER_MODULE; j++) {
+            if (sensors(i, j) != prevSensors(i, j)) {
+                auto layout = LAYOUT_POS[i*NUM_SENSORS_PER_MODULE+j];
                 setpos(2 + layout.row, layout.col);
-                if (sensors.values[i] & (1 << j)) {
+                if (sensors(i, j)) {
                     bwputstr(COM2, "\033[36m");
                     bwputc(COM2, layout.character);
                     bwputstr(COM2, "\033[0m");
@@ -208,8 +208,8 @@ void printUpdate(const Sensors &prevSensors, const Sensors &sensors, unsigned &s
 void sensorsMain() {
     ~registerAs(SensorServ);
 
-    create(ctl::Priority(30), recvNotif);
-    create(ctl::Priority(30), timeoutNotif);
+    create(ctl::Priority(26), recvNotif);
+    create(ctl::Priority(26), timeoutNotif);
 
     Sensors prevSensors;
     unsigned startOfTriggers = 0;
@@ -229,8 +229,8 @@ void sensorsMain() {
             switch (msg.type) {
                 case MsgType::Recv: {
                     ~reply(tid, ctl::EmptyMessage);
-                    auto c = msg.data;
-                    if (dataRead % 2 == 1) {
+                    sensors.values[dataRead/2] += msg.data << (8 * (dataRead % 2));
+                    /*if (dataRead % 2 == 1) {
                         sensors.values[dataRead/2] |= (
                                 (c & (1 << 0)) << 7 |
                                 (c & (1 << 1)) << 5 |
@@ -250,7 +250,7 @@ void sensorsMain() {
                             (c & (1 << 5)) >> 3 |
                             (c & (1 << 6)) >> 5 |
                             (c & (1 << 7)) >> 7;
-                    }
+                    }*/
                     dataRead++;
                     timeoutsRecv = 0;
                     break;
@@ -295,10 +295,16 @@ void sensorsMain() {
     }
 }
 
-void getSensors(Sensors *sensors) {
-    ~send(whoIs(SensorServ).asValue(), Message{MsgType::GetSensors}, *sensors);
+Sensors getSensors() {
+    static auto sensorServTid = whoIs(SensorServ).asValue();
+    Sensors sens;
+    ~send(sensorServTid, Message{MsgType::GetSensors}, sens);
+    return sens;
 }
 
-void waitTrigger(Sensors *sensors) {
-    ~send(whoIs(SensorServ).asValue(), Message{MsgType::WaitTrigger}, *sensors);
+Sensors waitTrigger() {
+    static auto sensorServTid = whoIs(SensorServ).asValue();
+    Sensors sens;
+    ~send(sensorServTid, Message{MsgType::WaitTrigger}, sens);
+    return sens;
 }

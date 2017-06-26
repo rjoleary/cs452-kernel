@@ -50,7 +50,7 @@ public:
     int awaitEvent(Td *td, const ctl::Event event);
 
     // Handles an interrupt.
-    void handle(Scheduler &scheduler, TdManager &tdManager);
+    void handle(Scheduler &scheduler);
 };
 
 // Interrupt sources which may be relevant.

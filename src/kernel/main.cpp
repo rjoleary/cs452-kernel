@@ -149,7 +149,7 @@ void mainLoop(Scheduler &scheduler, TdManager &tdManager, InterruptController &i
         extern unsigned isIrq;
         if (isIrq) {
             isIrq = 0;
-            intControl.handle(scheduler, tdManager);
+            intControl.handle(scheduler);
 
             // Reschedule interrupted task.
             active->interruptLinkReg();
