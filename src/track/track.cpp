@@ -54,7 +54,7 @@ void switchNotifierMain() {
 } // unnamed namespace
 
 void trackMain() {
-    track_node nodes[TRACK_MAX];
+    TrackNode nodes[TRACK_MAX];
     init_tracka(nodes);
 
     ~registerAs(TrackServName);
