@@ -80,7 +80,7 @@ const struct {
 };
 
 void updateGui(int sw, char dir, const SwitchState &ss) {
-    const int idx = ss.toIdx(sw);
+    const int idx = SwitchState::toIdx(sw);
     const auto &layoutPos = LAYOUT_POS[idx];
 
     char c = dir == 'C' ? layoutPos.curved : layoutPos.straight;
@@ -152,7 +152,7 @@ void switchMan() {
         ss[msg.sw] = msg.dir;
         updateGui(msg.sw, msg.dir, ss);
         while (!waiting.empty()) {
-            ~reply(waiting.pop(), ctl::EmptyMessage);
+            ~reply(waiting.pop(), ss);
         }
     };
 

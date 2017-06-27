@@ -8,11 +8,17 @@ constexpr auto NumSwitches = 22;
 
 struct alignas(4) SwitchState {
     char states[NumSwitches];
-    inline int toIdx(int sw) const {
+    static inline int toIdx(int sw) {
         if (1 <= sw && sw <= 18)
             return sw - 1;
         else
             return sw - 153 + 18;
+    }
+    static inline int fromIdx(int sw) {
+        if (0 <= sw && sw < 18)
+            return sw + 1;
+        else
+            return sw + 153 - 18;
     }
 
     char & operator[](int sw) {
