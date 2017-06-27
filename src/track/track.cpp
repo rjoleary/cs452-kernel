@@ -7,6 +7,7 @@
 #include <sensor.h>
 #include <switch.h>
 #include <clock.h>
+#include <path_finding.h>
 
 #include "track_node.h"
 #include "track_data_new.h"
