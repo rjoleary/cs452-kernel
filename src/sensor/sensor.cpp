@@ -164,7 +164,7 @@ const struct {
     {5, 3, '>'},
 };
 
-void printUpdate(const Sensors &prevSensors, const Sensors &sensors, unsigned &startOfTriggers) {
+void printUpdate(const SensorSet &prevSensors, const SensorSet &sensors, unsigned &startOfTriggers) {
     for (int i = 0; i < NUM_SENSOR_MODULES; i++) {
         for (int j = 0; j < NUM_SENSORS_PER_MODULE; j++) {
             if (sensors(i, j) != prevSensors(i, j)) {
@@ -188,7 +188,7 @@ void printUpdate(const Sensors &prevSensors, const Sensors &sensors, unsigned &s
     restorecur();
     flush(COM2);
 
-    for (int i = 0; i < NUM_SENSOR_MODULES; i++) {
+    for (int i = 0; i < NUM_SENSOR_MODULES - 2; i++) { // TODO: last two modules
         for (int j = 0; j < NUM_SENSORS_PER_MODULE; j++) {
             if (sensors(i, j) != prevSensors(i, j)) {
                 auto layout = LAYOUT_POS[i*NUM_SENSORS_PER_MODULE+j];
@@ -215,14 +215,14 @@ void sensorsMain() {
     create(ctl::Priority(26), recvNotif);
     create(ctl::Priority(26), timeoutNotif);
 
-    Sensors prevSensors;
+    SensorSet prevSensors;
     unsigned startOfTriggers = 0;
 
     ctl::CircularBuffer<ctl::Tid, NUM_TD> triggerBlocked;
 
     for (;;) {
         int dataRead = 0, timeoutsRecv = 0;
-        Sensors sensors;
+        SensorSet sensors;
         // Send command
         bwputc(COM1, 0x85);
         flush(COM1);
@@ -299,16 +299,16 @@ void sensorsMain() {
     }
 }
 
-Sensors getSensors() {
+SensorSet getSensors() {
     static auto sensorServTid = whoIs(SensorServ).asValue();
-    Sensors sens;
+    SensorSet sens;
     ~send(sensorServTid, Message{MsgType::GetSensors}, sens);
     return sens;
 }
 
-Sensors waitTrigger() {
+SensorSet waitTrigger() {
     static auto sensorServTid = whoIs(SensorServ).asValue();
-    Sensors sens;
+    SensorSet sens;
     ~send(sensorServTid, Message{MsgType::WaitTrigger}, sens);
     return sens;
 }
