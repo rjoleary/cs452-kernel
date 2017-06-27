@@ -1,6 +1,8 @@
 export PATH := /u3/rj2olear/gcc-arm-eabi-6/bin:$(PATH)
 
 STACK_SZ ?= 8192
+CACHE_ENABLED ?= 1
+OPT_ENABLED ?= 1
 
 XCC     := arm-none-eabi-g++
 AS      := arm-none-eabi-as
