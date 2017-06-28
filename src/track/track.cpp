@@ -159,8 +159,16 @@ void trackMain() {
                     bwputstr(COM2, "Cannot find path\r\n");
                 } else {
                     for (int i = 0; i < n; i++) {
+                        auto nodeIdx = path[i].nodeIdx;
                         bwprintf(COM2, "Node %s, distance: %d\r\n",
-                                nodes[path[i].nodeIdx].name, path[i].distance);
+                                nodes[nodeIdx].name, path[i].distance);
+                        if (nodes[nodeIdx].type == NODE_BRANCH) {
+                            if (nodes[nodeIdx].edge[DIR_STRAIGHT].src
+                                    == &nodes[path[i+1].nodeIdx])
+                                bwprintf(COM2, "Branch straight\r\n");
+                            else
+                                bwprintf(COM2, "Branch curved\r\n");
+                        }
                     }
                 }
 
