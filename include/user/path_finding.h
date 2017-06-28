@@ -6,14 +6,10 @@
 using ctl::size_t;
 using ctl::Heap;
 
-// Path represents a tree.
-struct Path {
-    // Index to the parent node. The start node has itself as the parent.
-    // Unreachable nodes have -1 as their parent.
-    short parent;
+typedef unsigned char NodeIdx;
 
-    // Distance to this node from the start node. Unreachable nodes have a
-    // value of -1.
+struct Path {
+    short nodeIdx;
     short distance;
 };
 
@@ -31,13 +27,16 @@ struct Path {
 //   graph.adjacent(vertex) - return iterator of edges adjacent to vertex
 //   graph.dest(edge)       - return destination of edge
 //   graph.weight(edge)     - return weight of edge
+//
+// Returns: length of the path, or 0 if no path found
 template <typename T>
-void dijkstra(const T &graph, unsigned char start, Path (&path_out)[T::VSize]) {
+int dijkstra(const T &graph, NodeIdx start, NodeIdx end, Path (&path_out)[T::VSize]) {
 
     struct alignas(4) WeightedVertex {
         short weight;
-        unsigned char vertexIdx;
-        unsigned char parentIdx;
+        NodeIdx vertexIdx;
+        NodeIdx parentIdx;
+        unsigned char nNodes; // number of nodes in this path
     };
 
     struct Comp {
@@ -46,8 +45,20 @@ void dijkstra(const T &graph, unsigned char start, Path (&path_out)[T::VSize]) {
         }
     };
 
+    struct Tree {
+        // Index to the parent node. The start node has itself as the parent.
+        // Unreachable nodes have -1 as their parent.
+        short parent;
+
+        // Distance to this node from the start node. Unreachable nodes have a
+        // value of -1.
+        short distance;
+
+        unsigned char nNodes;
+    } tree[T::VSize];
+
     // Reset the output array in case it has already been used.
-    for (auto &p : path_out) {
+    for (auto &p : tree) {
         p.parent = -1;
         p.distance = -1;
     }
@@ -58,6 +69,7 @@ void dijkstra(const T &graph, unsigned char start, Path (&path_out)[T::VSize]) {
         /* .weight    = */ 0,
         /* .vertexIdx = */ start,
         /* .parentIdx = */ start,
+        /* .nNodes    = */ 1,
     });
 
     while (!heap.empty()) {
@@ -65,20 +77,26 @@ void dijkstra(const T &graph, unsigned char start, Path (&path_out)[T::VSize]) {
         WeightedVertex front = heap.pop();
 
         // Update the weight and parent.
-        path_out[front.vertexIdx] = Path{
-            /* .parent =   */ front.parentIdx,
+        tree[front.vertexIdx] = Tree{
+            /* .parent   = */ front.parentIdx,
             /* .distance = */ front.weight,
+            /* .nNodes   = */ front.nNodes,
         };
+
+        // Exit early if we reached the end node.
+        if (front.vertexIdx == end) {
+            break;
+        }
 
         // Push all the adjacent nodes onto the heap.
         const size_t n = graph.adjacentN(front.vertexIdx);
         for (size_t i = 0; i < n; i++) {
             const auto &edge = graph.adjacent(front.vertexIdx, i);
-            unsigned char vertexIdx = graph.dest(edge);
+            NodeIdx vertexIdx = graph.dest(edge);
             short weight = graph.weight(edge);
 
             // Skip if we have already found a path to this node.
-            if (path_out[vertexIdx].parent != -1) {
+            if (tree[vertexIdx].parent != -1) {
                 continue;
             }
 
@@ -86,7 +104,22 @@ void dijkstra(const T &graph, unsigned char start, Path (&path_out)[T::VSize]) {
                 /* .weight    = */ static_cast<short>(front.weight + weight),
                 /* .vertexIdx = */ vertexIdx,
                 /* .parentIdx = */ front.vertexIdx,
+                /* .nNodes    = */ static_cast<unsigned char>(front.nNodes + 1),
             });
         }
     }
+
+    if (tree[end].parent == -1) {
+        return 0;
+    }
+
+    // Reverse path.
+    NodeIdx curIdx = end;
+    for (int i = tree[end].nNodes - 1; i >= 0; i--) {
+        path_out[i].nodeIdx = curIdx;
+        path_out[i].distance = tree[end].distance - tree[curIdx].distance;
+        curIdx = tree[curIdx].parent;
+    }
+
+    return tree[end].nNodes;
 }

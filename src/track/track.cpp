@@ -175,24 +175,19 @@ void trackMain() {
 
             case MsgType::Route: {
                 // Path finding
-                size_t beginIdx = expectedNode->num;
-                size_t endIdx = msg.route.sensor;
+                NodeIdx beginIdx = expectedNode->num;
+                NodeIdx endIdx = msg.route.sensor;
                 Path path[Graph::VSize];
-                dijkstra(Graph{nodes}, beginIdx, path);
+                int n = dijkstra(Graph{nodes}, beginIdx, endIdx, path);
 
                 // Print path in reverse
-                if (path[endIdx].parent != -1) {
-                    short curIdx = endIdx;
-                    for (;;) {
-                        bwprintf(COM2, "Node %s, distance: %d\r\n",
-                                nodes[curIdx].name, path[curIdx].distance);
-                        if (path[curIdx].parent == curIdx) {
-                            break;
-                        }
-                        curIdx = path[curIdx].parent;
-                    }
-                } else {
+                if (n == 0) {
                     bwputstr(COM2, "Cannot find path\r\n");
+                } else {
+                    for (int i = 0; i < n; i++) {
+                        bwprintf(COM2, "Node %s, distance: %d\r\n",
+                                nodes[path[i].nodeIdx].name, path[i].distance);
+                    }
                 }
 
                 ~reply(tid, ctl::EmptyMessage);
