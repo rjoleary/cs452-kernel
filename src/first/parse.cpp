@@ -4,6 +4,7 @@
 #include <switch.h>
 #include <sensor.h>
 #include <initializer_list>
+#include <track.h>
 
 #include <task.h>
 #include <ns.h>
@@ -191,6 +192,26 @@ int parseCmd(const char *cmd) {
             return 0;
         }
         cmdSetSpeed(number.val, speed.val);
+    } else if (isIdent(t, "route")) {
+        DecimalToken number = nextDec(&cmd);
+        if (number.err) {
+            tokenErr("invalid train number", number.token.start - cmdStart + 2, number.token.len);
+            return 0;
+        }
+        DecimalToken speed = nextDec(&cmd);
+        if (speed.err) {
+            tokenErr("invalid train speed", speed.token.start - cmdStart + 2, speed.token.len);
+            return 0;
+        }
+        DecimalToken sensor = nextDec(&cmd);
+        if (speed.err) {
+            tokenErr("invalid sensor", sensor.token.start - cmdStart + 2, sensor.token.len);
+            return 0;
+        }
+        if (terminateCmd(cmdStart, cmd)) {
+            return 0;
+        }
+        cmdRoute(number.val, speed.val, sensor.val);
     } else if (isIdent(t, "rv")) {
         DecimalToken number = nextDec(&cmd);
         if (number.err) {

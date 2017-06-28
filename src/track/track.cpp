@@ -20,7 +20,7 @@ namespace {
 constexpr ctl::Name TrackServName = {"TrackM"};
 
 enum class MsgType {
-    Sensor, Switch
+    Sensor, Switch, Route
 };
 
 struct Message {
@@ -32,6 +32,9 @@ struct Message {
         struct {
             char sw, state;
         } turnout;
+        struct {
+            char train, speed, sensor;
+        } route;
     };
 };
 
@@ -129,12 +132,40 @@ void trackMain() {
                 flush(COM2);
                 break;
             }
-            case MsgType::Switch:
+
+            case MsgType::Switch: {
                 ~reply(tid, ctl::EmptyMessage);
                 switches[msg.turnout.sw] = msg.turnout.state;
                 bwprintf(COM2, "\033[39;1H\033[JSwitch %d changed to %c\r\n",
                         msg.turnout.sw, msg.turnout.state);
                 break;
+            }
+
+            case MsgType::Route: {
+                ~reply(tid, ctl::EmptyMessage);
+                break;
+            }
         }
     }
+}
+
+void cmdRoute(int train, int speed, int sensor) {
+    if (train < 1 || 80 < train) {
+        bwputstr(COM2, "Error: train number must be between 1 and 80 inclusive\r\n");
+        return;
+    }
+    if (speed < 0 || 14 < speed) {
+        bwputstr(COM2, "Error: speed must be between 0 and 14 inclusive\r\n");
+        return;
+    }
+    if (sensor < 0 || 14 < sensor) {
+        bwputstr(COM2, "Error: sensor must be between 0 and 79 inclusive\r\n");
+        return;
+    }
+    static auto trackMan = whoIs(TrackServName).asValue();
+    Message msg{MsgType::Route};
+    msg.route.train = train;
+    msg.route.speed = speed;
+    msg.route.sensor = sensor;
+    ~send(trackMan, msg, ctl::EmptyMessage);
 }
