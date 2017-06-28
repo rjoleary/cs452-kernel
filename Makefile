@@ -1,6 +1,6 @@
 export PATH := /u3/rj2olear/gcc-arm-eabi-6/bin:$(PATH)
 
-STACK_SZ ?= 8192
+STACK_SZ ?= 16384
 CACHE_ENABLED ?= 1
 OPT_ENABLED ?= 1
 
@@ -30,7 +30,7 @@ endif
 ASFLAGS	= -mcpu=arm920t -mapcs-32
 # -mapcs: always generate a complete stack frame
 
-LDFLAGS = -Wl,-init,main,-Map=build/kernel.map,-N -T orex.ld -nostdlib -nostartfiles -ffreestanding -L/u3/rj2olear/gcc-arm-eabi-6/lib/gcc/arm-none-eabi/6.3.1/
+LDFLAGS = -Wl,-init,main,-Map=build/kernel.map,-N -T orex.ld -nostdlib -nostartfiles -ffreestanding -L/u3/rj2olear/gcc-arm-eabi-6/lib/gcc/arm-none-eabi/6.3.1/ -Wstack-usage=$(STACK_SZ)
 
 ifeq ($(OPT_ENABLED),1)
 CFLAGS := $(CFLAGS) -O2 -flto -DOPT_ENABLED

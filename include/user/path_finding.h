@@ -71,7 +71,9 @@ void dijkstra(const T &graph, unsigned char start, Path (&path_out)[T::VSize]) {
         };
 
         // Push all the adjacent nodes onto the heap.
-        for (const auto &edge : graph.adjacent(front.vertexIdx)) {
+        const size_t n = graph.adjacentN(front.vertexIdx);
+        for (size_t i = 0; i < n; i++) {
+            const auto &edge = graph.adjacent(front.vertexIdx, i);
             unsigned char vertexIdx = graph.dest(edge);
             short weight = graph.weight(edge);
 

@@ -32,8 +32,11 @@ template <size_t S> struct Graph {
     Vertex *vertices;
     Edge *edges;
 
-    auto adjacent(int idx) const {
-        return vertices[idx].edges;
+    auto adjacentN(int idx) const {
+        return vertices[idx].edges.size();
+    }
+    auto adjacent(int idx, int i) const {
+        return vertices[idx].edges[i];
     }
     auto dest(int idx) const {
         return edges[idx].dest;

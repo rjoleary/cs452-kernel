@@ -38,6 +38,25 @@ struct Message {
     };
 };
 
+struct Graph {
+    TrackNode *vertices;
+
+    static constexpr size_t VSize = TRACK_MAX;
+
+    auto adjacentN(int idx) const {
+        return vertices[idx].type == NODE_BRANCH ? 2 : 1;
+    }
+    const TrackEdge *adjacent(int idx, int i) const {
+        return &(vertices[idx].edge[i]);
+    }
+    auto dest(const TrackEdge *edge) const {
+        return edge->dest - vertices;
+    }
+    auto weight(const TrackEdge *edge) const {
+        return edge->dist;
+    }
+};
+
 void sensorNotifierMain() {
     auto serv = whoIs(TrackServName).asValue();
     Message msg = {MsgType::Sensor};
@@ -142,6 +161,26 @@ void trackMain() {
             }
 
             case MsgType::Route: {
+                // Path finding
+                size_t beginIdx = expectedNode - nodes;
+                size_t endIdx = msg.route.sensor;
+                Path path[Graph::VSize];
+                dijkstra(Graph{nodes}, beginIdx, path);
+
+                // Print path in reverse
+                if (path[endIdx].parent != -1) {
+                    short curIdx = endIdx;
+                    for (;;) {
+                        bwprintf(COM2, "Node %d, distance: %d\r\n", curIdx, path[curIdx].distance);
+                        if (path[curIdx].parent == curIdx) {
+                            break;
+                        }
+                        curIdx = path[curIdx].parent;
+                    }
+                } else {
+                    bwputstr(COM2, "Cannot find path\r\n");
+                }
+
                 ~reply(tid, ctl::EmptyMessage);
                 break;
             }
@@ -158,7 +197,7 @@ void cmdRoute(int train, int speed, int sensor) {
         bwputstr(COM2, "Error: speed must be between 0 and 14 inclusive\r\n");
         return;
     }
-    if (sensor < 0 || 14 < sensor) {
+    if (sensor < 0 || 79 < sensor) {
         bwputstr(COM2, "Error: sensor must be between 0 and 79 inclusive\r\n");
         return;
     }
