@@ -34,7 +34,7 @@ struct Path {
 template <typename T>
 void dijkstra(const T &graph, unsigned char start, Path (&path_out)[T::VSize]) {
 
-    struct WeightedVertex {
+    struct alignas(4) WeightedVertex {
         short weight;
         unsigned char vertexIdx;
         unsigned char parentIdx;
