@@ -27,16 +27,15 @@ struct Path {
 //   path     - output path, must have the same size as vertices
 //
 // The traits are:
-//   T::V - type of the vertex
-//   T::E - type of the edge
-//   T::adjacent(vertex) - return iterator of edges adjacent to vertex
-//   T::dest(edge)       - return destination of edge
-//   T::weight(edge)     - return weight of edge
-template <typename T, size_t VSize>
-void dijkstra(const typename T::V (&vertices)[VSize], int start, Path (&path_out)[VSize]) {
+//   T::VSize - total number of vertices
+//   graph.adjacent(vertex) - return iterator of edges adjacent to vertex
+//   graph.dest(edge)       - return destination of edge
+//   graph.weight(edge)     - return weight of edge
+template <typename T>
+void dijkstra(const T &graph, unsigned char start, Path (&path_out)[T::VSize]) {
 
     struct WeightedVertex {
-        unsigned short weight;
+        short weight;
         unsigned char vertexIdx;
         unsigned char parentIdx;
     };
@@ -49,12 +48,12 @@ void dijkstra(const typename T::V (&vertices)[VSize], int start, Path (&path_out
 
     // Reset the output array in case it has already been used.
     for (auto &p : path_out) {
-        path_out.parent = -1;
-        path_out.distance = -1;
+        p.parent = -1;
+        p.distance = -1;
     }
 
     // Push the first node onto the heap.
-    Heap<VSize, WeightedVertex, Comp> heap;
+    Heap<T::VSize, WeightedVertex, Comp> heap;
     heap.push(WeightedVertex{
         /* .weight    = */ 0,
         /* .vertexIdx = */ start,
@@ -67,22 +66,22 @@ void dijkstra(const typename T::V (&vertices)[VSize], int start, Path (&path_out
 
         // Update the weight and parent.
         path_out[front.vertexIdx] = Path{
-            /* .distance = */ front.weight,
             /* .parent =   */ front.parentIdx,
+            /* .distance = */ front.weight,
         };
 
         // Push all the adjacent nodes onto the heap.
-        for (const typename T::E &edge : T::adjacent(vertices)) {
-            unsigned char vertexIdx = T::dest(edge);
-            unsigned short weight = T::weight(edge);
+        for (const auto &edge : graph.adjacent(front.vertexIdx)) {
+            unsigned char vertexIdx = graph.dest(edge);
+            short weight = graph.weight(edge);
 
             // Skip if we have already found a path to this node.
-            if (path_out[vertexIdx] != -1) {
+            if (path_out[vertexIdx].parent != -1) {
                 continue;
             }
 
             heap.push(WeightedVertex{
-                /* .weight    = */ front.weight + weight,
+                /* .weight    = */ static_cast<short>(front.weight + weight),
                 /* .vertexIdx = */ vertexIdx,
                 /* .parentIdx = */ front.vertexIdx,
             });
