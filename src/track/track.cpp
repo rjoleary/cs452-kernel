@@ -106,6 +106,7 @@ void trackMain() {
     auto prevTime = ctl::time(clockServ).asValue();
     TrackNode *expectedNode = nullptr;
     auto prevDist = 0;
+    auto prevVelocity = 1;
 
     for (;;) {
         ctl::Tid tid;
@@ -123,6 +124,7 @@ void trackMain() {
                 auto next = currNode.edge[DIR_AHEAD].dest;
                 int i = 41;
                 if (expectedNode && expectedNode != &currNode)
+                    // Figure out 
                     bwprintf(COM2, "\033[%d;1HUNEXPECTED NODE HIT, WANTED %s\r\n",
                             i++, expectedNode->name);
                 int dist = currNode.edge[DIR_AHEAD].dist;
@@ -142,10 +144,14 @@ void trackMain() {
                 bwprintf(COM2, "\033[%d;1HDistance: %d\r\n", i++, dist);
 
                 auto currTime = ctl::time(clockServ).asValue();
-                auto velocity = (prevDist*1000)/(currTime - prevTime);
+                auto deltaTime = currTime-prevTime;
+                auto velocity = (prevDist*1000)/deltaTime;
+                bwprintf(COM2, "\033[%d;1HVelocity: %d\r\n", i++, velocity);
+                bwprintf(COM2, "\033[%d;1HExpected time: %d\r\n", i++, (prevDist*1000)/prevVelocity);
+                bwprintf(COM2, "\033[%d;1HActual time: %d\r\n", i++, deltaTime);
                 prevTime = currTime;
                 prevDist = dist;
-                bwprintf(COM2, "\033[%d;1HVelocity: %d\r\n", i++, velocity);
+                prevVelocity = velocity;
 
                 restorecur();
                 flush(COM2);
