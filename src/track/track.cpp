@@ -168,7 +168,7 @@ void trackMain() {
 
             case MsgType::Route: {
                 // Path finding
-                size_t beginIdx = expectedNode - nodes;
+                size_t beginIdx = expectedNode->num;
                 size_t endIdx = msg.route.sensor;
                 Path path[Graph::VSize];
                 dijkstra(Graph{nodes}, beginIdx, path);
@@ -177,7 +177,8 @@ void trackMain() {
                 if (path[endIdx].parent != -1) {
                     short curIdx = endIdx;
                     for (;;) {
-                        bwprintf(COM2, "Node %d, distance: %d\r\n", curIdx, path[curIdx].distance);
+                        bwprintf(COM2, "Node %s, distance: %d\r\n",
+                                nodes[curIdx].name, path[curIdx].distance);
                         if (path[curIdx].parent == curIdx) {
                             break;
                         }
