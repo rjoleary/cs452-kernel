@@ -20,7 +20,11 @@ namespace {
 constexpr ctl::Name TrackServName = {"TrackM"};
 
 enum class MsgType {
-    Sensor, Switch, Route
+    Sensor,
+    Switch,
+    Route,
+    SetStoppingDistance,
+    ClearBrokenSwitches,
 };
 
 struct Message {
@@ -35,6 +39,9 @@ struct Message {
         struct {
             char train, speed, sensor;
         } route;
+        struct {
+            int mm;
+        } setStoppingDistance;
     };
 };
 
@@ -205,6 +212,16 @@ void trackMain() {
                 ~reply(tid, ctl::EmptyMessage);
                 break;
             }
+
+            case MsgType::SetStoppingDistance: {
+                ~reply(tid, ctl::EmptyMessage);
+                break;
+            }
+
+            case MsgType::ClearBrokenSwitches: {
+                ~reply(tid, ctl::EmptyMessage);
+                break;
+            }
         }
     }
 }
@@ -227,5 +244,18 @@ void cmdRoute(int train, int speed, int sensor) {
     msg.route.train = train;
     msg.route.speed = speed;
     msg.route.sensor = sensor;
+    ~send(trackMan, msg, ctl::EmptyMessage);
+}
+
+void cmdSetStoppingDistance(int mm) {
+    static auto trackMan = whoIs(TrackServName).asValue();
+    Message msg{MsgType::SetStoppingDistance};
+    msg.setStoppingDistance.mm = mm;
+    ~send(trackMan, msg, ctl::EmptyMessage);
+}
+
+void cmdClearBrokenSwitches() {
+    static auto trackMan = whoIs(TrackServName).asValue();
+    Message msg{MsgType::ClearBrokenSwitches};
     ~send(trackMan, msg, ctl::EmptyMessage);
 }

@@ -23,11 +23,14 @@ void printHelp() {
         "   help             - Display this help information.\r\n"
         "   li NUMBER        - Toggle train lights.\r\n"
         "   q                - Quit and return to RedBoot.\r\n"
+        "   route TR SP SEN  - Route train to sensor at given speed.\r\n"
         "   rv NUMBER        - Reverse the direction of the train.\r\n"
+        "   ssss NUMBER      - Set the stopping distance in mm.\r\n"
         "   sw NUMBER DIR    - Set switch direction ('S' or 'C').\r\n"
         "   task (TID|NAME)  - Return info about a task.\r\n"
         "   taskall          - Return info about all tasks.\r\n"
         "   tr NUMBER SPEED  - Set train speed (0 for stop).\r\n"
+        "   unbreak          - Mark all sensors as unbroken.\r\n"
     );
 }
 
@@ -297,6 +300,21 @@ int parseCmd(const char *cmd) {
                     ti.tid, name.data, ti.ptid, ti.pri, ti.state, ti.userPercent, ti.sysPercent);
             }
         }
+    } else if (isIdent(t, "ssss")) {
+        DecimalToken number = nextDec(&cmd);
+        if (number.err) {
+            tokenErr("invalid millimeters", number.token.start - cmdStart + 2, number.token.len);
+            return 0;
+        }
+        if (terminateCmd(cmdStart, cmd)) {
+            return 0;
+        }
+        cmdSetStoppingDistance(number.val);
+    } else if (isIdent(t, "unbreak")) {
+        if (terminateCmd(cmdStart, cmd)) {
+            return 0;
+        }
+        cmdClearBrokenSwitches();
     } else if (isIdent(t, "q")) {
         if (terminateCmd(cmdStart, cmd)) {
             return 0;

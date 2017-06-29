@@ -7,6 +7,8 @@
 void trackMain();
 
 void cmdRoute(int train, int speed, int sensor);
+void cmdSetStoppingDistance(int mm);
+void cmdClearBrokenSwitches();
 
 struct Graph {
     TrackNode *vertices;
