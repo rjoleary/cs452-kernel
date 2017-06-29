@@ -8,6 +8,7 @@
 #include <switch.h>
 #include <clock.h>
 #include <path_finding.h>
+#include <train.h>
 
 #include "track_node.h"
 #include "track_data_new.h"
@@ -147,6 +148,14 @@ void trackMain() {
                             }
                         }
                     }
+                    if (pathLength) {
+                        NodeIdx beginIdx = currNode.num;
+                        NodeIdx endIdx = path[pathLength - 1].nodeIdx;
+                        pathLength = dijkstra(Graph{nodes}, beginIdx, endIdx, path);
+                        if (pathLength == 0) {
+                            bwputstr(COM2, "Cannot reroute\r\n");
+                        }
+                    }
                 }
                 if (pathLength) {
                     ASSERT(&currNode == &nodes[path[pathStart].nodeIdx]);
@@ -239,6 +248,7 @@ void trackMain() {
                                 bwprintf(COM2, "Branch curved\r\n");
                         }
                     }
+                    cmdSetSpeed(msg.route.train, msg.route.speed);
                 }
 
                 ~reply(tid, ctl::EmptyMessage);
