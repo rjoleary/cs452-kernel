@@ -1,6 +1,7 @@
 #pragma once
 
 #include <bwio.h>
+#include <std.h>
 
 using namespace ctl;
 
@@ -36,24 +37,24 @@ public:
 
     // Must be: [A-Ea-e]{1-16}
     // TODO: user ErrorOr
-    static Sensor fromString(const char *str, bool &error) {
+    static Sensor fromString(const char *str, size_t len, bool &error) {
         Sensor s;
-        if (!str[0] || !str[1]) {
+        if (len != 2 && len != 3) {
             error = true;
             return s;
         }
-        if (isModule(str[0])) {
-            s.module_ = (str[0] & 0x20) - 'a';
+        if (!isModule(str[0]) || !isDigit(str[1])) {
+            error = true;
+            return s;
         }
-        if (isDigit(str[1])) {
-            s.sensor_ = str[1] - '0';
-        }
-        if (str[2] && isDigit(str[2])) {
+        s.module_ = (str[0] | 0x20) - 'a';
+        s.sensor_ = str[1] - '0';
+        if (len == 3) {
+            if (!isDigit(str[2])) {
+                error = true;
+                return s;
+            }
             s.sensor_ = s.sensor_ * 10 + (str[2] - '0');
-        }
-        if (str[3]) {
-            error = true;
-            return s;
         }
         if (s.sensor_ < 1 || 16 < s.sensor_) {
             error = true;

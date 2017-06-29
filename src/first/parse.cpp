@@ -203,15 +203,21 @@ int parseCmd(const char *cmd) {
             tokenErr("invalid train speed", speed.token.start - cmdStart + 2, speed.token.len);
             return 0;
         }
-        DecimalToken sensor = nextDec(&cmd);
-        if (speed.err) {
-            tokenErr("invalid sensor", sensor.token.start - cmdStart + 2, sensor.token.len);
+        Token sensor = nextToken(&cmd);
+        if (sensor.len == 0) {
+            bwputstr(COM2, "Error: expected a direction\r\n");
+            return 0;
+        }
+        bool err;
+        Sensor sensorParsed = Sensor::fromString(sensor.start, sensor.len, err);
+        if (err) {
+            tokenErr("invalid sensor", sensor.start - cmdStart + 2, sensor.len);
             return 0;
         }
         if (terminateCmd(cmdStart, cmd)) {
             return 0;
         }
-        cmdRoute(number.val, speed.val, sensor.val);
+        cmdRoute(number.val, speed.val, sensorParsed.value());
     } else if (isIdent(t, "rv")) {
         DecimalToken number = nextDec(&cmd);
         if (number.err) {
