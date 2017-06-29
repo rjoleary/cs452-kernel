@@ -126,3 +126,5 @@ SensorSet getSensors();
 
 // Block calling task until any sensor is triggered.
 SensorSet waitTrigger();
+
+void markBrokenSensor(int sensor);

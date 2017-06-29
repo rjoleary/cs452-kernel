@@ -110,58 +110,40 @@ const struct {
     {13, 16, '<'},
 
     // D1-D16
-    {1, 5, '<'},
-    {1, 5, '>'},
-    {5, 7, '^'},
-    {5, 7, 'v'},
-    {3, 19, '>'},
-    {3, 19, '<'},
-    {13, 5, '<'},
-    {13, 5, '>'},
-    {11, 3, '<'},
-    {11, 3, '>'},
-    {9, 3, '>'},
-    {9, 3, '<'},
-    {3, 3, '>'},
-    {3, 3, '<'},
-    {5, 3, '<'},
-    {5, 3, '>'},
+    {5, 12, 'v'},
+    {5, 12, '^'},
+    {3, 21, '>'},
+    {3, 21, '<'},
+    {3, 29, '<'},
+    {3, 29, '>'},
+    {2, 30, 'x'},
+    {2, 30, 'x'},
+    {12, 30, 'v'},
+    {12, 30, '^'},
+    {0, 0, 'x'},
+    {0, 0, 'x'},
+    {0, 0, 'x'},
+    {0, 0, 'x'},
+    {0, 0, 'x'},
+    {0, 0, 'x'},
 
     // E1-E16
-    {1, 5, '<'},
-    {1, 5, '>'},
-    {5, 7, '^'},
-    {5, 7, 'v'},
-    {3, 19, '>'},
-    {3, 19, '<'},
-    {13, 5, '<'},
-    {13, 5, '>'},
-    {11, 3, '<'},
-    {11, 3, '>'},
-    {9, 3, '>'},
-    {9, 3, '<'},
-    {3, 3, '>'},
-    {3, 3, '<'},
-    {5, 3, '<'},
-    {5, 3, '>'},
-
-    // F1-F16
-    {1, 5, '<'},
-    {1, 5, '>'},
-    {5, 7, '^'},
-    {5, 7, 'v'},
-    {3, 19, '>'},
-    {3, 19, '<'},
-    {13, 5, '<'},
-    {13, 5, '>'},
-    {11, 3, '<'},
-    {11, 3, '>'},
-    {9, 3, '>'},
-    {9, 3, '<'},
-    {3, 3, '>'},
-    {3, 3, '<'},
-    {5, 3, '<'},
-    {5, 3, '>'},
+    {0, 0, 'x'},
+    {0, 0, 'x'},
+    {0, 0, 'x'},
+    {0, 0, 'x'},
+    {0, 0, 'x'},
+    {0, 0, 'x'},
+    {0, 0, 'x'},
+    {0, 0, 'x'},
+    {0, 0, 'x'},
+    {0, 0, 'x'},
+    {0, 0, 'x'},
+    {0, 0, 'x'},
+    {0, 0, 'x'},
+    {0, 0, 'x'},
+    {0, 0, 'x'},
+    {0, 0, 'x'},
 };
 
 void printUpdate(const SensorSet &prevSensors, const SensorSet &sensors, unsigned &startOfTriggers) {
@@ -188,7 +170,7 @@ void printUpdate(const SensorSet &prevSensors, const SensorSet &sensors, unsigne
     restorecur();
     flush(COM2);
 
-    for (int i = 0; i < NUM_SENSOR_MODULES - 2; i++) { // TODO: last two modules
+    for (int i = 0; i < NUM_SENSOR_MODULES; i++) {
         for (int j = 0; j < NUM_SENSORS_PER_MODULE; j++) {
             if (sensors(i, j) != prevSensors(i, j)) {
                 auto layout = LAYOUT_POS[i*NUM_SENSORS_PER_MODULE+j];
@@ -311,4 +293,15 @@ SensorSet waitTrigger() {
     SensorSet sens;
     ~send(sensorServTid, Message{MsgType::WaitTrigger}, sens);
     return sens;
+}
+
+void markBrokenSensor(int sensor) {
+    auto layout = LAYOUT_POS[sensor];
+    savecur();
+    setpos(2 + layout.row, layout.col);
+    bwputstr(COM2, "\033[41m");
+    bwputc(COM2, layout.character);
+    bwputstr(COM2, "\033[0m");
+    restorecur();
+    flush(COM2);
 }

@@ -205,4 +205,3 @@ SwitchState waitSwitchChange() {
     ~send(switchServTid, Message{MsgType::WaitChange}, ss);
     return ss;
 }
-

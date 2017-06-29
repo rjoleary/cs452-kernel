@@ -179,6 +179,7 @@ void trackMain() {
                             failNode.type = NODE_BROKEN_SENSOR;
                             bwprintf(COM2, "\033[38;1H\033[JSensor %s broken\r\n",
                                     failNode.name);
+                            markBrokenSensor(failNode.num);
                             sensorBroken = true;
                         }
                         else if (failNode.type == NODE_BRANCH && !sensorBroken) {
@@ -245,7 +246,7 @@ void trackMain() {
                             if (ticks > 0) {
                                 ~reply(delayTid, Reply{ticks});
                             } else {
-                                bwputstr(COM2, "Stopping too late!");
+                                bwputstr(COM2, "Stopping too late!\r\n");
                                 cmdSetSpeed(routingTrain, 0);
                             }
                             isStopping = true;
