@@ -6,6 +6,9 @@ enum NodeType {
     NODE_MERGE,
     NODE_ENTER,
     NODE_EXIT,
+    NODE_BROKEN_SENSOR,
+    NODE_BROKEN_SW_ST,
+    NODE_BROKEN_SW_CV
 };
 
 constexpr auto DIR_AHEAD = 0;

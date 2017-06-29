@@ -93,7 +93,7 @@ void trackMain() {
     auto clockServ = whoIs(ctl::names::ClockServer).asValue();
 
     auto prevTime = ctl::time(clockServ).asValue();
-    TrackNode *expectedNode = nullptr;
+    const TrackNode *expectedNode = nullptr, *previousNode;
     auto prevDist = 0;
     auto prevVelocity = 1;
 
@@ -114,41 +114,78 @@ void trackMain() {
                 bwprintf(COM2, "\033[40;1H\033[JCurrent node: %s\r\n",
                         currNode.name);
 
-                auto next = currNode.edge[DIR_AHEAD].dest;
                 int i = 41;
-                if (expectedNode && expectedNode != &currNode)
-                    // Figure out what is broken
+                if (expectedNode && expectedNode != &currNode) {
                     bwprintf(COM2, "\033[%d;1HUNEXPECTED NODE HIT, WANTED %s\r\n",
                             i++, expectedNode->name);
+                    Path failPath[Graph::VSize];
+                    NodeIdx beginIdx = previousNode->num;
+                    NodeIdx endIdx = currNode.num;
+                    auto failLength = dijkstra(Graph{nodes}, beginIdx, endIdx, failPath);
+                    for (int i = 1; i < failLength-1; ++i) {
+                        auto &failNode = nodes[failPath[i].nodeIdx];
+                        if (failNode.type == NODE_SENSOR) {
+                            failNode.type = NODE_BROKEN_SENSOR;
+                            bwprintf(COM2, "\033[38;1H\033[JSensor %d broken\r\n",
+                                    failNode.num);
+                        }
+                        else if (failNode.type == NODE_BRANCH) {
+                            auto &incorrectDir = switches[failNode.num];
+                            if (incorrectDir == 'C') {
+                                cmdSetSwitch(failNode.num, 'S');
+                                failNode.type = NODE_BROKEN_SW_ST;
+                                incorrectDir = 'S';
+                                bwprintf(COM2, "\033[38;1H\033[JSwitch %d broken, permenantly S\r\n",
+                                        failNode.num);
+                            }
+                            else {
+                                cmdSetSwitch(failNode.num, 'C');
+                                failNode.type = NODE_BROKEN_SW_CV;
+                                incorrectDir = 'C';
+                                bwprintf(COM2, "\033[38;1H\033[JSwitch %d broken, permenantly C\r\n",
+                                        failNode.num);
+                            }
+                        }
+                    }
+                }
                 if (pathLength) {
                     ASSERT(&currNode == &nodes[path[pathStart].nodeIdx]);
+                    int nextSensor = pathStart+1;
+                    for (; nextSensor < pathLength; ++nextSensor)
+                        if (nodes[path[nextSensor].nodeIdx].type == NODE_SENSOR)
+                            break;
+                    for (int i = pathStart+1; i < pathLength; ++i) {
+                        const auto &pathNode = path[i];
+                        const auto &node = nodes[pathNode.nodeIdx];
+                        if (node.type == NODE_BRANCH) {
+                            if (nextSensor > i ||
+                                    path[nextSensor].distance - pathNode.distance < 100) {
+                                const auto &next = nodes[path[i+1].nodeIdx];
+                                char wantedState = 'S';
+                                if (node.edge[DIR_CURVED].dest == &next) {
+                                    wantedState = 'C';
+                                }
+                                if (switches[node.num] != wantedState) {
+                                    cmdSetSwitch(node.num, wantedState);
+                                    switches[node.num] = wantedState;
+                                    bwprintf(COM2, "\033[39;1H\033[JSwitch %d changed to %c\r\n",
+                                            node.num, wantedState);
+                                }
+                            }
+                        }
+                    }
+                    pathStart = nextSensor;
+                    if (pathStart == pathLength)
+                        pathLength = 0;
                 }
                 int dist = currNode.edge[DIR_AHEAD].dist;
+                auto next = currNode.edge[DIR_AHEAD].dest;
                 bwprintf(COM2, "\033[%d;1HPath until next sensor:\r\n", i++);
                 while (next->type != NODE_SENSOR && next->type != NODE_EXIT) {
                     bwprintf(COM2, "\033[%d;1H%s\r\n", i++, next->name);
                     auto dir = DIR_AHEAD;
-                    if (next->type == NODE_BRANCH) {
-                        if (switches[next->num] == 'C')
-                            dir = DIR_CURVED;
-                    }
-                    if (pathLength) {
-                        pathStart++;
-                        ASSERT(next == &nodes[path[pathStart].nodeIdx]);
-                        if (next->type == NODE_BRANCH) {
-                            char wantedState = 'S';
-                            dir = DIR_AHEAD;
-                            if (next->edge[DIR_CURVED].dest 
-                                    == &nodes[path[pathStart+1].nodeIdx]) {
-                                wantedState = 'C';
-                                dir = DIR_CURVED;
-                            }
-                            if (switches[next->num] != wantedState) {
-                                cmdSetSwitch(next->num, wantedState);
-                            }
-                        }
-                    }
-                    bwprintf(COM2, "\033[%d;1HPathStart: %d\r\n", i++, pathStart);
+                    if (next->type == NODE_BRANCH && switches[next->num] == 'C')
+                        dir = DIR_CURVED;
                     dist += next->edge[dir].dist;
                     next = next->edge[dir].dest;
                 }
@@ -161,12 +198,8 @@ void trackMain() {
                 bwprintf(COM2, "\033[%d;1HVelocity: %d\r\n", i++, velocity);
                 bwprintf(COM2, "\033[%d;1HExpected time: %d\r\n", i++, (prevDist*1000)/prevVelocity);
                 bwprintf(COM2, "\033[%d;1HActual time: %d\r\n", i++, deltaTime);
-                if (pathLength) {
-                    pathStart++;
-                    if (pathStart == pathLength)
-                        pathLength = 0;
-                }
                 expectedNode = next;
+                previousNode = &currNode;
                 prevTime = currTime;
                 prevDist = dist;
                 prevVelocity = velocity;
@@ -191,7 +224,6 @@ void trackMain() {
                 pathLength = dijkstra(Graph{nodes}, beginIdx, endIdx, path);
                 pathStart = 0;
 
-                // Print path in reverse
                 if (pathLength == 0) {
                     bwputstr(COM2, "Cannot find path\r\n");
                 } else {
