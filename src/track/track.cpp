@@ -133,6 +133,7 @@ void trackMain() {
     int routingTrain = -1;
     int routingSpeed = -1;
     bool isStopping = false;
+    int overwrittenStoppingDistance = -1;
 
     for (;;) {
         ctl::Tid tid;
@@ -227,7 +228,9 @@ void trackMain() {
                         }
                     }
                     if (!isStopping) {
-                        const auto sd = stoppingDistance(routingTrain, routingSpeed);
+                        const auto sd = overwrittenStoppingDistance != -1 ?
+                                overwrittenStoppingDistance :
+                                stoppingDistance(routingTrain, routingSpeed);
                         if (path[nextSensor].distance < sd) {
                             int ticks = (path[pathStart].distance - sd) * 1000 / prevVelocity / 10;
                             bwprintf(COM2, "Setting delay for %d ticks\r\n", ticks);
