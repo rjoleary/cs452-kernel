@@ -108,6 +108,11 @@ Path finding uses Dijkstra's algorithm where the weight is the distance of each
 node. Our implementation of Dijkstra's has a memory usage proportional to the
 number of nodes in the graph.
 
+The graph used is the one supplied on the course website. Occasionally, when a
+sensor or switch is deemed broken, the node's type is modified to relay this
+information. This way, a broken sensor/switch does not incur any additional 
+cost. Also, the complexity of the graph is not altered.
+
 ### Calibration
 
 Calibration is used to determine the stopping distance for each train at a
