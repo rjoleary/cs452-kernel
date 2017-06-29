@@ -20,9 +20,22 @@ void setpos(unsigned, unsigned);
 namespace {
 constexpr ctl::Name TrackServName = {"TrackM"};
 
+// Returns the stopping distance (mm) for the given train and speed.
+int stoppingDistance(int train, int speed) {
+    // TODO: this is only forwards
+    if (train == 63 && speed == 10) return 807;
+    if (train == 63 && speed == 12) return 974;
+    if (train == 71 && speed == 10) return 494;
+    if (train == 71 && speed == 12) return 807;
+
+    // All other trains
+    return 1000;
+}
+
 enum class MsgType {
     Sensor,
     Switch,
+    Delay,
     Route,
     SetStoppingDistance,
     ClearBrokenSwitches,
@@ -45,6 +58,21 @@ struct Message {
         } setStoppingDistance;
     };
 };
+
+struct Reply {
+    int ticks;
+};
+
+void delayWorker() {
+    auto trackMan = whoIs(TrackServName).asValue();
+    auto clockServ = whoIs(names::ClockServer).asValue();
+    Message msg = {MsgType::Delay};
+    for (;;) {
+        Reply reply;
+        ~send(trackMan, msg, reply);
+        ~delay(clockServ, reply.ticks);
+    }
+}
 
 void sensorNotifierMain() {
     auto serv = whoIs(TrackServName).asValue();
@@ -79,7 +107,6 @@ void switchNotifierMain() {
         switches = newSwitches;
     }
 }
-
 } // unnamed namespace
 
 void trackMain() {
@@ -89,6 +116,7 @@ void trackMain() {
     ~registerAs(TrackServName);
     ~create(ctl::Priority(26), sensorNotifierMain);
     ~create(ctl::Priority(26), switchNotifierMain);
+    auto delayTid = create(ctl::Priority(26), delayWorker).asValue();
 
     auto switches = getSwitchData();
     auto clockServ = whoIs(ctl::names::ClockServer).asValue();
@@ -102,11 +130,22 @@ void trackMain() {
     int pathLength = 0;
     int pathStart = 0;
 
+    int routingTrain = -1;
+    int routingSpeed = -1;
+
     for (;;) {
         ctl::Tid tid;
         Message msg;
         ~receive(&tid, msg);
         switch (msg.type) {
+            case MsgType::Delay: {
+                bwputstr(COM2, "RECEIVED DELAY\r\n");
+                if (routingTrain != -1) {
+                    cmdSetSpeed(routingTrain, 0);
+                }
+                break;
+            }
+
             case MsgType::Sensor: {
                 ~reply(tid, ctl::EmptyMessage);
                 const auto &currNode = 
@@ -185,9 +224,18 @@ void trackMain() {
                             }
                         }
                     }
+                    const auto sd = stoppingDistance(routingTrain, routingSpeed);
+                    if (path[nextSensor].distance < sd) {
+                        int ticks = (path[pathStart].distance - sd)*1000 / prevVelocity / 10;
+                        bwprintf(COM2, "Setting delay for %d ticks\r\n", ticks);
+                        if (tick > 0) {
+                            ~reply(delayTid, Reply{ticks});
+                        }
+                    }
                     pathStart = nextSensor;
-                    if (pathStart == pathLength)
+                    if (pathStart == pathLength) {
                         pathLength = 0;
+                    }
                 }
                 int dist = currNode.edge[DIR_AHEAD].dist;
                 auto next = currNode.edge[DIR_AHEAD].dest;
@@ -252,6 +300,10 @@ void trackMain() {
                     }
                     cmdSetSpeed(msg.route.train, msg.route.speed);
                 }
+
+                // Store variables for later.
+                routingTrain = msg.route.train;
+                routingSpeed = msg.route.speed;
 
                 ~reply(tid, ctl::EmptyMessage);
                 break;
