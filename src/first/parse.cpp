@@ -18,7 +18,7 @@ void setpos(unsigned row, unsigned col);
 void printHelp() {
     bwputstr(COM2,
         "Commands:\r\n"
-        "   cal NUMBER       - stop train on the next trigger.\r\n"
+        "   cal TR SP SEN    - stop train on the next trigger.\r\n"
         "   com i [BYTE...]  - Send arbitrary byte over COMi.\r\n"
         "   help             - Display this help information.\r\n"
         "   li NUMBER        - Toggle train lights.\r\n"
@@ -137,17 +137,30 @@ int parseCmd(const char *cmd) {
             tokenErr("invalid train speed", speed.token.start - cmdStart + 2, speed.token.len);
             return 0;
         }
+        Token sensor = nextToken(&cmd);
+        if (sensor.len == 0) {
+            bwputstr(COM2, "Error: expected a direction\r\n");
+            return 0;
+        }
+        bool err;
+        Sensor sensorParsed = Sensor::fromString(sensor.start, sensor.len, err);
+        if (err) {
+            tokenErr("invalid sensor", sensor.start - cmdStart + 2, sensor.len);
+            return 0;
+        }
         if (terminateCmd(cmdStart, cmd)) {
             return 0;
         }
+        cmdToggleLight(number.val);
         cmdSetSpeed(number.val, speed.val);
         for (;;) {
             auto sensors = waitTrigger();
-            if (sensors(2, 13)) {
+            if (sensors(sensorParsed)) {
                 break;
             }
         }
         cmdSetSpeed(number.val, 0);
+        cmdToggleLight(number.val);
     } else if (isIdent(t, "com")) {
         DecimalToken com = nextDec(&cmd);
         if (com.err || (com.val != 1 && com.val != 2)) {
