@@ -123,14 +123,16 @@ void trackMain() {
                     NodeIdx beginIdx = previousNode->num;
                     NodeIdx endIdx = currNode.num;
                     auto failLength = dijkstra(Graph{nodes}, beginIdx, endIdx, failPath);
+                    bool sensorBroken = false;
                     for (int i = 1; i < failLength-1; ++i) {
                         auto &failNode = nodes[failPath[i].nodeIdx];
                         if (failNode.type == NODE_SENSOR) {
                             failNode.type = NODE_BROKEN_SENSOR;
                             bwprintf(COM2, "\033[38;1H\033[JSensor %d broken\r\n",
                                     failNode.num);
+                            sensorBroken = true;
                         }
-                        else if (failNode.type == NODE_BRANCH) {
+                        else if (failNode.type == NODE_BRANCH && !sensorBroken) {
                             auto &incorrectDir = switches[failNode.num];
                             if (incorrectDir == 'C') {
                                 cmdSetSwitch(failNode.num, 'S');
@@ -262,6 +264,13 @@ void trackMain() {
 
             case MsgType::ClearBrokenSwitches: {
                 ~reply(tid, ctl::EmptyMessage);
+                for (int i = 0; i < 80+22; ++i) {
+                    if (nodes[i].type == NODE_BROKEN_SENSOR)
+                        nodes[i].type = NODE_SENSOR;
+                    if (nodes[i].type == NODE_BROKEN_SW_ST
+                            || nodes[i].type == NODE_BROKEN_SW_CV)
+                        nodes[i].type = NODE_BRANCH;
+                }
                 break;
             }
         }
