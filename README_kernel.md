@@ -1,4 +1,4 @@
-# CS 452 Train Milestone 1
+# CS 452 Kernel 4
 
 Name: The Coldwell Kernel
 
@@ -6,7 +6,7 @@ Students: Ryan O'Leary (rj2olear) and Elnar Dakeshov (edakesho)
 
 Student Ids: 20509502 and 20577578
 
-Date: June 29, 2017
+Date: June 14, 2017
 
 
 ## Overview
@@ -50,7 +50,7 @@ Git hash: f09f101470cbd9eeb045df448e87411852d8c0e3
 
 In RedBoot, run the following:
 
-    > load -b 0x00218000 -h 10.15.167.5 "ARM/edakesho/tm1.elf"
+    > load -b 0x00218000 -h 10.15.167.5 "ARM/rj2olear/k4.elf"
     > go
 
 
@@ -61,8 +61,8 @@ In RedBoot, run the following:
 
 Where `<ARGUMENTS>` may be any combination of the following:
 
-- `CACHE_ENABLED=0`: Disables the instruction and data caches
-- `OPT_ENABLED=0`: Disables optimizations
+- `CACHE_ENABLED=1`: Enables the instruction and data caches
+- `OPT_ENABLED=1`: Enables optimizations (`-O2` and `-flto`)
 
 
 ## Interface
@@ -73,7 +73,7 @@ The following convenient features can be found on the user interface:
 - GO/STOP, toggle with Tab key
 - Percent user time spent in the idle task compared to other tasks
 - Top 10 most recent sensor triggers
-- Track A layout including 22 switch states and broken sensors
+- 22 switch states
 - Command prompt
 
 
@@ -596,8 +596,70 @@ tests.
 
 ## Bugs
 
-- Extra debug information is printed all over the terminal.
-- Sensor modules D and E are printed to the wrong location on the GUI.
+- If you enter too many commands, the terminal scrolls out and makes the
+  interface look like a mess. It helps if you make the terminal window very
+  tall.
 - There is a relatively long pause before entering and exiting the prompt. This
   ensures the switches have powered off, but can probably be more streamlined.
 - Corrupt data from the UART is treated like regular data.
+
+## List of files
+
+    .gitignore
+    Makefile
+    README.md
+    bench.txt
+    include/def.h
+    include/interrupt.h
+    include/panic.h
+    include/profiler.h
+    include/scheduler.h
+    include/syscall.h
+    include/task.h
+    include/user/bwio.h
+    include/user/circularbuffer.h
+    include/user/clock.h
+    include/user/def.h
+    include/user/err.h
+    include/user/event.h
+    include/user/heap.h
+    include/user/io.h
+    include/user/itc.h
+    include/user/ns.h
+    include/user/parse.h
+    include/user/sensor.h
+    include/user/std.h
+    include/user/switch.h
+    include/user/syscall.h
+    include/user/task.h
+    include/user/train.h
+    include/user/ts7200.h
+    include/user/types.h
+    logo.txt
+    makeall.sh
+    orex.ld
+    src/clock/main.cpp
+    src/first/main.cpp
+    src/first/parse.cpp
+    src/first/sensor.cpp
+    src/first/switch.cpp
+    src/first/terminal.cpp
+    src/first/train.cpp
+    src/idle/main.cpp
+    src/io/main.cpp
+    src/kernel/buildstr.cpp
+    src/kernel/interrupt.cpp
+    src/kernel/main.cpp
+    src/kernel/panic.cpp
+    src/kernel/profiler.cpp
+    src/kernel/profiler_irq.s
+    src/kernel/scheduler.cpp
+    src/kernel/syscall.s
+    src/kernel/task.cpp
+    src/ns/main.cpp
+    src/user/bwio.cpp
+    src/user/event.cpp
+    src/user/fast_memcpy.s
+    src/user/itc.cpp
+    src/user/std.cpp
+    src/user/task.cpp
