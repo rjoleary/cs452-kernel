@@ -25,8 +25,9 @@ int stoppingDistance(int train, int speed) {
     // TODO: this is only forwards
     if (train == 63 && speed == 10) return 807;
     if (train == 63 && speed == 12) return 974;
-    if (train == 71 && speed == 10) return 494;
+    if (train == 71 && speed == 10) return 370;
     if (train == 71 && speed == 12) return 807;
+    if (train == 76 && speed == 10) return 370;
 
     // All other trains
     return 1000;
@@ -144,6 +145,9 @@ void trackMain() {
                 bwputstr(COM2, "RECEIVED DELAY\r\n");
                 if (routingTrain != -1) {
                     cmdSetSpeed(routingTrain, 0);
+                    cmdToggleLight(routingTrain);
+                    routingTrain = -1;
+                    pathLength = 0;
                 }
                 isStopping = false;
                 break;
@@ -157,6 +161,9 @@ void trackMain() {
                 bwprintf(COM2, "\033[40;1H\033[JCurrent node: %s\r\n",
                         currNode.name);
 
+                auto currTime = ctl::time(clockServ).asValue();
+                auto deltaTime = currTime-prevTime;
+                auto velocity = (prevDist*1000)/deltaTime;
                 int i = 41;
                 if (expectedNode && expectedNode != &currNode) {
                     bwprintf(COM2, "\033[%d;1HUNEXPECTED NODE HIT, WANTED %s\r\n",
@@ -170,8 +177,8 @@ void trackMain() {
                         auto &failNode = nodes[failPath[i].nodeIdx];
                         if (failNode.type == NODE_SENSOR) {
                             failNode.type = NODE_BROKEN_SENSOR;
-                            bwprintf(COM2, "\033[38;1H\033[JSensor %d broken\r\n",
-                                    failNode.num);
+                            bwprintf(COM2, "\033[38;1H\033[JSensor %s broken\r\n",
+                                    failNode.name);
                             sensorBroken = true;
                         }
                         else if (failNode.type == NODE_BRANCH && !sensorBroken) {
@@ -199,6 +206,7 @@ void trackMain() {
                         if (pathLength == 0) {
                             bwputstr(COM2, "Cannot reroute\r\n");
                         }
+                        pathStart = 0;
                     }
                 }
                 if (pathLength) {
@@ -232,7 +240,7 @@ void trackMain() {
                                 overwrittenStoppingDistance :
                                 stoppingDistance(routingTrain, routingSpeed);
                         if (path[nextSensor].distance < sd) {
-                            int ticks = (path[pathStart].distance - sd) * 1000 / prevVelocity / 10;
+                            int ticks = (path[pathStart].distance - sd) * 1000 / velocity / 10;
                             bwprintf(COM2, "Setting delay for %d ticks\r\n", ticks);
                             if (ticks > 0) {
                                 ~reply(delayTid, Reply{ticks});
@@ -241,6 +249,9 @@ void trackMain() {
                                 cmdSetSpeed(routingTrain, 0);
                             }
                             isStopping = true;
+                        }
+                        else {
+                            bwprintf(COM2, "Incorrect ticks\r\n");
                         }
                     }
                     pathStart = nextSensor;
@@ -262,9 +273,6 @@ void trackMain() {
                 bwprintf(COM2, "\033[%d;1H%s\r\n", i++, next->name);
                 bwprintf(COM2, "\033[%d;1HDistance: %d\r\n", i++, dist);
 
-                auto currTime = ctl::time(clockServ).asValue();
-                auto deltaTime = currTime-prevTime;
-                auto velocity = (prevDist*1000)/deltaTime;
                 bwprintf(COM2, "\033[%d;1HVelocity: %d\r\n", i++, velocity);
                 bwprintf(COM2, "\033[%d;1HExpected time: %d\r\n", i++, (prevDist*1000)/prevVelocity);
                 bwprintf(COM2, "\033[%d;1HActual time: %d\r\n", i++, deltaTime);
@@ -293,6 +301,7 @@ void trackMain() {
                 NodeIdx endIdx = msg.route.sensor;
                 pathLength = dijkstra(Graph{nodes}, beginIdx, endIdx, path);
                 pathStart = 0;
+                isStopping = false;
 
                 if (pathLength == 0) {
                     bwputstr(COM2, "Cannot find path\r\n");
