@@ -132,6 +132,7 @@ void trackMain() {
 
     int routingTrain = -1;
     int routingSpeed = -1;
+    bool isStopping = false;
 
     for (;;) {
         ctl::Tid tid;
@@ -143,6 +144,7 @@ void trackMain() {
                 if (routingTrain != -1) {
                     cmdSetSpeed(routingTrain, 0);
                 }
+                isStopping = false;
                 break;
             }
 
@@ -224,12 +226,18 @@ void trackMain() {
                             }
                         }
                     }
-                    const auto sd = stoppingDistance(routingTrain, routingSpeed);
-                    if (path[nextSensor].distance < sd) {
-                        int ticks = (path[pathStart].distance - sd)*1000 / prevVelocity / 10;
-                        bwprintf(COM2, "Setting delay for %d ticks\r\n", ticks);
-                        if (tick > 0) {
-                            ~reply(delayTid, Reply{ticks});
+                    if (!isStopping) {
+                        const auto sd = stoppingDistance(routingTrain, routingSpeed);
+                        if (path[nextSensor].distance < sd) {
+                            int ticks = (path[pathStart].distance - sd) * 1000 / prevVelocity / 10;
+                            bwprintf(COM2, "Setting delay for %d ticks\r\n", ticks);
+                            if (ticks > 0) {
+                                ~reply(delayTid, Reply{ticks});
+                            } else {
+                                bwputstr(COM2, "Stopping too late!");
+                                cmdSetSpeed(routingTrain, 0);
+                            }
+                            isStopping = true;
                         }
                     }
                     pathStart = nextSensor;
