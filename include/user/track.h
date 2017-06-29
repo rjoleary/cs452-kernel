@@ -15,9 +15,9 @@ struct Graph {
 
     auto adjacentN(int idx) const {
         switch (vertices[idx].type) {
-            case NODE_SENSOR: return 1;
             case NODE_BRANCH: return 2;
-            case NODE_MERGE: return 1;
+            case NODE_SENSOR:
+            case NODE_MERGE:
             case NODE_ENTER: return 1;
             case NODE_EXIT: return 0;
             default: return 0; // TODO: make enum class

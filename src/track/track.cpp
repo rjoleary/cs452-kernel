@@ -84,10 +84,15 @@ void trackMain() {
 
     auto switches = getSwitchData();
     auto clockServ = whoIs(ctl::names::ClockServer).asValue();
+
     auto prevTime = ctl::time(clockServ).asValue();
     TrackNode *expectedNode = nullptr;
     auto prevDist = 0;
     auto prevVelocity = 1;
+
+    Path path[Graph::VSize];
+    int pathLength = 0;
+    int pathStart = 0;
 
     for (;;) {
         ctl::Tid tid;
@@ -105,9 +110,12 @@ void trackMain() {
                 auto next = currNode.edge[DIR_AHEAD].dest;
                 int i = 41;
                 if (expectedNode && expectedNode != &currNode)
-                    // Figure out 
+                    // Figure out what is broken
                     bwprintf(COM2, "\033[%d;1HUNEXPECTED NODE HIT, WANTED %s\r\n",
                             i++, expectedNode->name);
+                if (pathLength) {
+                    ASSERT(&currNode == &nodes[path[pathStart].nodeIdx]);
+                }
                 int dist = currNode.edge[DIR_AHEAD].dist;
                 bwprintf(COM2, "\033[%d;1HPath until next sensor:\r\n", i++);
                 while (next->type != NODE_SENSOR && next->type != NODE_EXIT) {
@@ -117,10 +125,26 @@ void trackMain() {
                         if (switches[next->num] == 'C')
                             dir = DIR_CURVED;
                     }
+                    if (pathLength) {
+                        pathStart++;
+                        ASSERT(next == &nodes[path[pathStart].nodeIdx]);
+                        if (next->type == NODE_BRANCH) {
+                            char wantedState = 'S';
+                            dir = DIR_AHEAD;
+                            if (next->edge[DIR_CURVED].dest 
+                                    == &nodes[path[pathStart+1].nodeIdx]) {
+                                wantedState = 'C';
+                                dir = DIR_CURVED;
+                            }
+                            if (switches[next->num] != wantedState) {
+                                cmdSetSwitch(next->num, wantedState);
+                            }
+                        }
+                    }
+                    bwprintf(COM2, "\033[%d;1HPathStart: %d\r\n", i++, pathStart);
                     dist += next->edge[dir].dist;
                     next = next->edge[dir].dest;
                 }
-                expectedNode = next;
                 bwprintf(COM2, "\033[%d;1H%s\r\n", i++, next->name);
                 bwprintf(COM2, "\033[%d;1HDistance: %d\r\n", i++, dist);
 
@@ -130,6 +154,12 @@ void trackMain() {
                 bwprintf(COM2, "\033[%d;1HVelocity: %d\r\n", i++, velocity);
                 bwprintf(COM2, "\033[%d;1HExpected time: %d\r\n", i++, (prevDist*1000)/prevVelocity);
                 bwprintf(COM2, "\033[%d;1HActual time: %d\r\n", i++, deltaTime);
+                if (pathLength) {
+                    pathStart++;
+                    if (pathStart == pathLength)
+                        pathLength = 0;
+                }
+                expectedNode = next;
                 prevTime = currTime;
                 prevDist = dist;
                 prevVelocity = velocity;
@@ -151,19 +181,19 @@ void trackMain() {
                 // Path finding
                 NodeIdx beginIdx = expectedNode->num;
                 NodeIdx endIdx = msg.route.sensor;
-                Path path[Graph::VSize];
-                int n = dijkstra(Graph{nodes}, beginIdx, endIdx, path);
+                pathLength = dijkstra(Graph{nodes}, beginIdx, endIdx, path);
+                pathStart = 0;
 
                 // Print path in reverse
-                if (n == 0) {
+                if (pathLength == 0) {
                     bwputstr(COM2, "Cannot find path\r\n");
                 } else {
-                    for (int i = 0; i < n; i++) {
+                    for (int i = 0; i < pathLength; i++) {
                         auto nodeIdx = path[i].nodeIdx;
                         bwprintf(COM2, "Node %s, distance: %d\r\n",
                                 nodes[nodeIdx].name, path[i].distance);
                         if (nodes[nodeIdx].type == NODE_BRANCH) {
-                            if (nodes[nodeIdx].edge[DIR_STRAIGHT].src
+                            if (nodes[nodeIdx].edge[DIR_STRAIGHT].dest
                                     == &nodes[path[i+1].nodeIdx])
                                 bwprintf(COM2, "Branch straight\r\n");
                             else

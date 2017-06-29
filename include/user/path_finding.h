@@ -48,20 +48,14 @@ int dijkstra(const T &graph, NodeIdx start, NodeIdx end, Path (&path_out)[T::VSi
     struct Tree {
         // Index to the parent node. The start node has itself as the parent.
         // Unreachable nodes have -1 as their parent.
-        short parent;
+        short parent = -1;
 
         // Distance to this node from the start node. Unreachable nodes have a
         // value of -1.
-        short distance;
+        short distance = -1;
 
         unsigned char nNodes;
     } tree[T::VSize];
-
-    // Reset the output array in case it has already been used.
-    for (auto &p : tree) {
-        p.parent = -1;
-        p.distance = -1;
-    }
 
     // Push the first node onto the heap.
     Heap<T::VSize, WeightedVertex, Comp> heap;
@@ -75,6 +69,8 @@ int dijkstra(const T &graph, NodeIdx start, NodeIdx end, Path (&path_out)[T::VSi
     while (!heap.empty()) {
         // Pop the shortest path from the heap.
         WeightedVertex front = heap.pop();
+
+        if (tree[front.vertexIdx].parent != -1) continue;
 
         // Update the weight and parent.
         tree[front.vertexIdx] = Tree{
