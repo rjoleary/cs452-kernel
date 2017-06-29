@@ -321,6 +321,7 @@ void trackMain() {
             }
 
             case MsgType::SetStoppingDistance: {
+                overwrittenStoppingDistance = msg.setStoppingDistance.mm;
                 ~reply(tid, ctl::EmptyMessage);
                 break;
             }
