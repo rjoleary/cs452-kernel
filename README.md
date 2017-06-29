@@ -123,12 +123,30 @@ reverse.
 
 For accurate results, the average of three trials is taken.
 
-Here is the data hard-coded into the program:
-
-
 
 ### Stopping Distance
 
+The results from calibration provided these stopping distances:
+
+- Train 63:
+    - Speed: 10
+        - Forward: 807 mm
+        - Reverse: 899 mm
+    - Speed: 12
+        - Forward: 974 mm
+        - Reverse: 1049 mm
+- Train 71
+    - Speed: 10
+        - Forward: 494 mm
+        - Reverse: 625 mm
+    - Speed: 12
+        - Forward: 807 mm
+        - Reverse: 953 mm
+
+At each sensor, the distance to the end of the route is calculated. With the
+velocity, it is possible to estimate the stopping time. If the stopping time
+will pass before the next sensor, a delay is entered to stop the train at the
+given stopping time.
 
 
 ## Bugs
