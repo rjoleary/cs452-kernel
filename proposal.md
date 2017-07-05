@@ -25,11 +25,9 @@ Project Type: Game
 - Trains must not collide! However, in their attempt to reach the same Pokemon,
   they might have to stop to avoid a collision. When two trains stop near each
   other, a battle ensues!
-- Through the terminal is also possible to manually engage two trains in a
-  battle.
-- The train with the best and most Pokemon (sum of all the Pokemon weights)
-  wins the battle. The losing trainer must give a random Pokemon to the winning
-  train and retreat.
+- With the terminal is also possible to manually engage two trains in a battle.
+- The train with the best total weight of its Pokemon wins the battle. The
+  losing trainer must give a random Pokemon to the winning train and retreat.
 - The GUI will display:
     - Pokemon locations
     - Pokemon collected by each train
@@ -44,10 +42,10 @@ Project Type: Game
 2. The trainers are adversarial, so we need to write a decent AI to select
    which Pokemon to pursue. For example, should the train attempt to collect a
    Pokemon further out of its way because it is stronger? This is an
-   optimization challenge.
+   optimization challenge. The Pokemon also follow branches unpredictably which
+   adds to the excitement.
 3. The trains are attempting to stop on a moving Pokemon while they are moving
-   themselves. The Pokemon also follow branches unpredictably which adds to the
-   excitement.
+   themselves.
 
 
 ## Technical Solutions
@@ -56,12 +54,14 @@ Each point corresponds to the same number in the previous section.
 
 1. Hopefully, this is a challenge we complete with milestone 2.
 2. This adds onto the existing path finding implementation. The weight of the
-   Pokemon subtracks from the length of the path.
+   Pokemon subtracts from the length of the path. As for a branch
+   misprediction, we want to be on the path which leads to the next most
+   optimal Pokemon.
 3. If we measure stopping distance as a function of the train's velocity,
    `S(t_v)`, then the stopping time relative `t` to the moving Pokemon
    (velocity `p_v` and position `p_d`) becomes `t = (p_d-p_v*t-S(t_v))/t_v`
-   (solve for `t`). As for a branch misprediction, we want to be on the path
-   which leads to the next most optimal Pokemon.
+   (solve for `t`). The equation may need some tweaking, but is certainly
+   possible when you take into account relative velocities.
 
 
 ## Appendix: What is Pokemon?
@@ -72,7 +72,7 @@ rundown:
 - `Pokemon` (plural `Pokemon`) are fantasy animals each with their own unique
   ability. Probably the most famous Pokemon is Pikachu, but there are many
   others such as Charmander, Bulbasaur and Mew.
-- `Pokemon Trainers` travel the corners of the map in search of Pokemon. The
+- `Pokemon Trainers` travel the corners of the map in search of Pokemon. They
   collect the Pokemon in `Pokeballs` with the hope of one day "catching 'em
   all".
 - `Pokemon Battles` take place between Pokemon trainers to determine who is the
