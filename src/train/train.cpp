@@ -21,21 +21,30 @@ enum class MsgType : char {
 
 struct alignas(4) Message {
     MsgType type;
-    char train, speed;
+    Train train;
+    char speed;
+};
+
+// Message sent to new trains.
+struct alignas(4) InitMessage {
+    Train train;
 };
 
 // Manages a single train.
 void trainMain() {
     // Receive train number from the train man.
-    unsigned number;
+    InitMessage initMessage;
     ctl::Tid trainMan;
-    ~receive(&trainMan, number);
+    ~receive(&trainMan, initMessage);
     ~reply(trainMan, ctl::EmptyMessage);
+
+    Train number(initMessage.train);
 
     // Register as "TrainXX".
     ctl::Name name{"TrainXX"};
-    name.data[5] = number / 10 % 10 + '0';
-    name.data[6] = number % 10 + '0';
+    int n = number.underlying();
+    name.data[5] = n / 10 % 10 + '0';
+    name.data[6] = n % 10 + '0';
     ~registerAs(name);
 
     // Get clock server.
@@ -47,7 +56,7 @@ void trainMain() {
     const char SPEED_MASK = 0x0f;
 
     // Receive messages from the train man.
-    Message msg{MsgType::CheckIn, char(number)};
+    Message msg{MsgType::CheckIn, number};
     for (;;) {
         Message rply;
         ~send(trainMan, msg, rply);
@@ -56,7 +65,7 @@ void trainMain() {
             case MsgType::LightOn: {
                 speed = speed & LIGHT_MASK;
                 bwputc(COM1, speed);
-                bwputc(COM1, number);
+                bwputc(COM1, number.underlying());
                 flush(COM1);
                 break;
             }
@@ -64,7 +73,7 @@ void trainMain() {
             case MsgType::LightOff: {
                 speed = speed & ~LIGHT_MASK;
                 bwputc(COM1, speed);
-                bwputc(COM1, number);
+                bwputc(COM1, number.underlying());
                 flush(COM1);
                 break;
             }
@@ -72,7 +81,7 @@ void trainMain() {
             case MsgType::LightToggle: {
                 speed = speed ^ LIGHT_MASK;
                 bwputc(COM1, speed);
-                bwputc(COM1, number);
+                bwputc(COM1, number.underlying());
                 flush(COM1);
                 break;
             }
@@ -80,7 +89,7 @@ void trainMain() {
             case MsgType::SetSpeed: {
                 speed = (speed & ~SPEED_MASK) | (rply.speed & SPEED_MASK);
                 bwputc(COM1, speed);
-                bwputc(COM1, number);
+                bwputc(COM1, number.underlying());
                 flush(COM1);
                 break;
             }
@@ -89,24 +98,24 @@ void trainMain() {
                 if (speed & SPEED_MASK) {
                     // Stop
                     bwputc(COM1, speed & ~SPEED_MASK);
-                    bwputc(COM1, number);
+                    bwputc(COM1, number.underlying());
                     flush(COM1);
                     // 200 milliseconds for each train speed
                     ~ctl::delay(clockServer, 20 * (speed & SPEED_MASK));
                 }
                 // Reverse
                 bwputc(COM1, speed | SPEED_MASK);
-                bwputc(COM1, number);
+                bwputc(COM1, number.underlying());
                 flush(COM1);
                 // Without this delay, sometimes train does not reverse
                 ~ctl::delay(clockServer, 10);
                 // Set speed
                 bwputc(COM1, speed);
-                bwputc(COM1, number);
+                bwputc(COM1, number.underlying());
                 flush(COM1);
                 break;
             }
-            
+
             default: {
                 ASSERT(false);
             }
@@ -134,7 +143,7 @@ void trainManMain() {
         ctl::Tid tid;
         Message msg;
         ~receive(&tid, msg);
-        Train &train = trains[msg.train-1];
+        Train &train = trains[msg.train.underlying()-1];
 
         // If this is a train checking in, reply with the queued message.
         if (msg.type == MsgType::CheckIn) {
@@ -148,7 +157,7 @@ void trainManMain() {
             // Create new task for the train if one does not exist.
             if (train.tid == ctl::INVALID_TID) {
                 train.tid = create(ctl::Priority(26), trainMain).asValue();
-                ~send(train.tid, unsigned(msg.train), ctl::EmptyMessage);
+                ~send(train.tid, InitMessage{msg.train}, ctl::EmptyMessage);
             }
 
             // Send the message to the train or queue it.
@@ -164,28 +173,27 @@ void trainManMain() {
     }
 }
 
-void stopTrains() {
+void TrainServer::stopTrains() {
     bwputc(COM1, 97);
     flush(COM1);
 }
 
-void goTrains() {
+void TrainServer::goTrains() {
     bwputc(COM1, 96);
     flush(COM1);
 }
 
-void cmdToggleLight(int train) {
-    if (train < 1 || 80 < train) {
+void TrainServer::cmdToggleLight(Train train) {
+    if (train.underlying() < 1 || 80 < train.underlying()) {
         bwputstr(COM2, "Error: train number must be between 1 and 80 inclusive\r\n");
         return;
     }
-    static auto trManServ = whoIs(TrManName).asValue();
-    Message msg{MsgType::LightToggle, char(train)};
-    ~send(trManServ, msg, ctl::EmptyMessage);
+    Message msg{MsgType::LightToggle, train};
+    ~send(tid, msg, ctl::EmptyMessage);
 }
 
-void cmdSetSpeed(int train, int speed) {
-    if (train < 1 || 80 < train) {
+void TrainServer::cmdSetSpeed(Train train, int speed) {
+    if (train.underlying() < 1 || 80 < train.underlying()) {
         bwputstr(COM2, "Error: train number must be between 1 and 80 inclusive\r\n");
         return;
     }
@@ -193,17 +201,15 @@ void cmdSetSpeed(int train, int speed) {
         bwputstr(COM2, "Error: speed must be between 0 and 14 inclusive\r\n");
         return;
     }
-    static auto trManServ = whoIs(TrManName).asValue();
-    Message msg{MsgType::SetSpeed, char(train), char(speed)};
-    ~send(trManServ, msg, ctl::EmptyMessage);
+    Message msg{MsgType::SetSpeed, train, char(speed)};
+    ~send(tid, msg, ctl::EmptyMessage);
 }
 
-void cmdReverse(int train) {
-    if (train < 1 || 80 < train) {
+void TrainServer::cmdReverse(Train train) {
+    if (train.underlying() < 1 || 80 < train.underlying()) {
         bwputstr(COM2, "Error: train number must be between 1 and 80 inclusive\r\n");
         return;
     }
-    static auto trManServ = whoIs(TrManName).asValue();
-    Message msg{MsgType::Reverse, char(train)};
-    ~send(trManServ, msg, ctl::EmptyMessage);
+    Message msg{MsgType::Reverse};
+    ~send(tid, msg, ctl::EmptyMessage);
 }

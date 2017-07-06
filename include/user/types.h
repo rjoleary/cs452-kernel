@@ -9,6 +9,7 @@ public:
     constexpr explicit NamedType(T t_) : t(t_){}
     constexpr NamedType() = default;
     constexpr bool operator==(const NamedType &rhs) const { return t == rhs.t; }
+    constexpr bool operator!=(const NamedType &rhs) const { return t != rhs.t; }
     constexpr bool operator<(const NamedType &rhs) const { return t < rhs.t; }
     constexpr bool operator>(const NamedType &rhs) const { return t > rhs.t; }
     T& underlying() { return t; }

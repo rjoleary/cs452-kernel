@@ -21,13 +21,13 @@ namespace {
 constexpr ctl::Name TrackServName = {"TrackM"};
 
 // Returns the stopping distance (mm) for the given train and speed.
-int stoppingDistance(int train, int speed) {
+int stoppingDistance(Train train, int speed) {
     // TODO: this is only forwards
-    if (train == 63 && speed == 10) return 807;
-    if (train == 63 && speed == 12) return 974;
-    if (train == 71 && speed == 10) return 370;
-    if (train == 71 && speed == 12) return 807;
-    if (train == 76 && speed == 10) return 370;
+    if (train.underlying() == 63 && speed == 10) return 807;
+    if (train.underlying() == 63 && speed == 12) return 974;
+    if (train.underlying() == 71 && speed == 10) return 370;
+    if (train.underlying() == 71 && speed == 12) return 807;
+    if (train.underlying() == 76 && speed == 10) return 370;
 
     // All other trains
     return 1000;
@@ -52,7 +52,8 @@ struct Message {
             char sw, state;
         } turnout;
         struct {
-            char train, speed, sensor;
+            Train train;
+            char speed, sensor;
         } route;
         struct {
             int mm;
@@ -118,6 +119,7 @@ void trackMain() {
     ~create(ctl::Priority(26), sensorNotifierMain);
     ~create(ctl::Priority(26), switchNotifierMain);
     auto delayTid = create(ctl::Priority(26), delayWorker).asValue();
+    TrainServer trainServer;
 
     auto switches = getSwitchData();
     auto clockServ = whoIs(ctl::names::ClockServer).asValue();
@@ -131,7 +133,7 @@ void trackMain() {
     int pathLength = 0;
     int pathStart = 0;
 
-    int routingTrain = -1;
+    Train routingTrain;
     int routingSpeed = -1;
     bool isStopping = false;
     int overwrittenStoppingDistance = -1;
@@ -143,10 +145,10 @@ void trackMain() {
         switch (msg.type) {
             case MsgType::Delay: {
                 bwputstr(COM2, "RECEIVED DELAY\r\n");
-                if (routingTrain != -1) {
-                    cmdSetSpeed(routingTrain, 0);
-                    cmdToggleLight(routingTrain);
-                    routingTrain = -1;
+                if (routingTrain != INVALID_TRAIN) {
+                    trainServer.cmdSetSpeed(routingTrain, 0);
+                    trainServer.cmdToggleLight(routingTrain);
+                    routingTrain = INVALID_TRAIN;
                     pathLength = 0;
                 }
                 isStopping = false;
@@ -247,7 +249,7 @@ void trackMain() {
                                 ~reply(delayTid, Reply{ticks});
                             } else {
                                 bwputstr(COM2, "Stopping too late!\r\n");
-                                cmdSetSpeed(routingTrain, 0);
+                                trainServer.cmdSetSpeed(routingTrain, 0);
                             }
                             isStopping = true;
                         }
@@ -319,7 +321,7 @@ void trackMain() {
                                 bwprintf(COM2, "Branch curved\r\n");
                         }
                     }
-                    cmdSetSpeed(msg.route.train, msg.route.speed);
+                    trainServer.cmdSetSpeed(msg.route.train, msg.route.speed);
                 }
 
                 // Store variables for later.
@@ -366,7 +368,7 @@ void cmdRoute(int train, int speed, int sensor) {
     }
     static auto trackMan = whoIs(TrackServName).asValue();
     Message msg{MsgType::Route};
-    msg.route.train = train;
+    msg.route.train = Train(train);
     msg.route.speed = speed;
     msg.route.sensor = sensor;
     ~send(trackMan, msg, ctl::EmptyMessage);

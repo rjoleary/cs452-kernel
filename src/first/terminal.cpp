@@ -118,7 +118,8 @@ void runTerminal() {
     char clear[] = "\033[J";
     bwputstr(COM2, clear);
 
-    goTrains();
+    TrainServer trainServer;
+    trainServer.goTrains();
 
     // Print initial text.
     printLayout();
@@ -164,10 +165,10 @@ void runTerminal() {
             setpos(1, 11);
             if (isStopped) {
                 bwputstr(COM2, "\033[32m GO \033[37m");
-                goTrains();
+                trainServer.goTrains();
             } else {
                 bwputstr(COM2, "\033[31mSTOP\033[37m");
-                stopTrains();
+                trainServer.stopTrains();
             }
             restorecur();
             isStopped = !isStopped;

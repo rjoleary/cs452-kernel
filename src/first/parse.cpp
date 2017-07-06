@@ -121,6 +121,10 @@ unsigned terminateCmd(const char *cmdStart, const char *cmd) {
 
 // Return 1 if user requested to exit.
 int parseCmd(const char *cmd) {
+
+    // TODO: Make the parser a class too!
+    static TrainServer trainServer;
+
     const char *cmdStart = cmd;
     // Error checking is really messy =(
     Token t = nextToken(&cmd);
@@ -151,16 +155,17 @@ int parseCmd(const char *cmd) {
         if (terminateCmd(cmdStart, cmd)) {
             return 0;
         }
-        cmdToggleLight(number.val);
-        cmdSetSpeed(number.val, speed.val);
+        Train train(number.val);
+        trainServer.cmdToggleLight(train);
+        trainServer.cmdSetSpeed(train, speed.val);
         for (;;) {
             auto sensors = waitTrigger();
             if (sensors(sensorParsed)) {
                 break;
             }
         }
-        cmdSetSpeed(number.val, 0);
-        cmdToggleLight(number.val);
+        trainServer.cmdSetSpeed(train, 0);
+        trainServer.cmdToggleLight(train);
     } else if (isIdent(t, "com")) {
         DecimalToken com = nextDec(&cmd);
         if (com.err || (com.val != 1 && com.val != 2)) {
@@ -192,7 +197,7 @@ int parseCmd(const char *cmd) {
         if (terminateCmd(cmdStart, cmd)) {
             return 0;
         }
-        cmdToggleLight(number.val);
+        trainServer.cmdToggleLight(Train(number.val));
     } else if (isIdent(t, "tr")) {
         DecimalToken number = nextDec(&cmd);
         if (number.err) {
@@ -207,7 +212,7 @@ int parseCmd(const char *cmd) {
         if (terminateCmd(cmdStart, cmd)) {
             return 0;
         }
-        cmdSetSpeed(number.val, speed.val);
+        trainServer.cmdSetSpeed(Train(number.val), speed.val);
     } else if (isIdent(t, "route")) {
         DecimalToken number = nextDec(&cmd);
         if (number.err) {
@@ -243,7 +248,7 @@ int parseCmd(const char *cmd) {
         if (terminateCmd(cmdStart, cmd)) {
             return 0;
         }
-        cmdReverse(number.val);
+        trainServer.cmdReverse(Train(number.val));
     } else if (isIdent(t, "sw")) {
         DecimalToken number = nextDec(&cmd);
         if (number.err) {
