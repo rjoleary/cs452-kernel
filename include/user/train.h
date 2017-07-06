@@ -9,6 +9,8 @@ constexpr Train INVALID_TRAIN(0);
 class TrainServer {
     ctl::Tid tid;
   public:
+    TrainServer();
+
     void stopTrains();
     void goTrains();
 

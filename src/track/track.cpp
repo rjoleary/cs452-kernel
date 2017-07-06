@@ -133,7 +133,7 @@ void trackMain() {
     int pathLength = 0;
     int pathStart = 0;
 
-    Train routingTrain;
+    Train routingTrain = INVALID_TRAIN;
     int routingSpeed = -1;
     bool isStopping = false;
     int overwrittenStoppingDistance = -1;

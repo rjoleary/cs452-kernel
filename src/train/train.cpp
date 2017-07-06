@@ -173,6 +173,10 @@ void trainManMain() {
     }
 }
 
+TrainServer::TrainServer()
+    : tid(whoIs(TrManName).asValue()) {
+}
+
 void TrainServer::stopTrains() {
     bwputc(COM1, 97);
     flush(COM1);
