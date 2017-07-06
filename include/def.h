@@ -4,10 +4,7 @@
 #include <user/def.h>
 
 // Size of individual user stacks in bytes.
-#ifndef STACK_SZ
-#warning Stack size should be defined in Makefile.
-#define STACK_SZ 8192
-#endif
+static_assert(STACK_SZ, "Stack size should be defined in Makefile.");
 
 namespace kernel {
 

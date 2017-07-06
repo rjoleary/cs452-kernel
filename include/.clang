@@ -1,0 +1,16 @@
+-Wall
+-Wextra
+-Wno-missing-field-initializers
+-Werror
+-Wpedantic
+--std=gnu++14
+-nostdlib
+-ffreestanding
+-fno-exceptions
+-fno-unwind-tables
+-fno-rtti
+-fno-threadsafe-statics
+-DSTACK_SZ=16384
+
+-Wno-pragma-once-outside-header
+-Wno-unused-parameter

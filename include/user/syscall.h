@@ -16,6 +16,17 @@ enum class Syscall {
 };
 }
 
+// Clang is only used for autocomplete and testing. The toolchain for
+#ifdef __clang__
+#define SYSCALL0(id) (void)id;
+#define SYSCALL1(id) (void)id; (void)a0;
+#define SYSCALL0R(id) int ret = 0; (void)id;
+#define SYSCALL1R(id) int ret = 0; (void)id; (void)a0;
+#define SYSCALL2R(id) int ret = 0; (void)id; (void)a0; (void)a1;
+#define SYSCALL3R(id) int ret = 0; (void)id; (void)a0; (void)a1; (void)a2;
+#define SYSCALL5R(id) int ret = 0; (void)id; (void)a0; (void)a1; (void)a2; (void)a3; (void)a4;
+#else
+
 // Body for a syscall taking 0 arguments.
 #define SYSCALL0(id)            \
     asm volatile (              \
@@ -121,3 +132,5 @@ enum class Syscall {
         : "r7"                                     \
         , "memory"                                 \
     );
+
+#endif // __clang__
