@@ -99,6 +99,26 @@ Additionally, the Tab key will stop all trains in case of emergency.
 
 ## Description
 
+### Layers of Abstraction
+
+Each layer is built from multiple classes and/or tasks:
+
+| Layer   | Description |
+| ------- | ----------- |
+| Routing | Routes one or more trains between two graph points; oblivious of sensors |
+| Model   | Models all trains locations/velocities, extrapolates based on sensors and reports on hazards |
+| Device  | Handles primitive commands (setSpeed, waitSensors, ...) |
+
+Why?
+
+- Software abstraction: Most of the model layer will likely stay the same
+  regardless of which project we choose. However, the routing layer may change
+  from performing path finding to something else.
+- Failure isolation: For example, if the routing algorithm performs a bad route, the
+  model layer will protect the trains against collision. This allows us to
+  experiment with more sophisticated routing algorithms.
+
+
 ### Path finding
 
 Path finding finds the shortest path between the start and end nodes. For train
