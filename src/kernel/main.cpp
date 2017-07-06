@@ -18,7 +18,7 @@ const char* buildstr();
 
 // The attribute allows us to specify the exact location of the user stacks in
 // the linker script. This will be useful when it comes to memory protection.
-__attribute__((section("user_stacks"))) 
+__attribute__((section("user_stacks")))
 static unsigned userStacks[NUM_TD][STACK_SZ/4];
 
 static int copyMsg(const unsigned *src, int srcSize, unsigned *dest, int destSize) {
@@ -247,7 +247,7 @@ void mainLoop(Scheduler &scheduler, TdManager &tdManager, InterruptController &i
             }
             else if (!(td = tdManager.createTd())) {
                 ret = -static_cast<int>(Error::NoRes);
-            } 
+            }
             else {
                 td->ptid = active->tid;
                 td->pri  = priority;

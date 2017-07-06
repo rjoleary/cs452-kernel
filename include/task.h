@@ -86,7 +86,7 @@ struct Td {
 
     // Set the initial state of a user's stack.
     void initStack(void (*entrypoint)());
-    
+
     Td* popSender();
     void pushSender(Td&);
 };

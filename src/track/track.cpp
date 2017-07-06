@@ -157,7 +157,7 @@ void trackMain() {
 
             case MsgType::Sensor: {
                 ~reply(tid, ctl::EmptyMessage);
-                const auto &currNode = 
+                const auto &currNode =
                     nodes[msg.sensor.module*NUM_SENSORS_PER_MODULE + msg.sensor.number];
                 savecur();
                 bwprintf(COM2, "\033[40;1H\033[JCurrent node: %s\r\n",

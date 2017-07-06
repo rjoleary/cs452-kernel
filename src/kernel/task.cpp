@@ -82,7 +82,7 @@ Td* Td::popSender() {
 
 void Td::pushSender(Td &sender) {
     if (__builtin_expect(!sendBegin, 1)) {
-        sendBegin = 
+        sendBegin =
             sendEnd = &sender;
     }
     else {

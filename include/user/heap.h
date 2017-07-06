@@ -55,7 +55,7 @@ public:
         auto &last = entries[size];
         swap(root, last);
         bubbleDown(0);
-        
+
         return last;
     }
 

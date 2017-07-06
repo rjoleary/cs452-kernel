@@ -159,7 +159,7 @@ void runTerminal() {
         switch (c) {
         case QUIT_CHAR: // quit
             goto Return;
-            
+
         case STOP_CHAR: // emergency stop
             savecur();
             setpos(1, 11);

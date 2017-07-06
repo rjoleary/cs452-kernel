@@ -41,7 +41,7 @@ struct Uart1Traits {
     static constexpr auto taskBufferSize = 8;
     static constexpr auto flushOnNewline = false;
     static constexpr auto notifPri = 30;
-    static bool cts() { 
+    static bool cts() {
         return *(volatile unsigned*)(flagReg) & CTS_MASK;
     }
 
@@ -209,7 +209,7 @@ void txMain() {
 
             case MsgType::PutC: {
                 int idx = tid.underlying();
-                
+
                 // Add to buffer.
                 buffers[idx].push(msg.data);
 

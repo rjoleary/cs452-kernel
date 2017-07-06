@@ -32,7 +32,7 @@ irqEntry:
     str r1, [r1]
     @ Restore kernel registers and return.
     ldmea sp, {r4-r12,sp,pc}
-    
+
 kernelEntry:
     @ Switch to system mode to push user registers.
     msr cpsr_c, #0xdf

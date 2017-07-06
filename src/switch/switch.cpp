@@ -133,7 +133,7 @@ void cmdSetSwitch(int sw, char dir) {
         return;
     }
     static auto ss = whoIs(SwitchServ).asValue();
-    
+
     ~send(ss, Message{MsgType::Update, sw, dir}, ctl::EmptyMessage);
 }
 
@@ -182,7 +182,7 @@ void switchMan() {
                 notifyNotifier(tid, msgToSend);
             }
             break;
-        case MsgType::GetData: 
+        case MsgType::GetData:
             ~reply(tid, ss);
             break;
         case MsgType::WaitChange:

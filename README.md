@@ -94,7 +94,7 @@ Enter instructions at the `%` prompt. The available instructions are:
 - `taskall` - Return info about all tasks.
 - `tr NUMBER SPEED` - Set train speed (0 for stop).
 - `unbreak` - Mark all sensors as unbroken.
- 
+
 Additionally, the Tab key will stop all trains in case of emergency.
 
 ## Description
@@ -102,7 +102,7 @@ Additionally, the Tab key will stop all trains in case of emergency.
 ### Path finding
 
 Path finding finds the shortest path between the start and end nodes. For train
-milestone 1, the start and end nodes are always sensors. 
+milestone 1, the start and end nodes are always sensors.
 
 Path finding uses Dijkstra's algorithm where the weight is the distance of each
 node. Our implementation of Dijkstra's has a memory usage proportional to the
@@ -110,7 +110,7 @@ number of nodes in the graph.
 
 The graph used is the one supplied on the course website. Occasionally, when a
 sensor or switch is deemed broken, the node's type is modified to relay this
-information. This way, a broken sensor/switch does not incur any additional 
+information. This way, a broken sensor/switch does not incur any additional
 cost. Also, the complexity of the graph is not altered.
 
 ### Rerouting and Broken Tracks

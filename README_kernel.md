@@ -98,7 +98,7 @@ Additionally, the Tab will stop all trains in case of emergency.
 
 ### Language
 
-We are using C++14 with GCC 6. C++ allows the use of a richer type system and 
+We are using C++14 with GCC 6. C++ allows the use of a richer type system and
 other safety guarantees. Additionally, we can shift some performance costs from
 runtime to compile time. To safely use C++ in an embedded system, many features
 must be disabled such as RTTI (Run-Time Type Information), exceptions, the STL
@@ -520,7 +520,7 @@ set the rollover time to 19, so that it will fire off an interrupt every 20
 counts (which translates to once every 10ms, the length of a tick). A notifier
 task listens to this event, and when it fires it sends an empty message to the
 clock server. The clock server then increments its time and notifies any
-waiting tasks if appropriate. 
+waiting tasks if appropriate.
 
 The clock server has the following interface:
 
