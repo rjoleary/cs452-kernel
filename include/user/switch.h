@@ -1,5 +1,8 @@
 #pragma once
 
+// TODO: make stongly typed
+typedef int Switch;
+
 void cmdSetSwitch(int sw, char dir);
 void setupSwitches();
 void switchMan();

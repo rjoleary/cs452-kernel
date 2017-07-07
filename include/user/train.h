@@ -6,6 +6,9 @@
 using Train = ctl::NamedType<char, struct Train_t>;
 constexpr Train INVALID_TRAIN(0);
 
+// TODO: make more strongly typed
+typedef int Speed;
+
 class TrainServer {
     ctl::Tid tid;
   public:
