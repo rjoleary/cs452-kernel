@@ -39,7 +39,7 @@ void modelMain() {
 } // anonymous namespace
 
 void Model::create() {
-    ~ctl::create(ctl::Priority(30), modelMain);
+    ~ctl::create(ctl::Priority(25), modelMain);
 }
 
 Model::Model()

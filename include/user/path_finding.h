@@ -29,8 +29,8 @@ struct Path {
 //   graph.weight(edge)     - return weight of edge
 //
 // Returns: length of the path, or 0 if no path found
-template <typename T>
-int dijkstra(const T &graph, NodeIdx start, NodeIdx end, Path (&path_out)[T::VSize]) {
+template <typename T, size_t PathSize>
+int dijkstra(const T &graph, NodeIdx start, NodeIdx end, Path (&path_out)[PathSize]) {
 
     struct alignas(4) WeightedVertex {
         short weight;
@@ -108,6 +108,7 @@ int dijkstra(const T &graph, NodeIdx start, NodeIdx end, Path (&path_out)[T::VSi
     if (tree[end].parent == -1) {
         return 0;
     }
+    ASSERT(tree[end].nNodes > PathSize);
 
     // Reverse path.
     NodeIdx curIdx = end;
