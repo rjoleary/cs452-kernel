@@ -146,9 +146,8 @@ int parseCmd(const char *cmd) {
             bwputstr(COM2, "Error: expected a direction\r\n");
             return 0;
         }
-        bool err;
-        Sensor sensorParsed = Sensor::fromString(sensor.start, sensor.len, err);
-        if (err) {
+        auto sensorParsed = Sensor::fromString(sensor.start, sensor.len);
+        if (sensorParsed.isError()) {
             tokenErr("invalid sensor", sensor.start - cmdStart + 2, sensor.len);
             return 0;
         }
@@ -160,7 +159,7 @@ int parseCmd(const char *cmd) {
         trainServer.cmdSetSpeed(train, speed.val);
         for (;;) {
             auto sensors = waitTrigger();
-            if (sensors(sensorParsed)) {
+            if (sensors(sensorParsed.asValue())) {
                 break;
             }
         }
@@ -229,16 +228,15 @@ int parseCmd(const char *cmd) {
             bwputstr(COM2, "Error: expected a direction\r\n");
             return 0;
         }
-        bool err;
-        Sensor sensorParsed = Sensor::fromString(sensor.start, sensor.len, err);
-        if (err) {
+        auto sensorParsed = Sensor::fromString(sensor.start, sensor.len);
+        if (sensorParsed.isError()) {
             tokenErr("invalid sensor", sensor.start - cmdStart + 2, sensor.len);
             return 0;
         }
         if (terminateCmd(cmdStart, cmd)) {
             return 0;
         }
-        cmdRoute(number.val, speed.val, sensorParsed.value());
+        cmdRoute(number.val, speed.val, sensorParsed.asValue().value());
     } else if (isIdent(t, "rv")) {
         DecimalToken number = nextDec(&cmd);
         if (number.err) {

@@ -30,35 +30,43 @@ inline const char *errorToString(Error err) {
     }
 }
 
+template <typename T>
+class ErrorOr;
+
+template <typename T>
+const char *asErrorString(const ErrorOr<T> &errOr) {
+    return errorToString(errOr.asError());
+}
+
 // Note that negative values of T are considered error.
 template <typename T>
 class ErrorOr {
     // Must be size 4 to fit in syscall return value.
-    static_assert(sizeof(T) == 4, "ErrorOr needs size of 4");
-    int data;
+    static_assert(sizeof(T) <= 4, "ErrorOr needs size of 4 or less");
+    int data = 0;
 
-    ErrorOr() {}
+    ErrorOr() = default;
 
 public:
-    static const ErrorOr<T> fromValue(T data) {
-        ErrorOr<T> ret;
-        ret.data = *reinterpret_cast<int*>(&data);
+    static ErrorOr fromValue(T data) {
+        ErrorOr ret;
+        memcpy(&ret.data, &data, sizeof(T));
         return ret;
     }
 
-    static const ErrorOr<T> fromError(Error err) {
-        ErrorOr<T> ret;
+    static ErrorOr fromError(Error err) {
+        ErrorOr ret;
         ret.data = -static_cast<int>(err);
         return ret;
     }
 
-    static const ErrorOr<T> fromInt(int value) {
-        ErrorOr<T> ret;
+    static ErrorOr fromInt(int value) {
+        ErrorOr ret;
         ret.data = value;
         return ret;
     }
 
-    static const ErrorOr<T> fromBoth(Error err, T value) {
+    static ErrorOr fromBoth(Error err, T value) {
         return fromError(err).replace(value);
     }
 
@@ -70,9 +78,11 @@ public:
     // Return the value or assert.
     T asValue() const {
         if (isError()) {
-            assert(asErrorString());
+            assert(asErrorString(*this));
         }
-        return *reinterpret_cast<const T*>(&data);
+        T ret;
+        memcpy(&ret, &data, sizeof(T));
+        return ret;
     }
 
     // Return the error.
@@ -88,35 +98,31 @@ public:
         }
         return ErrorOr<U>::fromValue(value);
     }
-
-    // Convert error to string.
-    const char *asErrorString() const {
-        return errorToString(asError());
-    }
 };
 static_assert(sizeof(ErrorOr<Tid>) == sizeof(Tid), "ErrorOr<Tid> != Tid");
+
 
 // For functions returning void.
 template <>
 class ErrorOr<void> {
     Error data;
-    ErrorOr() {}
+    ErrorOr() = default;
 
 public:
-    static const ErrorOr<void> fromOk() {
-        ErrorOr<void> ret;
+    static ErrorOr fromOk() {
+        ErrorOr ret;
         ret.data = Error::Ok;
         return ret;
     }
 
-    static const ErrorOr<void> fromError(Error err) {
-        ErrorOr<void> ret;
+    static ErrorOr fromError(Error err) {
+        ErrorOr ret;
         ret.data = err;
         return ret;
     }
 
-    static const ErrorOr<void> fromInt(int value) {
-        ErrorOr<void> ret;
+    static ErrorOr fromInt(int value) {
+        ErrorOr ret;
         ret.data = static_cast<Error>(value < 0 ? -value : value);
         return ret;
     }
@@ -129,7 +135,7 @@ public:
     // Return the value or assert.
     void asValue() const {
         if (isError()) {
-            assert(asErrorString());
+            assert(asErrorString(*this));
         }
     }
 
@@ -143,11 +149,6 @@ public:
     ErrorOr<T> replace(T value) const {
         return ErrorOr<T>::fromError(data).replace(value);
     }
-
-    // Convert error to string.
-    const char *asErrorString() const {
-        return errorToString(asError());
-    }
 };
 static_assert(sizeof(ErrorOr<void>) == 4, "ErrorOr<void> not size 4");
 
@@ -156,4 +157,5 @@ template <typename T>
 T operator~(ErrorOr<T> e) {
     return e.asValue();
 }
+
 }

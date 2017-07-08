@@ -2,6 +2,7 @@
 
 #include <bwio.h>
 #include <std.h>
+#include <err.h>
 
 using namespace ctl;
 
@@ -22,47 +23,38 @@ class Sensor {
 
 public:
     // Range: [0-79]
-    // TODO: use ErrorOr
-    static Sensor fromInt(int value, bool &error) {
-        Sensor s;
+    static ErrorOr<Sensor> fromInt(int value) {
         if (value < 0 || 79 < value) {
-            error = true;
-            return s;
+            return ErrorOr<Sensor>::fromError(Error::BadArg);
         }
+        Sensor s;
         s.module_ = value / 16;
         s.sensor_ = value % 16;
-        error = false;
-        return s;
+        return ErrorOr<Sensor>::fromValue(s);
     }
 
     // Must be: [A-Ea-e]{1-16}
-    // TODO: user ErrorOr
-    static Sensor fromString(const char *str, size_t len, bool &error) {
-        Sensor s;
+    static ErrorOr<Sensor> fromString(const char *str, size_t len) {
         if (len != 2 && len != 3) {
-            error = true;
-            return s;
+            return ErrorOr<Sensor>::fromError(Error::BadArg);
         }
         if (!isModule(str[0]) || !isDigit(str[1])) {
-            error = true;
-            return s;
+            return ErrorOr<Sensor>::fromError(Error::BadArg);
         }
+        Sensor s;
         s.module_ = (str[0] | 0x20) - 'a';
         s.sensor_ = str[1] - '0';
         if (len == 3) {
             if (!isDigit(str[2])) {
-                error = true;
-                return s;
+                return ErrorOr<Sensor>::fromError(Error::BadArg);
             }
             s.sensor_ = s.sensor_ * 10 + (str[2] - '0');
         }
         if (s.sensor_ < 1 || 16 < s.sensor_) {
-            error = true;
-            return s;
+            return ErrorOr<Sensor>::fromError(Error::BadArg);
         }
         s.sensor_--;
-        error = false;
-        return s;
+        return ErrorOr<Sensor>::fromValue(s);
     }
 
     unsigned char module() const {

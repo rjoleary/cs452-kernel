@@ -2,7 +2,11 @@
 #include <def.h>
 #include <model.h>
 #include <sensor.h>
+#include <path_finding.h>
 #include <train.h>
+#include <track_node.h>
+#include <track_data_new.h>
+#include <track.h>
 
 namespace {
 
@@ -20,52 +24,19 @@ struct Message {
 };
 
 struct RouteReply {
-    Path[MAX_PATH] path;
+    Path path[MAX_PATH];
     int length;
-};
-
-struct Graph {
-    TrackNode *vertices;
-
-    static constexpr ctl::size_t VSize = TRACK_MAX;
-
-    auto adjacentN(int idx) const {
-        switch (vertices[idx].type) {
-            case NODE_BRANCH: return 2;
-            case NODE_SENSOR:
-            case NODE_MERGE:
-            case NODE_BROKEN_SENSOR:
-            case NODE_BROKEN_SW_ST:
-            case NODE_BROKEN_SW_CV:
-            case NODE_ENTER: return 1;
-            case NODE_EXIT: return 0;
-            default: return 0; // TODO: make enum class
-        }
-    }
-    const TrackEdge *adjacent(int idx, int i) const {
-        if (vertices[idx].type == NODE_BROKEN_SW_CV)
-            return &vertices[idx].edge[i+1];
-        return &vertices[idx].edge[i];
-    }
-    auto dest(const TrackEdge *edge) const {
-        return edge->dest - vertices;
-    }
-    auto weight(const TrackEdge *edge) const {
-        return edge->dist;
-    }
 };
 
 } // unnamed namespace
 
 void routeMain() {
-    constexpr auto InvalidTrain = -1;
-
     TrackNode trackNodes[TRACK_MAX];
-    init_tracka(trackNode);
+    init_tracka(trackNodes);
     
     struct {
         Path path[MAX_PATH];
-        ctl::Tid train = INVALID_TRAIN;
+        Train train = INVALID_TRAIN;
     } routes[MAX_CONCURRENT_TRAINS];
 
     for (;;) {
@@ -77,14 +48,15 @@ void routeMain() {
         switch (msg.type) {
             case MsgType::NewRoute: {
                 for (auto &route : routes) {
-                    if (route.trainTid == INVALID_TID
+                    if (route.train == INVALID_TRAIN
                             || route.train == msg.train) {
-                        auto length = dijkstra(Graph(trackNodes),
-                                route.path,
+                        auto length = dijkstra(Graph{trackNodes},
                                 msg.start.value(),
                                 msg.end.value(),
                                 route.path);
-                        ctl::reply(tid, RouteReply{route.path, length});
+                        // Return array somehow, you can't just assign it because C
+                        //ctl::reply(tid, RouteReply{route.path, length});
+                        (void) length;
                         goto Breakout;
                     }
                 }
@@ -92,11 +64,11 @@ void routeMain() {
                 ctl::reply(tid, RouteReply{{}, -1});
             }
         }
-Breakout:
+Breakout: ;
     }
 }
 
 // Idk what interface good
 void getRoute(Train train, Sensor start, Sensor end) {
-
+    (void) train; (void) start; (void) end;
 }
