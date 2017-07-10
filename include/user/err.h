@@ -158,4 +158,61 @@ T operator~(ErrorOr<T> e) {
     return e.asValue();
 }
 
+// For arbitrary data.
+template <typename T>
+class ErrorOr2 {
+    T data;
+    Error err;
+
+    ErrorOr2() = default;
+
+public:
+    static ErrorOr2 fromValue(T data) {
+        return ErrorOr2 {
+            data,
+            Error::Ok,
+        };
+    }
+
+    static ErrorOr2 fromError(Error err) {
+        return ErrorOr2 {
+            {},
+            err,
+        };
+    }
+
+    static ErrorOr2 fromBoth(Error err, T value) {
+        return ErrorOr2 {
+            value,
+            err,
+        };
+    }
+
+    // Return true if value is an error.
+    bool isError() const {
+        return err;
+    }
+
+    // Return the value or assert.
+    const T &asValue() const {
+        return const_cast<ErrorOr2*>(this)->asValue();
+    }
+
+    // Return the value or assert.
+    T &asValue() {
+        if (isError()) {
+            assert(errorToString(err));
+        }
+
+        T ret;
+        memcpy(&ret, &data, sizeof(T));
+        return ret;
+    }
+
+    // Return the error.
+    Error asError() const {
+        return err;
+    }
+};
+
 }

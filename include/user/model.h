@@ -48,7 +48,7 @@ public:
 
     // Representation of a train's state.
     struct TrainState {
-        int time; // ticks
+        int time; // ticks // TODO: not part of state
         Position position;
         Speed speed;
         int velocity; // mm/tick

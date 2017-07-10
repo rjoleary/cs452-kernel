@@ -11,6 +11,7 @@
 #include <err.h>
 #include <std.h>
 #include <def.h>
+#include <model.h>
 
 // forward declare
 void setpos(unsigned row, unsigned col);
@@ -124,6 +125,7 @@ int parseCmd(const char *cmd) {
 
     // TODO: Make the parser a class too!
     static TrainServer trainServer;
+    static Model model;
 
     const char *cmdStart = cmd;
     // Error checking is really messy =(
@@ -211,7 +213,12 @@ int parseCmd(const char *cmd) {
         if (terminateCmd(cmdStart, cmd)) {
             return 0;
         }
-        trainServer.cmdSetSpeed(Train(number.val), speed.val);
+        Error err = model.setTrainSpeed(Train(number.val), speed.val);
+        if (err == Error::NoRes) {
+            bwputstr(COM2, "Error: too many concurrent trains\r\n");
+        } else {
+            bwprintf(COM2, "Error: %s\r\n", errorToString(err));
+        }
     } else if (isIdent(t, "route")) {
         DecimalToken number = nextDec(&cmd);
         if (number.err) {
