@@ -1,8 +1,9 @@
 #pragma once
 
-#include <bwio.h>
-#include <std.h>
-#include <err.h>
+#include "bwio.h"
+#include "std.h"
+#include "err.h"
+#include "int.h"
 
 using namespace ctl;
 
@@ -10,8 +11,8 @@ constexpr int NUM_SENSOR_MODULES = 5;
 constexpr int NUM_SENSORS_PER_MODULE = 16;
 
 class Sensor {
-    unsigned char module_; // [0-4]
-    unsigned char sensor_; // [0-15]
+    U8 module_; // [0-4]
+    U8 sensor_; // [0-15]
 
     static bool isModule(char c) {
         return ('a' <= c && c <= 'e') || ('A' <= c && c <= 'E');
@@ -57,15 +58,15 @@ public:
         return ErrorOr<Sensor>::fromValue(s);
     }
 
-    unsigned char module() const {
+    U8 module() const {
         return module_;
     }
 
-    unsigned char sensor() const {
+    U8 sensor() const {
         return sensor_;
     }
 
-    unsigned char value() const {
+    U8 value() const {
         return module_ * 16 + sensor_;
     }
 
@@ -76,7 +77,7 @@ public:
 
 struct alignas(4) SensorSet {
     // One bit array per module.
-    unsigned short values[NUM_SENSOR_MODULES] = {0};
+    U16 values[NUM_SENSOR_MODULES] = {0};
 
     bool operator()(int i, int j) const {
         if (j < 8)

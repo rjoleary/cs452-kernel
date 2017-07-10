@@ -1,6 +1,7 @@
 #pragma once
 
 #include "types.h"
+#include "int.h"
 
 // The total number of task descriptors. The number of task descriptors is
 // fixed so that lookup and creating new tasks is constant time.

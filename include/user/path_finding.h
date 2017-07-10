@@ -6,11 +6,11 @@
 using ctl::size_t;
 using ctl::Heap;
 
-typedef unsigned char NodeIdx;
+typedef U8 NodeIdx;
 
 struct Path {
-    short nodeIdx;
-    short distance;
+    I16 nodeIdx;
+    I16 distance;
 };
 
 // dijkstra find shortest path from start node to all other nodes.
@@ -33,10 +33,10 @@ template <typename T, size_t PathSize>
 int dijkstra(const T &graph, NodeIdx start, NodeIdx end, Path (&path_out)[PathSize]) {
 
     struct alignas(4) WeightedVertex {
-        short weight;
+        I16 weight;
         NodeIdx vertexIdx;
         NodeIdx parentIdx;
-        unsigned char nNodes; // number of nodes in this path
+        U8 nNodes; // number of nodes in this path
     };
 
     struct Comp {
@@ -48,13 +48,13 @@ int dijkstra(const T &graph, NodeIdx start, NodeIdx end, Path (&path_out)[PathSi
     struct Tree {
         // Index to the parent node. The start node has itself as the parent.
         // Unreachable nodes have -1 as their parent.
-        short parent = -1;
+        I16 parent = -1;
 
         // Distance to this node from the start node. Unreachable nodes have a
         // value of -1.
-        short distance = -1;
+        I16 distance = -1;
 
-        unsigned char nNodes;
+        U8 nNodes;
     } tree[T::VSize];
 
     // Push the first node onto the heap.
@@ -89,7 +89,7 @@ int dijkstra(const T &graph, NodeIdx start, NodeIdx end, Path (&path_out)[PathSi
         for (size_t i = 0; i < n; i++) {
             const auto &edge = graph.adjacent(front.vertexIdx, i);
             NodeIdx vertexIdx = graph.dest(edge);
-            short weight = graph.weight(edge);
+            I16 weight = graph.weight(edge);
 
             // Skip if we have already found a path to this node.
             if (tree[vertexIdx].parent != -1) {
@@ -97,10 +97,10 @@ int dijkstra(const T &graph, NodeIdx start, NodeIdx end, Path (&path_out)[PathSi
             }
 
             heap.push(WeightedVertex{
-                /* .weight    = */ static_cast<short>(front.weight + weight),
+                /* .weight    = */ static_cast<I16>(front.weight + weight),
                 /* .vertexIdx = */ vertexIdx,
                 /* .parentIdx = */ front.vertexIdx,
-                /* .nNodes    = */ static_cast<unsigned char>(front.nNodes + 1),
+                /* .nNodes    = */ static_cast<U8>(front.nNodes + 1),
             });
         }
     }

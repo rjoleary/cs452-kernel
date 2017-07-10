@@ -10,8 +10,7 @@
 #include <io.h>
 #include <ns.h>
 #include <std.h>
-
-typedef volatile unsigned * register_t;
+#include <int.h>
 
 /*
  * The UARTs are initialized by RedBoot to the following state
@@ -21,13 +20,13 @@ typedef volatile unsigned * register_t;
  * 	fifos enabled
  */
 int bwsetfifo( int channel, int state ) {
-    register_t line;
+    Register* line;
 	switch( channel ) {
 	case COM1:
-		line = (register_t)( UART1_BASE + UART_LCRH_OFFSET );
+		line = (Register*)( UART1_BASE + UART_LCRH_OFFSET );
 	        break;
 	case COM2:
-	        line = (register_t)( UART2_BASE + UART_LCRH_OFFSET );
+	        line = (Register*)( UART2_BASE + UART_LCRH_OFFSET );
 	        break;
 	default:
 	        return -1;
@@ -40,15 +39,16 @@ int bwsetfifo( int channel, int state ) {
 }
 
 int bwsetspeed( int channel, int speed ) {
-	register_t high, low;
+	Register *high;
+    Register *low;
 	switch( channel ) {
 	case COM1:
-		high = (register_t)( UART1_BASE + UART_LCRM_OFFSET );
-		low = (register_t)( UART1_BASE + UART_LCRL_OFFSET );
+		high = (Register*)( UART1_BASE + UART_LCRM_OFFSET );
+		low = (Register*)( UART1_BASE + UART_LCRL_OFFSET );
 	        break;
 	case COM2:
-		high = (register_t)( UART2_BASE + UART_LCRM_OFFSET );
-		low = (register_t)( UART2_BASE + UART_LCRL_OFFSET );
+		high = (Register*)( UART2_BASE + UART_LCRM_OFFSET );
+		low = (Register*)( UART2_BASE + UART_LCRL_OFFSET );
 	        break;
 	default:
 	        return -1;
@@ -78,15 +78,16 @@ int bwputc( int channel, char c ) {
 		return 0;
 	}
 
-	register_t flags, data;
+	Register *flags;
+    Register *data;
 	switch( channel ) {
 	case COM1:
-		flags = (register_t)( UART1_BASE + UART_FLAG_OFFSET );
-		data = (register_t)( UART1_BASE + UART_DATA_OFFSET );
+		flags = (Register*)( UART1_BASE + UART_FLAG_OFFSET );
+		data = (Register*)( UART1_BASE + UART_DATA_OFFSET );
 		break;
 	case COM2:
-		flags = (register_t)( UART2_BASE + UART_FLAG_OFFSET );
-		data = (register_t)( UART2_BASE + UART_DATA_OFFSET );
+		flags = (Register*)( UART2_BASE + UART_FLAG_OFFSET );
+		data = (Register*)( UART2_BASE + UART_DATA_OFFSET );
 		break;
 	default:
 		return -1;
@@ -251,4 +252,3 @@ void bwprintf( int channel, const char *fmt, ... ) {
     bwformat( channel, fmt, va );
     va_end(va);
 }
-
