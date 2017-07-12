@@ -23,11 +23,11 @@ constexpr ctl::Name TrackServName = {"TrackM"};
 // Returns the stopping distance (mm) for the given train and speed.
 int stoppingDistance(Train train, int speed) {
     // TODO: this is only forwards
-    if (train.underlying() == 63 && speed == 10) return 807;
-    if (train.underlying() == 63 && speed == 12) return 974;
-    if (train.underlying() == 71 && speed == 10) return 370;
-    if (train.underlying() == 71 && speed == 12) return 807;
-    if (train.underlying() == 76 && speed == 10) return 370;
+    if (train == Train(63) && speed == 10) return 807;
+    if (train == Train(63) && speed == 12) return 974;
+    if (train == Train(71) && speed == 10) return 370;
+    if (train == Train(71) && speed == 12) return 807;
+    if (train == Train(76) && speed == 10) return 370;
 
     // All other trains
     return 1000;
