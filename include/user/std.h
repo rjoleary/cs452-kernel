@@ -1,5 +1,7 @@
 #pragma once
 
+#include "int.h"
+
 #define memcpy  __builtin_memcpy
 #define memset  __builtin_memset
 #define memcmp  __builtin_memcmp
@@ -18,7 +20,6 @@ void fast_memcpy(unsigned *dest, const unsigned *source, int num);
 } while (false)
 
 namespace ctl {
-using size_t = decltype(sizeof(0));
 void assert(const char *description);
 
 template <typename T>

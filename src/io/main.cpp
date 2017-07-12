@@ -47,7 +47,7 @@ struct Uart1Traits {
 
     struct BlkInfo {
         Tid tid;
-        size_t size;
+        Size size;
     };
 
     CircularBuffer<BlkInfo, NUM_TD> blkInfo;
@@ -59,7 +59,7 @@ struct Uart1Traits {
             sentData = 0;
         }
     }
-    void flushed(Tid tid, size_t size) {
+    void flushed(Tid tid, Size size) {
         if (size != 0)
             blkInfo.push({tid, size});
     }
@@ -82,7 +82,7 @@ struct Uart2Traits {
     static bool cts() { return true; }
 
     void sent() {}
-    void flushed(Tid, size_t) {}
+    void flushed(Tid, Size) {}
     void respond(Tid tid, bool) { ~reply(tid, EmptyMessage); }
 };
 

@@ -5,11 +5,11 @@
 
 namespace ctl {
 // Overflow policy is to drop characters.
-template <typename Data, size_t MaxSize>
+template <typename Data, Size MaxSize>
 class CircularBuffer {
     static_assert(std::is_trivial<Data>::value, "Data must be trivial");
     Data entries[MaxSize];
-    size_t begin = 0, end = 0, size_ = 0;
+    Size begin = 0, end = 0, size_ = 0;
 public:
     const Data& pop() {
         ASSERT(!empty());
@@ -30,7 +30,7 @@ public:
     bool full() const {
         return size_ == MaxSize;
     }
-    size_t size() const {
+    Size size() const {
         return size_;
     }
     const Data& front() {

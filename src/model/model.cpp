@@ -47,7 +47,7 @@ void modelMain() {
             case MsgType::SetTrainSpeed: {
                 SetTrainSpeedReply rply;
                 auto idx = trainStates.getIdx(msg.train);
-                if (idx == (ctl::size_t)-1) {
+                if (idx == (Size)-1) {
                     rply.error = ctl::Error::NoRes;
                     ~reply(tid, rply);
                 }
@@ -61,7 +61,7 @@ void modelMain() {
             case MsgType::GetTrainState: {
                 GetTrainStateReply rply;
                 auto idx = trainStates.getIdx(msg.train);
-                if (idx == (ctl::size_t)-1) {
+                if (idx == (Size)-1) {
                     rply.error = ctl::Error::NoRes;
                     ~reply(tid, rply);
                 }

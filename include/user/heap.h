@@ -6,13 +6,13 @@
 #include <types.h>
 
 namespace ctl {
-template <size_t MaxSize, typename Data, typename Comp>
+template <Size MaxSize, typename Data, typename Comp>
 class Heap {
     Comp comp;
     Data entries[MaxSize];
-    ctl::size_t size = 0;
+    Size size = 0;
 
-    void bubbleDown(size_t place) {
+    void bubbleDown(Size place) {
         while (place < size) {
             auto left = place*2 + 1,
                  right = left + 1,
@@ -33,7 +33,7 @@ class Heap {
         }
     }
 
-    void bubbleUp(size_t place) {
+    void bubbleUp(Size place) {
         while (place > 0) {
             auto parent = (place-1)/2;
             if (comp(entries[place], entries[parent])) {

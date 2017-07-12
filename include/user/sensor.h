@@ -35,7 +35,7 @@ public:
     }
 
     // Must be: [A-Ea-e]{1-16}
-    static ErrorOr<Sensor> fromString(const char *str, size_t len) {
+    static ErrorOr<Sensor> fromString(const char *str, Size len) {
         if (len != 2 && len != 3) {
             return ErrorOr<Sensor>::fromError(Error::BadArg);
         }

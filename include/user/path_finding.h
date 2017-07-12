@@ -3,7 +3,6 @@
 #include "heap.h"
 #include "std.h"
 
-using ctl::size_t;
 using ctl::Heap;
 
 typedef U8 NodeIdx;
@@ -29,7 +28,7 @@ struct Path {
 //   graph.weight(edge)     - return weight of edge
 //
 // Returns: length of the path, or 0 if no path found
-template <typename T, size_t PathSize>
+template <typename T, Size PathSize>
 int dijkstra(const T &graph, NodeIdx start, NodeIdx end, Path (&path_out)[PathSize]) {
 
     struct alignas(4) WeightedVertex {
@@ -85,8 +84,8 @@ int dijkstra(const T &graph, NodeIdx start, NodeIdx end, Path (&path_out)[PathSi
         }
 
         // Push all the adjacent nodes onto the heap.
-        const size_t n = graph.adjacentN(front.vertexIdx);
-        for (size_t i = 0; i < n; i++) {
+        const Size n = graph.adjacentN(front.vertexIdx);
+        for (Size i = 0; i < n; i++) {
             const auto &edge = graph.adjacent(front.vertexIdx, i);
             NodeIdx vertexIdx = graph.dest(edge);
             I16 weight = graph.weight(edge);

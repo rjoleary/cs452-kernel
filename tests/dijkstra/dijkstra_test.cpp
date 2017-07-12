@@ -26,8 +26,8 @@ struct Edge {
     int dest;
 };
 
-template <size_t S> struct Graph {
-    static const size_t VSize = S;
+template <Size S> struct Graph {
+    static const Size VSize = S;
 
     Vertex *vertices;
     Edge *edges;
@@ -77,7 +77,7 @@ int main() {
             {1, 4}, {1, 6},
             {3, 5}, {3, 6}, 
         };
-        const size_t VSize = sizeof(vertices) / sizeof(vertices[0]);
+        const Size VSize = sizeof(vertices) / sizeof(vertices[0]);
         Path out[VSize];
         int n = dijkstra(Graph<VSize>{vertices, edges}, 2, 5, out);
 

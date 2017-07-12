@@ -1,23 +1,23 @@
-typedef decltype(sizeof(0)) size_t;
+#include <int.h>
 
 // Cannot include std.h for these functions to work.
 extern "C" {
-void *memcpy(void *dest, const void *src, size_t n) {
-    for (size_t i = 0; i < n; i++) {
+void *memcpy(void *dest, const void *src, Size n) {
+    for (Size i = 0; i < n; i++) {
         *(static_cast<char*>(dest) + i) = *(static_cast<const char*>(src) + i);
     }
     return dest;
 }
 
-void *memset(void *s, int c, size_t n) {
-    for (size_t i = 0; i < n; i++) {
+void *memset(void *s, int c, Size n) {
+    for (Size i = 0; i < n; i++) {
         *static_cast<char*>(s) = static_cast<char>(c);
     }
     return s;
 }
 
-int memcmp(const void *a, const void *b, size_t n) {
-    for (size_t i = 0; i < n; i++) {
+int memcmp(const void *a, const void *b, Size n) {
+    for (Size i = 0; i < n; i++) {
         char ca = static_cast<const char*>(a)[i];
         char cb = static_cast<const char*>(b)[i];
         if (ca != cb) {
@@ -27,8 +27,8 @@ int memcmp(const void *a, const void *b, size_t n) {
     return 0;
 }
 
-char *strncpy(char *dest, const char *src, size_t n) {
-    for (size_t i = 0; i < n; i++) {
+char *strncpy(char *dest, const char *src, Size n) {
+    for (Size i = 0; i < n; i++) {
         dest[i] = src[i];
         if (!*dest) {
             break;
@@ -37,8 +37,8 @@ char *strncpy(char *dest, const char *src, size_t n) {
     return dest;
 }
 
-size_t strlen(const char *s) {
-    size_t n = 0;
+Size strlen(const char *s) {
+    Size n = 0;
     while (*(s++)) {
         n++;
     }

@@ -13,7 +13,7 @@ void cmdClearBrokenSwitches();
 struct Graph {
     TrackNode *vertices;
 
-    static constexpr ctl::size_t VSize = TRACK_MAX;
+    static constexpr Size VSize = TRACK_MAX;
 
     auto adjacentN(int idx) const {
         switch (vertices[idx].type) {

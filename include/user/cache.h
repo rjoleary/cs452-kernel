@@ -3,17 +3,17 @@
 #include <std.h>
 
 // Key-value cache
-template <ctl::size_t Cap, typename K, typename V>
+template <Size Cap, typename K, typename V>
 class Cache {
     K keys[Cap];
     V values[Cap];
-    ctl::size_t size;
+    Size size;
 public:
-    typedef ctl::size_t CacheIndex;
+    typedef Size CacheIndex;
 
     // Returns the cache index or -1 if full
     CacheIndex getIdx(const K &key) {
-        for (ctl::size_t i = 0; i < size; i++) {
+        for (Size i = 0; i < size; i++) {
             if (keys[i] == key) {
                 return i;
             }
