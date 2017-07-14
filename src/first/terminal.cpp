@@ -141,9 +141,6 @@ void runTerminal() {
     // Create sensors task.
     ~create(Priority(25), sensorsMain);
 
-    // Create track manager task.
-    ~create(Priority(25), trackMain);
-
     bool isStopped = false;
     unsigned cmdsz = 0;
     char cmdbuf[MAX_CMDSZ+1];

@@ -13,6 +13,7 @@
 #include "track_node.h"
 #include "track_data_new.h"
 
+/*
 void savecur();
 void restorecur();
 void setpos(unsigned, unsigned);
@@ -351,10 +352,10 @@ void trackMain() {
             }
         }
     }
-}
+}*/
 
-void cmdRoute(int train, int speed, int sensor) {
-    if (train < 1 || 80 < train) {
+void cmdRoute(int , int , int ) {
+    /*if (train < 1 || 80 < train) {
         bwputstr(COM2, "Error: train number must be between 1 and 80 inclusive\r\n");
         return;
     }
@@ -371,18 +372,21 @@ void cmdRoute(int train, int speed, int sensor) {
     msg.route.train = Train(train);
     msg.route.speed = speed;
     msg.route.sensor = sensor;
-    ~send(trackMan, msg, ctl::EmptyMessage);
+    ~send(trackMan, msg, ctl::EmptyMessage);*/
+    // TODO: Repurpose, use proper types also
 }
 
-void cmdSetStoppingDistance(int mm) {
+void cmdSetStoppingDistance(int ) {
+    // TODO: Repurpose
+    /*
     static auto trackMan = whoIs(TrackServName).asValue();
     Message msg{MsgType::SetStoppingDistance};
     msg.setStoppingDistance.mm = mm;
-    ~send(trackMan, msg, ctl::EmptyMessage);
+    ~send(trackMan, msg, ctl::EmptyMessage);*/
 }
 
 void cmdClearBrokenSwitches() {
-    static auto trackMan = whoIs(TrackServName).asValue();
+    /*static auto trackMan = whoIs(TrackServName).asValue();
     Message msg{MsgType::ClearBrokenSwitches};
-    ~send(trackMan, msg, ctl::EmptyMessage);
+    ~send(trackMan, msg, ctl::EmptyMessage);*/
 }
