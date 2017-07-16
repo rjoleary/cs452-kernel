@@ -99,15 +99,90 @@ Additionally, the Tab key will stop all trains in case of emergency.
 
 ## Description
 
+### New servers
+
+Features:
+- multiple trains without collisions
+- routing supports reversing a train
+- short stops
+- free running mode
+
+TrackMan - Delete it
+
+Reservation Server
+- Stores reservations
+  - Reservation: list of track nodes reserved by a train
+    - All trains have reservations regardless of whether they are being routed.
+    - For each track piece, it stores the absolute time the trains will be
+      expected to enter and leave it.
+    - The reservation:
+      - Starts from the train's location
+      - For each next node starting from the trains current node:
+        - If the node is a branch/merge, call "queryExpectedSwitchState" on the
+          routing layer.
+        - If the node is the first sensor, mark this as the start of the
+          stopping distance.
+        - Break once the total distance has exceeded the stopping distance.
+    - The reservation starts from where you are to the stopping distance from
+      the next sensor.
+    - If the train is anywhere on a track node within its stopping distance,
+      that track node is considered reserved.
+    - When accelerating/deceleration from speed X to Y, the reservation is as
+      if the reservation is max(X, Y). Acceleration is assumed to be linear.
+  - No two reservations may contain the same track node
+- Provides function for getting the reservations for all trains
+  - MAX_CONCURRENT_TRAINS * 15 2D array
+- Provides function to switch a switch
+  - If the switch is reserved, the switch is switched.
+- Listens to switches
+  - Update train reservations
+- Listens to sensors
+  - Update train reservations
+- Timeout
+  - If train is blocked on another train's reservation for too long, signal to
+    routing server to reroute. The routing server is given the offending
+    reservation.
+
+Routing Server
+- Exposes function for creating routes
+  - Query the state of the train
+  - Creates a path from start to end
+  - Tell reservation server to change train's speed
+- Rerouting due to offending reservation
+  - Query the state of the train
+  - Temporarily remove offending nodes from the graph
+  - Creates a path from start to end
+  - Tell reservation server to change train's speed
+- Exposes function "queryExpectedSwitchState", function of the train number and
+  switch state.
+  - Four outcomes: don't care, straight/curved (only for branches), reverse
+    (only for merges)
+
+Model Server
+- Exposes function for getting train state
+- Exposes function for listening on sensors for a given train
+- Exposes function for listening on hazards for a given train
+
+
+Solutions:
+- One train following another: Train
+- Two trains on a collision course:
+- Short routes with much switching
+- Single failure of sensors
+- Single failure of switch
+- There are one or more switches in the path
+
+
 ### Layers of Abstraction
 
 Each layer is built from multiple classes and/or tasks:
 
-| Layer   | Description |
-| ------- | ----------- |
-| Routing | Routes one or more trains between two graph points; oblivious of sensors |
-| Model   | Models all trains locations/velocities, extrapolates based on sensors and reports on hazards |
-| Device  | Handles primitive commands (setSpeed, waitSensors, ...) |
+| Layer       | Description |
+| ----------- | ----------- |
+| Routing     | Routes one or more trains between two graph points; oblivious of sensors |
+| Reservation |
+| Model       | Models all trains locations/velocities, performs sensor attribution, extrapolates based on sensors and reports on hazards |
+| Device      | Handles primitive commands (setSpeed, waitSensors, ...) |
 
 Why?
 
