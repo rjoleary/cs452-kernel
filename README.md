@@ -103,11 +103,44 @@ Additionally, the Tab key will stop all trains in case of emergency.
 
 Features:
 - multiple trains without collisions
-- routing supports reversing a train
+- reverse trains during routing
 - short stops
 - free running mode
 
+Hazards: Some of these have meaning in the code, the rest are conceptual at best
+- Train Red Zone Hazard: The system has gotten to a state where trains will
+  collide.
+- Train Yellow Zone Hazard: The system has gotten to a state where, if no action
+  is taken, it will enter the red zone imminently. The model layer will perform
+  an action, such as triggering a switch or stopping a train.
+- Switch Red Zone Hazard: A train is over a switch and changing the switch's
+  state may cause the train the derail.
+- Switch Yellow Zone Hazard: A train will soon be over a switch. If a specific
+  direction is desired for the switch, it much be changes imminently before the
+  switch enters the red zone.
+
 TrackMan - Delete it
+
+Routing Server
+- Exposes a function for routing a train from the shell.
+  - Routing layer may query the current state of the train. Not only is the
+    optional, but it is not required for milestone 2.
+  - Using Dijkstra's, a graph is generated from the end node to all nodes on the
+    graph.
+  - A Gradient Absolute Switch Profile (GASP) is created from the graph. For
+    every switch, the desired direction for passing through the switch is
+    stored. Addtionally, the minimal point (the end switch and offset) is
+    stored.
+  - The GASP is passed to the model server.
+- Rerouting due to contention
+  - Query the state of the train
+  - Temporarily remove offending nodes from the graph
+  - Creates a path from start to end
+  - Tell reservation server to change train's speed
+- Exposes function "queryExpectedSwitchState", function of the train number and
+  switch state.
+  - Four outcomes: don't care, straight/curved (only for branches), reverse
+    (only for merges)
 
 Reservation Server
 - Stores reservations
@@ -118,8 +151,7 @@ Reservation Server
     - The reservation:
       - Starts from the train's location
       - For each next node starting from the trains current node:
-        - If the node is a branch/merge, call "queryExpectedSwitchState" on the
-          routing layer.
+        - If the node is a branch/merge, lookup in the GASP.
         - If the node is the first sensor, mark this as the start of the
           stopping distance.
         - Break once the total distance has exceeded the stopping distance.
@@ -143,30 +175,24 @@ Reservation Server
     routing server to reroute. The routing server is given the offending
     reservation.
 
-Routing Server
-- Exposes function for creating routes
-  - Query the state of the train
-  - Creates a path from start to end
-  - Tell reservation server to change train's speed
-- Rerouting due to offending reservation
-  - Query the state of the train
-  - Temporarily remove offending nodes from the graph
-  - Creates a path from start to end
-  - Tell reservation server to change train's speed
-- Exposes function "queryExpectedSwitchState", function of the train number and
-  switch state.
-  - Four outcomes: don't care, straight/curved (only for branches), reverse
-    (only for merges)
-
 Model Server
 - Exposes function for getting train state
 - Exposes function for listening on sensors for a given train
 - Exposes function for listening on hazards for a given train
-
+- 
 
 Solutions:
-- One train following another: Train
-- Two trains on a collision course:
+- One train following another: The leader behaves normally. The follower is
+  controlled via negative feedback to stay at the cusp of the yellow zone. That
+  is, when a train receives a yellow zone hazard and the offending train's
+  velocity is in the same direction, the follower matches the leader's velocity.
+  To prevent unstable velocities, the following train's speed must always
+  decrease while it is in the yellow zone.
+- Two trains on a collision course: There are three generalized situations in
+  which trains may collide:
+  - Two trains on a straight: 
+  - Two trains on the branches of a switch:
+  - One train on the branch, the other on the merge of a switch: 
 - Short routes with much switching
 - Single failure of sensors
 - Single failure of switch
