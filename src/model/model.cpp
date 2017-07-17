@@ -17,28 +17,35 @@ const T &min(const T &a, const T &b) {
 enum class MsgType {
     SetTrainSpeed,
     GetTrainState,
+    SetGasp,
     SensorNotify,
 };
 
-struct Message {
+struct alignas(4) Message {
     MsgType type;
     Train train;
     Speed speed;
     Sensor sensor;
+    Gasp gasp; // TODO: this is quite large for every message
 };
 
-struct SetTrainSpeedReply {
+struct alignas(4) SetTrainSpeedReply {
     ctl::Error error = ctl::Error::Ok;
 };
 
-struct GetTrainStateReply {
+struct alignas(4) GetTrainStateReply {
     ctl::Error error = ctl::Error::Ok;
     ModelServer::TrainState state; // TODO: must copy, a bit inefficient
 };
 
+struct alignas(4) SetGaspReply {
+    ctl::Error error = ctl::Error::Ok;
+};
+
 void sensorNotifierMain() {
     auto serv = whoIs(ctl::Name{"Model"}).asValue();
-    Message msg = {MsgType::SensorNotify};
+    Message msg;
+    msg.type = MsgType::SensorNotify;
     for (;;) {
         auto sens = waitTrigger();
         for (Size i = 0; i < NUM_SENSORS; i++) {
@@ -72,6 +79,7 @@ void modelMain() {
                 if (idx == (Size)-1) {
                     rply.error = ctl::Error::NoRes;
                     ~reply(tid, rply);
+                    break;
                 }
                 // TODO: cut the middleman
                 state.trains.get(idx).speed = msg.speed;
@@ -86,11 +94,24 @@ void modelMain() {
                 if (idx == (Size)-1) {
                     rply.error = ctl::Error::NoRes;
                     ~reply(tid, rply);
+                    break;
                 }
                 // TODO: reduce copying
                 rply.state = state.trains.get(idx);
                 ~reply(tid, rply);
                 break;
+            }
+
+            case MsgType::SetGasp: {
+                SetGaspReply rply;
+                auto idx = state.trains.getIdx(msg.train);
+                if (idx == (Size)-1) {
+                    rply.error = ctl::Error::NoRes;
+                    ~reply(tid, rply);
+                    break;
+                }
+                state.trains.get(idx).gasp = msg.gasp;
+                ~reply(tid, rply);
             }
 
             case MsgType::SensorNotify: {
@@ -141,5 +162,15 @@ ctl::Error ModelServer::getTrainState(Train train, TrainState *state) {
     GetTrainStateReply reply;
     ~send(tid, msg, reply);
     *state = reply.state;
+    return reply.error;
+}
+
+ctl::Error ModelServer::setGasp(Train train, const Gasp &gasp) {
+    Message msg;
+    msg.type = MsgType::SetGasp;
+    msg.train = train;
+    msg.gasp = gasp;
+    SetGaspReply reply;
+    ~send(tid, msg, EmptyMessage);
     return reply.error;
 }
