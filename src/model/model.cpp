@@ -3,16 +3,8 @@
 #include <itc.h>
 #include <ns.h>
 #include <task.h>
-#include <train.h>
-#include <cache.h>
 
 namespace {
-
-struct ModelState {
-    Cache<MAX_CONCURRENT_TRAINS, Train, ModelServer::TrainState> trains;
-    Switch switches[NumSwitches];
-};
-
 // TODO: move to some standard header
 template <typename T>
 const T &min(const T &a, const T &b) {

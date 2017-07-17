@@ -1,7 +1,7 @@
 #pragma once
 
 #include "switch.h"
-#include "model.h"
+#include "train.h"
 
 enum class SwitchGradient : U8 {
     DontCare,
@@ -13,5 +13,5 @@ enum class SwitchGradient : U8 {
 // Gradient Absolute Switch Profile
 struct Gasp {
     SwitchGradient gradient[NumSwitches];
-    ModelServer::Position end;
+    Position end;
 };

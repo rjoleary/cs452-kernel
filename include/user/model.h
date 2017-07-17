@@ -1,11 +1,11 @@
 #pragma once
 
+#include "cache.h"
 #include "err.h"
+#include "gasp.h"
 #include "switch.h"
 #include "train.h"
 #include "types.h"
-
-struct Gasp;
 
 // Maximum number of trains that can be on the track at once.
 constexpr auto MAX_CONCURRENT_TRAINS = 8;
@@ -28,12 +28,6 @@ static_assert(SWITCH_RED_ZONE < SWITCH_YELLOW_ZONE, "Red zone must be subset of 
 class ModelServer {
     ctl::Tid tid;
 public:
-    // Representation of a position offset from a switch.
-    struct Position {
-        int nodeIdx; // TODO: make NodeIdx typedef global
-        Distance offset; // mm
-    };
-
     // Representation of a train's state.
     struct TrainState {
         Speed speed;
@@ -64,3 +58,10 @@ public:
     //   ctl::Error::NoRes: more than MAX_CONCURRENT_TRAINS
     ctl::Error setGasp(Train train, const Gasp &gasp);
 };
+
+struct ModelState {
+    Cache<MAX_CONCURRENT_TRAINS, Train, ModelServer::TrainState> trains;
+    Cache<MAX_CONCURRENT_TRAINS, Train, Gasp> gasps;
+    Switch switches[NumSwitches];
+};
+

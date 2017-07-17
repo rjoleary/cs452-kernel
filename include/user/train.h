@@ -13,6 +13,12 @@ typedef I32 Velocity;
 typedef I32 Distance;
 typedef I32 Time;
 
+// Representation of a position offset from a switch.
+struct Position {
+    int nodeIdx; // TODO: make NodeIdx typedef global
+    Distance offset; // mm
+};
+
 class TrainServer {
     ctl::Tid tid;
   public:
