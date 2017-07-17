@@ -107,79 +107,77 @@ Features:
 - short stops
 - free running mode
 
-Hazards: Some of these have meaning in the code, the rest are conceptual at best
+Hazards: Some of these have meaning in the code, the rest are conceptual.
 - Train Red Zone Hazard: The system has gotten to a state where trains will
   collide.
-- Train Yellow Zone Hazard: The system has gotten to a state where, if no action
-  is taken, it will enter the red zone imminently. The model layer will perform
-  an action, such as triggering a switch or stopping a train.
+- Train Yellow Zone Hazard: The system has gotten to a state where, if no
+  action is taken, it will enter the red zone imminently. The model layer will
+  perform an action, such as triggering a switch or stopping a train.
 - Switch Red Zone Hazard: A train is over a switch and changing the switch's
   state may cause the train the derail.
 - Switch Yellow Zone Hazard: A train will soon be over a switch. If a specific
   direction is desired for the switch, it much be changes imminently before the
   switch enters the red zone.
 
-TrackMan - Delete it
-
-Routing Server
-- Exposes a function for routing a train from the shell.
-  - Routing layer may query the current state of the train. Not only is the
-    optional, but it is not required for milestone 2.
-  - Using Dijkstra's, a graph is generated from the end node to all nodes on the
-    graph.
-  - A Gradient Absolute Switch Profile (GASP) is created from the graph. For
+Routing Layer
+- Exposes a function for routing a train from the terminal.
+  - First, the routing layer may query the current state of the train. Not only
+    is the optional, but it is not required for milestone 2.
+  - Then, using Dijkstra's algorithm, a shortest path tree is generated in
+    reverse, rooted on the end node.
+  - A Gradient Absolute Switch Profile (GASP) is created from the tree. For
     every switch, the desired direction for passing through the switch is
     stored. Addtionally, the minimal point (the end switch and offset) is
     stored.
   - The GASP is passed to the model server.
-- Rerouting due to contention
-  - Query the state of the train
-  - Temporarily remove offending nodes from the graph
-  - Creates a path from start to end
-  - Tell reservation server to change train's speed
-- Exposes function "queryExpectedSwitchState", function of the train number and
-  switch state.
-  - Four outcomes: don't care, straight/curved (only for branches), reverse
-    (only for merges)
+- After initial routing, there are two reasons for rerouting:
+  - Contention: The train has stopped to avoid collision. To resolve this
+    issue, the routing layer generates a new GASP from a graph with the
+    offending node removed.
+  - Broken switch: A switch is considered broken if having the opposite state is
+    . To resolve this issue, the routing layer generates a new GASP from a
+    graph with the offending node removed.
 
-Reservation Server
-- Stores reservations
-  - Reservation: list of track nodes reserved by a train
-    - All trains have reservations regardless of whether they are being routed.
-    - For each track piece, it stores the absolute time the trains will be
-      expected to enter and leave it.
-    - The reservation:
-      - Starts from the train's location
-      - For each next node starting from the trains current node:
-        - If the node is a branch/merge, lookup in the GASP.
-        - If the node is the first sensor, mark this as the start of the
-          stopping distance.
-        - Break once the total distance has exceeded the stopping distance.
-    - The reservation starts from where you are to the stopping distance from
-      the next sensor.
-    - If the train is anywhere on a track node within its stopping distance,
-      that track node is considered reserved.
-    - When accelerating/deceleration from speed X to Y, the reservation is as
-      if the reservation is max(X, Y). Acceleration is assumed to be linear.
+Model Layer
+- Exposes a function for getting train state. The state contains:
+  - current speed of the train
+  - estimated velocity of the train
+  - estimated stopping distance of the train
+  - estimated location of the train
+- Sensor attribution
+- Models all trains locations/velocities
+- Performs sensor attribution
+- Train state extrapolation
+
+Reservation System (part of the model layer)
+- Stores reservations: a list of track nodes reserved by each train
+  - All trains have reservations regardless of whether they are being routed.
+    This is required to support free-running mode.
+  - For each track node, it stores the absolute time the trains will be
+    expected to enter and leave it.
+  - The reservation starts from the node immediately behind the train to the
+    stopping distance from the next sensor.
+  - Whenever the reservation is calculated, the previous reservation is thrown
+    out and recreated with
+    - Starts from the train's location
+    - For each next node starting from the trains current node:
+      - Reserve each node and its reverse node.
+      - If the node is a branch/merge, lookup in the GASP to determine in which
+        direction to route the train.
+      - If the node is the first sensor, mark this as the start of the
+        stopping distance.
+      - Break once the total distance has exceeded the stopping distance.
+  - If the train is anywhere on a track node within its stopping distance,
+    that track node is considered reserved.
+  - When accelerating/deceleration from speed X to Y, the reservation is as
+    if the reservation is max(X, Y). Acceleration is assumed to be linear.
   - No two reservations may contain the same track node
-- Provides function for getting the reservations for all trains
-  - MAX_CONCURRENT_TRAINS * 15 2D array
-- Provides function to switch a switch
-  - If the switch is reserved, the switch is switched.
-- Listens to switches
-  - Update train reservations
 - Listens to sensors
   - Update train reservations
 - Timeout
-  - If train is blocked on another train's reservation for too long, signal to
-    routing server to reroute. The routing server is given the offending
-    reservation.
-
-Model Server
-- Exposes function for getting train state
-- Exposes function for listening on sensors for a given train
-- Exposes function for listening on hazards for a given train
-- 
+  - If a train is blocked on another train's reservation for too long, signal
+    to routing server to reroute. The routing server is given the offending
+    node.
 
 Solutions:
 - One train following another: The leader behaves normally. The follower is
@@ -190,14 +188,19 @@ Solutions:
   decrease while it is in the yellow zone.
 - Two trains on a collision course: There are three generalized situations in
   which trains may collide:
-  - Two trains on a straight: 
+  - Two trains on a straight:
   - Two trains on the branches of a switch:
-  - One train on the branch, the other on the merge of a switch: 
+  - One train on the branch, the other on the merge of a switch:
 - Short routes with much switching
 - Single failure of sensors
 - Single failure of switch
 - There are one or more switches in the path
 
+- Rerouting due to contention
+  - Query the state of the train
+  - Temporarily remove offending nodes from the graph
+  - Creates a path from start to end
+  - Tell reservation server to change train's speed
 
 ### Layers of Abstraction
 
@@ -206,8 +209,7 @@ Each layer is built from multiple classes and/or tasks:
 | Layer       | Description |
 | ----------- | ----------- |
 | Routing     | Routes one or more trains between two graph points; oblivious of sensors |
-| Reservation |
-| Model       | Models all trains locations/velocities, performs sensor attribution, extrapolates based on sensors and reports on hazards |
+| Model       | Models all trains locations/velocities, performs sensor attribution, performs reservations |
 | Device      | Handles primitive commands (setSpeed, waitSensors, ...) |
 
 Why?
