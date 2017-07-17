@@ -24,7 +24,7 @@ struct Message {
 };
 
 struct RouteReply {
-    Path path[MAX_PATH];
+    SwitchState ss;
     int length;
 };
 
@@ -42,18 +42,14 @@ void routeMain() {
 
         switch (msg.type) {
             case MsgType::NewRoute: {
-                RouteReply reply;
-                reply.length = dijkstra(Graph{trackNodes},
-                        msg.start.value(),
-                        msg.end.value(),
-                        reply.path);
-                ctl::reply(tid, reply);
+                /*auto ss = */dijkstra(Graph{trackNodes},
+                        msg.end.value());
             }
         }
     }
 }
 
 // Idk what interface good
-void getRoute(Train train, Sensor start, Sensor end) {
-    (void) train; (void) start; (void) end;
+void getRoute(Train train, Sensor end) {
+    (void) train; (void) end;
 }

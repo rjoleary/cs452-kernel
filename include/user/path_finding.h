@@ -2,15 +2,11 @@
 
 #include "heap.h"
 #include "std.h"
+#include "switch.h"
 
 using ctl::Heap;
 
 typedef U8 NodeIdx;
-
-struct Path {
-    I16 nodeIdx;
-    I16 distance;
-};
 
 // dijkstra find shortest path from start node to all other nodes.
 //
@@ -28,14 +24,12 @@ struct Path {
 //   graph.weight(edge)     - return weight of edge
 //
 // Returns: length of the path, or 0 if no path found
-template <typename T, Size PathSize>
-int dijkstra(const T &graph, NodeIdx start, NodeIdx end, Path (&path_out)[PathSize]) {
-
+template <typename T>
+SwitchState dijkstra(const T &graph, NodeIdx end) {
     struct alignas(4) WeightedVertex {
         I16 weight;
         NodeIdx vertexIdx;
-        NodeIdx parentIdx;
-        U8 nNodes; // number of nodes in this path
+        NodeIdx childIdx;
     };
 
     struct Comp {
@@ -45,77 +39,79 @@ int dijkstra(const T &graph, NodeIdx start, NodeIdx end, Path (&path_out)[PathSi
     };
 
     struct Tree {
-        // Index to the parent node. The start node has itself as the parent.
-        // Unreachable nodes have -1 as their parent.
-        I16 parent = -1;
+        // Index to the child node. The start node has itself as the child.
+        // Unreachable nodes have -1 as their child.
+        I16 child    = -1;
 
         // Distance to this node from the start node. Unreachable nodes have a
         // value of -1.
         I16 distance = -1;
-
-        U8 nNodes;
     } tree[T::VSize];
 
     // Push the first node onto the heap.
     Heap<T::VSize, WeightedVertex, Comp> heap;
     heap.push(WeightedVertex{
         /* .weight    = */ 0,
-        /* .vertexIdx = */ start,
-        /* .parentIdx = */ start,
-        /* .nNodes    = */ 1,
+        /* .vertexIdx = */ end,
+        /* .childIdx  = */ end
     });
+
+    SwitchState ss;
 
     while (!heap.empty()) {
         // Pop the shortest path from the heap.
         WeightedVertex front = heap.pop();
 
-        if (tree[front.vertexIdx].parent != -1) continue;
+        if (tree[front.vertexIdx].child != -1
+                || tree[graph.reverse(front.vertexIdx)].child != -1) {
+            continue;
+        }
 
-        // Update the weight and parent.
+        // Update the weight and child.
         tree[front.vertexIdx] = Tree{
-            /* .parent   = */ front.parentIdx,
-            /* .distance = */ front.weight,
-            /* .nNodes   = */ front.nNodes,
+            /* .child    = */ front.childIdx,
+            /* .distance = */ front.weight
         };
-
-        // Exit early if we reached the end node.
-        if (front.vertexIdx == end) {
-            break;
+        if (graph.isSwitch(front.vertexIdx)) {
+            ss[graph.getSwitchNum(front.vertexIdx)] = 
+                graph.getSwitchPath(front.childIdx, front.vertexIdx);
         }
 
         // Push all the adjacent nodes onto the heap.
-        const Size n = graph.adjacentN(front.vertexIdx);
-        for (Size i = 0; i < n; i++) {
+        for (int i = 0; i < graph.adjacentN(front.vertexIdx); i++) {
             const auto &edge = graph.adjacent(front.vertexIdx, i);
-            NodeIdx vertexIdx = graph.dest(edge);
-            I16 weight = graph.weight(edge);
+            NodeIdx vertexIdx = graph.reverse(graph.dest(edge));
+            I16 weight = graph.weight(edge) + 500;
 
             // Skip if we have already found a path to this node.
-            if (tree[vertexIdx].parent != -1) {
+            if (tree[vertexIdx].child != -1
+                    || tree[graph.reverse(vertexIdx)].child != -1) {
                 continue;
             }
 
             heap.push(WeightedVertex{
-                /* .weight    = */ static_cast<I16>(front.weight + weight),
+                /* .weight    = */ I16(front.weight + weight),
                 /* .vertexIdx = */ vertexIdx,
-                /* .parentIdx = */ front.vertexIdx,
-                /* .nNodes    = */ static_cast<U8>(front.nNodes + 1),
+                /* .childIdx  = */ graph.reverse(front.vertexIdx)
+            });
+        }
+        for (int i = 0 ; i < graph.adjacentN(graph.reverse(front.vertexIdx)); i++) {
+            const auto &edge = graph.adjacent(graph.reverse(front.vertexIdx), i);
+            NodeIdx vertexIdx = graph.dest(edge);
+            I16 weight = graph.weight(edge);
+
+            // Skip if we have already found a path to this node.
+            if (tree[vertexIdx].child != -1
+                    || tree[graph.reverse(vertexIdx)].child != -1) {
+                continue;
+            }
+
+            heap.push(WeightedVertex{
+                /* .weight    = */ I16(front.weight + weight),
+                /* .vertexIdx = */ graph.reverse(vertexIdx),
+                /* .childIdx  = */ front.vertexIdx
             });
         }
     }
-
-    if (tree[end].parent == -1) {
-        return 0;
-    }
-    ASSERT(tree[end].nNodes > PathSize);
-
-    // Reverse path.
-    NodeIdx curIdx = end;
-    for (int i = tree[end].nNodes - 1; i >= 0; i--) {
-        path_out[i].nodeIdx = curIdx;
-        path_out[i].distance = tree[end].distance - tree[curIdx].distance;
-        curIdx = tree[curIdx].parent;
-    }
-
-    return tree[end].nNodes;
+    return ss;
 }
