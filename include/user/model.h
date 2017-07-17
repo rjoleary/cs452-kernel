@@ -3,6 +3,7 @@
 #include "cache.h"
 #include "err.h"
 #include "gasp.h"
+#include "sensor.h"
 #include "switch.h"
 #include "train.h"
 #include "types.h"
@@ -34,6 +35,7 @@ public:
         Velocity velocity;
         Distance stoppingDistance;
         Position position;
+        Gasp gasp;
     };
 
     static void create();
@@ -60,8 +62,9 @@ public:
 };
 
 struct ModelState {
+    Time lastUpdate;
     Cache<MAX_CONCURRENT_TRAINS, Train, ModelServer::TrainState> trains;
-    Cache<MAX_CONCURRENT_TRAINS, Train, Gasp> gasps;
     Switch switches[NumSwitches];
+    void updateTrainStates();
+    void updateTrainAtSensor(Train train, Sensor sensor);
 };
-

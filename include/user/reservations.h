@@ -16,8 +16,10 @@ class Reservations {
         Time exitTime[15];
     };
 
+    const ModelState &model_;
     Cache<MAX_CONCURRENT_TRAINS, Train, TrainReservation> reservations_;
 
   public:
-    void sensorTriggered(Sensor sensor, const ModelState &model);
+    Reservations(const ModelState &model);
+    void sensorTriggered(Train train, Sensor sensor);
 };

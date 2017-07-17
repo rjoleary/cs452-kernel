@@ -1,8 +1,8 @@
 #pragma once
 
-typedef char  I8;
-typedef short I16;
-typedef int   I32;
+typedef signed char  I8;
+typedef signed short I16;
+typedef signed int   I32;
 
 typedef unsigned char  U8;
 typedef unsigned short U16;

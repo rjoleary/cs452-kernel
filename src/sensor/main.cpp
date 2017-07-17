@@ -147,8 +147,8 @@ const struct {
 };
 
 void printUpdate(const SensorSet &prevSensors, const SensorSet &sensors, unsigned &startOfTriggers) {
-    for (int i = 0; i < NUM_SENSOR_MODULES; i++) {
-        for (int j = 0; j < NUM_SENSORS_PER_MODULE; j++) {
+    for (Size i = 0; i < NUM_SENSOR_MODULES; i++) {
+        for (Size j = 0; j < NUM_SENSORS_PER_MODULE; j++) {
             if (sensors(i, j) != prevSensors(i, j)) {
                 savecur();
                 setpos(4 + startOfTriggers, 40);
@@ -170,8 +170,8 @@ void printUpdate(const SensorSet &prevSensors, const SensorSet &sensors, unsigne
     restorecur();
     flush(COM2);
 
-    for (int i = 0; i < NUM_SENSOR_MODULES; i++) {
-        for (int j = 0; j < NUM_SENSORS_PER_MODULE; j++) {
+    for (Size i = 0; i < NUM_SENSOR_MODULES; i++) {
+        for (Size j = 0; j < NUM_SENSORS_PER_MODULE; j++) {
             if (sensors(i, j) != prevSensors(i, j)) {
                 auto layout = LAYOUT_POS[i*NUM_SENSORS_PER_MODULE+j];
                 savecur();
@@ -264,7 +264,7 @@ void sensorsMain() {
             continue;
         }
 
-        for (int i = 0; i < NUM_SENSOR_MODULES; i++) {
+        for (Size i = 0; i < NUM_SENSOR_MODULES; i++) {
             if ((prevSensors.values[i] ^ sensors.values[i]) != 0) {
                 // Print sensors
                 printUpdate(prevSensors, sensors, startOfTriggers);

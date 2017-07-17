@@ -8,10 +8,10 @@ using Train = ctl::NamedType<char, struct Train_t>;
 constexpr Train INVALID_TRAIN(0);
 
 // TODO: make more strongly typed
-typedef I32 Speed;
-typedef I32 Velocity;
-typedef I32 Distance;
-typedef I32 Time;
+typedef I32 Speed; // [0-15]
+typedef I32 Velocity; // mm/tick
+typedef I32 Distance; // mm
+typedef I32 Time; // ticks
 
 // Representation of a position offset from a switch.
 struct Position {

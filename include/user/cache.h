@@ -5,28 +5,33 @@
 // Key-value cache
 template <Size Cap, typename K, typename V>
 class Cache {
-    K keys[Cap];
-    V values[Cap];
-    Size size;
+    K keys_[Cap];
+    V values_[Cap];
+    Size size_;
 public:
     typedef Size CacheIndex;
 
+    // Return the number of cached values.
+    Size size() const {
+        return size_;
+    }
+
     // Returns the cache index or -1 if full
     CacheIndex getIdx(const K &key) {
-        for (Size i = 0; i < size; i++) {
-            if (keys[i] == key) {
+        for (Size i = 0; i < size_; i++) {
+            if (keys_[i] == key) {
                 return i;
             }
         }
-        if (size < Cap) {
-            return size++;
+        if (size_ < Cap) {
+            return size_++;
         }
         return -1;
     }
 
     // Get a key from the given cache index.
     V &get(CacheIndex idx) {
-        ASSERT(idx < size);
-        return values[idx];
+        ASSERT(idx < size_);
+        return values_[idx];
     }
 };

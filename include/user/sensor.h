@@ -7,8 +7,9 @@
 
 using namespace ctl;
 
-constexpr int NUM_SENSOR_MODULES = 5;
-constexpr int NUM_SENSORS_PER_MODULE = 16;
+constexpr Size NUM_SENSOR_MODULES = 5;
+constexpr Size NUM_SENSORS_PER_MODULE = 16;
+constexpr Size NUM_SENSORS = NUM_SENSOR_MODULES * NUM_SENSORS_PER_MODULE;
 
 class Sensor {
     U8 module_; // [0-4]
@@ -24,7 +25,7 @@ class Sensor {
 
 public:
     // Range: [0-79]
-    static ErrorOr<Sensor> fromInt(int value) {
+    static ErrorOr<Sensor> fromInt(I32 value) {
         if (value < 0 || 79 < value) {
             return ErrorOr<Sensor>::fromError(Error::BadArg);
         }
@@ -85,7 +86,7 @@ struct alignas(4) SensorSet {
         return values[i] & (1 << (15 -j + 8));
     }
 
-    bool operator()(Sensor s) const {
+    bool operator()(const Sensor &s) const {
         return (*this)(s.module(), s.sensor());
     }
 
@@ -99,7 +100,7 @@ struct alignas(4) SensorSet {
     }
 
     SensorSet& operator^=(const SensorSet &other) {
-        for (int i = 0; i < NUM_SENSOR_MODULES; i++) {
+        for (Size i = 0; i < NUM_SENSOR_MODULES; i++) {
             values[i] ^= other.values[i];
         }
         return *this;

@@ -1,8 +1,11 @@
 #include <model.h>
 
+#include <attribution.h>
 #include <itc.h>
 #include <ns.h>
+#include <sensor.h>
 #include <task.h>
+#include <reservations.h>
 
 namespace {
 // TODO: move to some standard header
@@ -14,12 +17,14 @@ const T &min(const T &a, const T &b) {
 enum class MsgType {
     SetTrainSpeed,
     GetTrainState,
+    SensorNotify,
 };
 
 struct Message {
     MsgType type;
     Train train;
     Speed speed;
+    Sensor sensor;
 };
 
 struct SetTrainSpeedReply {
@@ -31,12 +36,30 @@ struct GetTrainStateReply {
     ModelServer::TrainState state; // TODO: must copy, a bit inefficient
 };
 
+void sensorNotifierMain() {
+    auto serv = whoIs(ctl::Name{"Model"}).asValue();
+    Message msg = {MsgType::SensorNotify};
+    for (;;) {
+        auto sens = waitTrigger();
+        for (Size i = 0; i < NUM_SENSORS; i++) {
+            auto s = Sensor::fromInt(i).asValue();
+            if (sens(s)) {
+                msg.sensor = s;
+                ~send(serv, msg, ctl::EmptyMessage);
+            }
+        }
+    }
+}
+
 // Shopkeeper
 void modelMain() {
     ~ctl::registerAs(ctl::Name{"Model"});
+    ~ctl::create(ctl::Priority(26), sensorNotifierMain);
     TrainServer trainServer;
 
     ModelState state;
+    Reservations reservations(state);
+    Attribution attribution(state);
 
     for (;;) {
         ctl::Tid tid;
@@ -69,10 +92,29 @@ void modelMain() {
                 ~reply(tid, rply);
                 break;
             }
+
+            case MsgType::SensorNotify: {
+                ~reply(tid, EmptyMessage);
+                state.updateTrainStates();
+                Train t = attribution.attribute(msg.sensor);
+                state.updateTrainAtSensor(t, msg.sensor);
+                reservations.sensorTriggered(t, msg.sensor);
+                break;
+            }
         }
     }
 }
 } // anonymous namespace
+
+void ModelState::updateTrainStates() {
+    // TODO
+}
+
+void ModelState::updateTrainAtSensor(Train train, Sensor sensor) {
+    // TODO
+    (void) train;
+    (void) sensor;
+}
 
 void ModelServer::create() {
     ~ctl::create(ctl::Priority(25), modelMain);
