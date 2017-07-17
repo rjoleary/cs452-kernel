@@ -37,7 +37,7 @@ void firstMain() {
     ~create(Priority(29), io::uart1RxMain);
     ~create(Priority(29), clockMain);
     ~create(Priority(25), trainManMain);
-    Model::create();
+    ModelServer::create();
 
     runTerminal();
 }

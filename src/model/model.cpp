@@ -7,10 +7,21 @@
 #include <cache.h>
 
 namespace {
+
+struct ModelState {
+    Cache<MAX_CONCURRENT_TRAINS, Train, ModelServer::TrainState> trains;
+    Switch switches[NumSwitches];
+};
+
+// TODO: move to some standard header
+template <typename T>
+const T &min(const T &a, const T &b) {
+    return a <= b ? a : b;
+}
+
 enum class MsgType {
     SetTrainSpeed,
     GetTrainState,
-    ListenHazards,
 };
 
 struct Message {
@@ -25,19 +36,15 @@ struct SetTrainSpeedReply {
 
 struct GetTrainStateReply {
     ctl::Error error = ctl::Error::Ok;
-    Model::TrainState state; // TODO: must copy, a bit inefficient
+    ModelServer::TrainState state; // TODO: must copy, a bit inefficient
 };
 
-struct ListenHazardsReply {
-    ctl::Error error = ctl::Error::Ok;
-    Model::Hazard hazard; // TODO: must copy, a bit inefficient
-};
-
+// Shopkeeper
 void modelMain() {
     ~ctl::registerAs(ctl::Name{"Model"});
     TrainServer trainServer;
 
-    Cache<MAX_CONCURRENT_TRAINS, Train, Model::TrainState> trainStates;
+    ModelState state;
 
     for (;;) {
         ctl::Tid tid;
@@ -46,13 +53,13 @@ void modelMain() {
         switch (msg.type) {
             case MsgType::SetTrainSpeed: {
                 SetTrainSpeedReply rply;
-                auto idx = trainStates.getIdx(msg.train);
+                auto idx = state.trains.getIdx(msg.train);
                 if (idx == (Size)-1) {
                     rply.error = ctl::Error::NoRes;
                     ~reply(tid, rply);
                 }
                 // TODO: cut the middleman
-                trainStates.get(idx).speed = msg.speed;
+                state.trains.get(idx).speed = msg.speed;
                 trainServer.cmdSetSpeed(msg.train, msg.speed);
                 ~reply(tid, rply);
                 break;
@@ -60,18 +67,14 @@ void modelMain() {
 
             case MsgType::GetTrainState: {
                 GetTrainStateReply rply;
-                auto idx = trainStates.getIdx(msg.train);
+                auto idx = state.trains.getIdx(msg.train);
                 if (idx == (Size)-1) {
                     rply.error = ctl::Error::NoRes;
                     ~reply(tid, rply);
                 }
                 // TODO: reduce copying
-                rply.state = trainStates.get(idx);
+                rply.state = state.trains.get(idx);
                 ~reply(tid, rply);
-                break;
-            }
-
-            case MsgType::ListenHazards: {
                 break;
             }
         }
@@ -79,15 +82,15 @@ void modelMain() {
 }
 } // anonymous namespace
 
-void Model::create() {
+void ModelServer::create() {
     ~ctl::create(ctl::Priority(25), modelMain);
 }
 
-Model::Model()
+ModelServer::ModelServer()
     : tid(ctl::whoIs(ctl::Name{"Model"}).asValue()) {
 }
 
-ctl::Error Model::setTrainSpeed(Train train, Speed speed) {
+ctl::Error ModelServer::setTrainSpeed(Train train, Speed speed) {
     Message msg;
     msg.type = MsgType::SetTrainSpeed;
     msg.train = train;
@@ -97,26 +100,12 @@ ctl::Error Model::setTrainSpeed(Train train, Speed speed) {
     return reply.error;
 }
 
-ctl::Error Model::getTrainState(Train train, TrainState *state) {
+ctl::Error ModelServer::getTrainState(Train train, TrainState *state) {
     Message msg;
     msg.type = MsgType::GetTrainState;
     msg.train = train;
     GetTrainStateReply reply;
     ~send(tid, msg, reply);
     *state = reply.state;
-    return reply.error;
-}
-
-ctl::Error Model::listenHazards(Hazard *hazard) {
-    return listenHazards(INVALID_TRAIN, hazard);
-}
-
-ctl::Error Model::listenHazards(Train train, Hazard *hazard) {
-    Message msg;
-    msg.type = MsgType::ListenHazards;
-    msg.train = train;
-    ListenHazardsReply reply;
-    ~send(tid, msg, reply);
-    *hazard = reply.hazard;
     return reply.error;
 }

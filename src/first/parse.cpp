@@ -125,7 +125,7 @@ int parseCmd(const char *cmd) {
 
     // TODO: Make the parser a class too!
     static TrainServer trainServer;
-    static Model model;
+    static ModelServer model;
 
     const char *cmdStart = cmd;
     // Error checking is really messy =(

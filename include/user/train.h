@@ -1,13 +1,17 @@
 // Functions for controlling the trains.
 #pragma once
 
+#include "int.h"
 #include "types.h"
 
 using Train = ctl::NamedType<char, struct Train_t>;
 constexpr Train INVALID_TRAIN(0);
 
 // TODO: make more strongly typed
-typedef int Speed;
+typedef I32 Speed;
+typedef I32 Velocity;
+typedef I32 Distance;
+typedef I32 Time;
 
 class TrainServer {
     ctl::Tid tid;
