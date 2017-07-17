@@ -1,10 +1,11 @@
 #pragma once
 
 #include "err.h"
-#include "gasp.h"
 #include "switch.h"
 #include "train.h"
 #include "types.h"
+
+struct Gasp;
 
 // Maximum number of trains that can be on the track at once.
 constexpr auto MAX_CONCURRENT_TRAINS = 8;
@@ -29,8 +30,8 @@ class ModelServer {
 public:
     // Representation of a position offset from a switch.
     struct Position {
-        Switch swi;
-        int offset; // mm
+        int nodeIdx; // TODO: make NodeIdx typedef global
+        Distance offset; // mm
     };
 
     // Representation of a train's state.
@@ -61,5 +62,5 @@ public:
     // Returns:
     //   ctl::Error::Ok: success
     //   ctl::Error::NoRes: more than MAX_CONCURRENT_TRAINS
-    ctl::Error setGasp(Train train, Gasp gasp);
+    ctl::Error setGasp(Train train, const Gasp &gasp);
 };
