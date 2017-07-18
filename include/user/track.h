@@ -8,7 +8,7 @@ void cmdRoute(int train, int speed, int sensor);
 void cmdSetStoppingDistance(int mm);
 void cmdClearBrokenSwitches();
 
-static const auto Track = init_tracka();
+const TrackData &Track();
 
 struct Graph {
     const TrackNode *vertices;

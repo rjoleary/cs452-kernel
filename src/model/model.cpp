@@ -165,7 +165,7 @@ breakout:
 } // anonymous namespace
 
 const TrackEdge &ModelState::nodeEdge(NodeIdx idx) const {
-    const auto &tn = Track.nodes[idx];
+    const auto &tn = Track().nodes[idx];
     if (tn.type == NODE_BRANCH) {
         return tn.edge[switches[tn.num] == 'C'];
     }
@@ -182,7 +182,7 @@ void ModelState::updateTrainStates() {
 
         // Normalize the node.
         while (ts.position.offset > nodeEdge(ts.position.nodeIdx).dist) {
-            ts.position.nodeIdx = nodeEdge(ts.position.nodeIdx).dest - Track.nodes;
+            ts.position.nodeIdx = nodeEdge(ts.position.nodeIdx).dest - Track().nodes;
             ts.position.offset -= nodeEdge(ts.position.nodeIdx).dist;
         }
     }
@@ -195,7 +195,7 @@ void ModelState::updateTrainAtSensor(Train train, Sensor sensor) {
 
     // Update velocity based on sensor.
     ModelServer::TrainState &ts = trains.get(train);
-    Distance d = shortestDistance<Graph::VSize>(Track, ts.lastSensor.value(), sensor.value());
+    Distance d = shortestDistance<Graph::VSize>(Track(), ts.lastSensor.value(), sensor.value());
     ts.velocity = d / (t - ts.lastUpdate);
     ts.lastUpdate = t;
 

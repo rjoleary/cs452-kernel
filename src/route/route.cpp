@@ -41,7 +41,7 @@ void routeMain() {
 
         switch (msg.type) {
             case MsgType::NewRoute: {
-                auto ss = dijkstra(Graph{Track.nodes},
+                auto ss = dijkstra(Graph{Track().nodes},
                         msg.end.value());
                 ctl::reply(tid, RouteReply{ss});
             }

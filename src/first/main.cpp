@@ -25,6 +25,7 @@ void nsMain();
 void clockMain();
 
 void firstMain() {
+    Track();
     ASSERT(create(Priority(1), nsMain).asValue() == NS_TID);
     ASSERT(create(PRIORITY_MIN, idleMain).asValue() == IDLE_TID);
     ~ctl::registerAs(Name{"First"});
