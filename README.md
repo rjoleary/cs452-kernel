@@ -202,6 +202,15 @@ Solutions:
   - Creates a path from start to end
   - Tell reservation server to change train's speed
 
+Sensor attribution: Whenever the model gets sensor notified, the following
+steps are taken:
+1. Extrapolate the position of all trains based on time (position & velocity)
+2. Figure out which train caused the sensor (the sensor should be on a train's
+   reservation)
+3. Update that train's position to be exactly over the switch. Also, update the
+   velocity of the train to be more exact.
+4. Inform the reservation class to update reservations.
+
 ### Layers of Abstraction
 
 Each layer is built from multiple classes and/or tasks:
