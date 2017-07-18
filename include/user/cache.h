@@ -44,6 +44,7 @@ public:
             }
         }
         ASSERT(size_ != Cap);
+        keys_[size_] = key;
         return values_[size_++];
     }
     const V &get(const K &key) const {
