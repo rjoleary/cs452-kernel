@@ -118,9 +118,9 @@ void modelMain() {
                 auto erroror = attribution.attribute(msg.sensor);
                 Train t;
                 if (erroror.isError()) {
-                    for (Size i = 0; i < state.trains.size(); ++i) {
-                        if (state.trains.get(i).position == INVALID_POSITION) {
-                            t = state.trains.getKey(i);
+                    for (auto &train : state.trains.keys()) {
+                        if (state.trains.get(train).position == INVALID_POSITION) {
+                            t = train;
                             goto breakout;
                         }
                     }
