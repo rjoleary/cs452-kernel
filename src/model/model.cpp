@@ -158,7 +158,7 @@ void modelMain() {
                     if (state.newTrain.has) {
                         t = state.newTrain.train;
                     } else {
-                        bwprintf(COM2, "Unnattributed sensor %d\r\n", msg.sensor.value());
+                        bwprintf(COM2, "\033[45;1HUnnattributed sensor %d\r\n", msg.sensor.value());
                         // TODO: no known attribution
                         break;
                     }
@@ -166,23 +166,18 @@ void modelMain() {
                 else {
                     t = erroror.asValue();
                 }
-                bwprintf(COM2, "Sensor %d attributed for %d\r\n",
+                bwprintf(COM2, "\033[45;1HSensor %d attributed for %d\r\n",
                         msg.sensor.value(), int(t.underlying()));
                 // If this is a new train
-                if (state.newTrain.has) {
+                if (erroror.isError()) {
                     state.newTrain.has = false;
                     state.trains.get(state.newTrain.train) = state.newTrain.state;
                 }
                 else {
                     state.updateTrainAtSensor(t, msg.sensor);
                 }
-                const bool TRAINS_WILL_COLLIDE = false;
-                if (reservations.sensorTriggered(t, msg.sensor) == TRAINS_WILL_COLLIDE) {
-                    bwprintf(COM2, "SensorTriggered\r\n");
-                    trainServer.cmdSetSpeed(t, 0);
-                }
+                reservations.doReservations(t, msg.sensor, state.trains.get(t).speed);
                 reservations.printReservations();
-                bwprintf(COM2, "SensorTriggered\r\n");
                 break;
             }
 

@@ -7,7 +7,6 @@
 
 namespace {
 constexpr auto ReverseReservation = 200;
-constexpr auto TimeError = 1;
 }
 
 void savecur();
@@ -26,7 +25,7 @@ void Reservations::printReservations() const {
         const auto &reses = trainReservations.get(tr);
         for (Size i = 0; i < reses.length; i++) {
             const auto &res = reses.reservations[i];
-            const auto &node = Track().nodes[res.node];
+            const auto &node = Track().nodes[res];
             bwputstr(COM2, node.name);
             bwputstr(COM2, "->");
         }
@@ -36,30 +35,21 @@ void Reservations::printReservations() const {
     }
 }
 
-bool Reservations::reserve(Train train, NodeIdx node, int dist, int length) {
-    // TODO: Fix time
-    auto clockServ = ctl::whoIs(ctl::names::ClockServer).asValue();
-    auto velocity = model.trains.get(train).velocity;
-    auto startTime = ctl::time(clockServ).asValue() + dist/velocity,
-         endTime = startTime + length/velocity;
-    startTime -= TimeError;
-    endTime += TimeError;
+bool Reservations::reserve(Train train, NodeIdx node) {
     for (auto &reses : trainReservations.values()) {
         for (Size j = 0; j < reses.length; ++j) {
             const auto &res = reses.reservations[j];
-            if (res.node == node
-                    || Track().nodes[res.node].edge[DIR_AHEAD].dest->reverse - Track().nodes == node
-                    || (Track().nodes[res.node].type == NODE_BRANCH
-                        ? Track().nodes[res.node].edge[DIR_CURVED].dest->reverse - Track().nodes == node
+            if (res == node
+                    || Track().nodes[res].edge[DIR_AHEAD].dest->reverse - Track().nodes == node
+                    || (Track().nodes[res].type == NODE_BRANCH
+                        ? Track().nodes[res].edge[DIR_CURVED].dest->reverse - Track().nodes == node
                         : false)) {
-                if (res.end < startTime) continue;
-                if (res.start > endTime) continue;
                 return false;
             }
         }
     }
     auto &myRes = trainReservations.get(train);
-    myRes.reservations[myRes.length++] = {node, startTime, endTime};
+    myRes.reservations[myRes.length++] = node;
     return true;
 }
 
@@ -79,15 +69,13 @@ bool Reservations::sensorTriggered(Train train, Sensor sensor) {
             if (model.switches[reverse->num] == 'C')
                 dir = DIR_CURVED;
         }
-        auto dist = reverse->edge[dir].dist;
         backwardsDistance += reverse->edge[dir].dist;
         reverse = reverse->edge[dir].dest;
-        if (!reserve(train, reverse->reverse - Track().nodes, -backwardsDistance, dist)) return false;
+        if (!reserve(train, reverse->reverse - Track().nodes)) return false;
     }
 
     // Reserve forwards, to next sensor + stopping distance
     int forwardDistance = 0;
-    int totalDist = 0;
     bool foundNextSensor = false;
     auto forward = &startNode;
     while (!(foundNextSensor && forwardDistance >= model.trains.get(train).stoppingDistance)) {
@@ -97,19 +85,40 @@ bool Reservations::sensorTriggered(Train train, Sensor sensor) {
             if (model.switches[forward->num] == 'C')
                 dir = DIR_CURVED;
         }
-        if (!reserve(train, forward - Track().nodes, totalDist, forward->edge[dir].dist)) return false;
-        totalDist += forward->edge[dir].dist;
+        if (!reserve(train, forward - Track().nodes)) return false;
         if (foundNextSensor) {
             forwardDistance += forward->edge[dir].dist;
         }
         if (forward->edge[dir].dest->type == NODE_SENSOR) {
             foundNextSensor = true;
         }
-        bwprintf(COM2, "node %s dist %d totaldist %d\r\n", forward->name, totalDist, forwardDistance);
         forward = forward->edge[dir].dest;
     }
 
     return true;
+}
+
+void Reservations::doReservations(Train train, Sensor sensor, Speed speed) {
+    TrainServer ts;
+    Waitlist newList;
+    if (!sensorTriggered(train, sensor)) {
+        newList.items[newList.length++] = {train, sensor, speed};
+        ts.cmdSetSpeed(train, 0);
+        bwprintf(COM2, "Train %d waitlisted\r\n", train);
+    }
+    for (Size i = 0; i < waitlist.length; ++i) {
+        if (!sensorTriggered(waitlist.items[i].train, waitlist.items[i].sensor)) {
+            newList.items[newList.length++] = {waitlist.items[i].train, waitlist.items[i].sensor};
+            bwprintf(COM2, "Train %d rewaitlisted\r\n", waitlist.items[i].train);
+        }
+        else {
+            ts.cmdSetSpeed(waitlist.items[i].train, waitlist.items[i].speed);
+            bwprintf(COM2, "Train %d unwaitlisted %d\r\n", 
+                    waitlist.items[i].train, waitlist.items[i].speed);
+        }
+    }
+    waitlist = newList;
+    // see if we can move anything in waitlist
 }
 
 bool Reservations::hasReservation(Train train, NodeIdx idx) const {
@@ -117,7 +126,7 @@ bool Reservations::hasReservation(Train train, NodeIdx idx) const {
     const TrainReservation &tr = trainReservations.get(train);
     for (Size i = 0; i < tr.length; i++) {
         // TODO: time-based hasReservation
-        if (tr.reservations[i].node == idx) {
+        if (tr.reservations[i] == idx) {
             return true;
         }
     }

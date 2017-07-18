@@ -117,14 +117,14 @@ void setupSwitches() {
     cmdSetSwitch(155, 'C');
     cmdSetSwitch(156, 'S');
 
-    cmdSetSwitch(11, 'S');
+    /*cmdSetSwitch(11, 'S');
     cmdSetSwitch(12, 'S');
     cmdSetSwitch(14, 'S');
     cmdSetSwitch(15, 'S');
     cmdSetSwitch(9, 'S');
     cmdSetSwitch(8, 'S');
     cmdSetSwitch(7, 'S');
-    cmdSetSwitch(6, 'S');
+    cmdSetSwitch(6, 'S');*/
 }
 
 void cmdSetSwitch(int sw, char dir) {
