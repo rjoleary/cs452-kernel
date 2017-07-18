@@ -8,6 +8,7 @@
 #include <itc.h>
 #include <io.h>
 #include <train.h>
+#include <route.h>
 
 // Forward declaration.
 void idleMain();
@@ -37,6 +38,7 @@ void firstMain() {
     ~create(Priority(29), io::uart1RxMain);
     ~create(Priority(29), clockMain);
     ~create(Priority(25), trainManMain);
+    ~create(Priority(23), routeMain);
 
     runTerminal();
 }

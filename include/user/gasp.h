@@ -12,6 +12,6 @@ enum class SwitchGradient : U8 {
 
 // Gradient Absolute Switch Profile
 struct Gasp {
-    SwitchGradient gradient[NumSwitches];
+    SwitchState gradient;
     Position end;
 };
