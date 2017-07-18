@@ -1,11 +1,86 @@
 #include "reservations.h"
+#include "model.h"
+#include "track.h"
+#include "track_node.h"
+#include "ns.h"
+#include "clock.h"
 
-Reservations::Reservations(const ModelState &model)
-    : model_(model) {
+namespace {
+constexpr auto ReverseReservation = 200;
 }
 
-void Reservations::sensorTriggered(Train train, Sensor sensor) {
-    // TODO(yelnar)
-    (void) train;
-    (void) sensor;
+Reservations::Reservations(const ModelState &mod)
+    : model(mod) {
+}
+
+bool Reservations::reserve(Train train, NodeIdx node, int dist, int length) {
+    // TODO: Fix time
+    auto clockServ = ctl::whoIs(ctl::names::ClockServer).asValue();
+    auto velocity = model.trains.get(train).velocity;
+    auto startTime = ctl::time(clockServ).asValue() + dist/velocity,
+         endTime = startTime + length/velocity;
+    for (Size i = 0; i < trainReservations.size(); ++i) {
+        auto reses = trainReservations.get(i);
+        for (Size j = 0; j < reses.length; ++j) {
+            const auto &res = reses.reservations[j];
+            if (res.node == node
+                    || Track.nodes[res.node].edge[DIR_AHEAD].dest->reverse - Track.nodes == node 
+                    || (Track.nodes[res.node].type == NODE_BRANCH
+                        ? Track.nodes[res.node].edge[DIR_CURVED].dest->reverse - Track.nodes == node 
+                        : false)) {
+                if (res.end < startTime) continue;
+                if (res.start > endTime) continue;
+                return false;
+            }
+        }
+    }
+    auto &myRes = trainReservations.get(train);
+    myRes.reservations[myRes.length++] = {node, startTime, endTime};
+    return true;
+}
+
+bool Reservations::sensorTriggered(Train train, Sensor sensor) {
+    trainReservations.get(train).length = 0;
+
+    const auto &startNode = Track.nodes[sensor.value()];
+
+    // Reserve backwards
+    int backwardsDistance = 0;
+    auto reverse = startNode.reverse;
+    while (backwardsDistance < ReverseReservation) {
+        auto dir = DIR_AHEAD;
+        // If it was a branch, get the correct previous node
+        if (reverse->type == NODE_BRANCH) {
+            if (model.switches[reverse->num] == 'C')
+                dir = DIR_CURVED;
+        }
+        auto dist = reverse->edge[dir].dist;
+        backwardsDistance += reverse->edge[dir].dist;
+        reverse = reverse->edge[dir].dest;
+        if (!reserve(train, reverse->reverse - Track.nodes, -backwardsDistance, dist)) return false;
+    }
+
+    // Reserve forwards, to next sensor + stopping distance
+    int forwardDistance = 0;
+    int totalDist = 0;
+    bool foundNextSensor = false;
+    auto forward = &startNode;
+    while (!(foundNextSensor && forwardDistance >= model.trains.get(train).stoppingDistance)) {
+        auto dir = DIR_AHEAD;
+        if (forward->type == NODE_BRANCH) {
+            if (model.switches[forward->num] == 'C')
+                dir = DIR_CURVED;
+        }
+        if (!reserve(train, forward - Track.nodes, totalDist, forward->edge[dir].dist)) return false;
+        totalDist += forward->edge[dir].dist;
+        if (foundNextSensor) {
+            forwardDistance += forward->edge[dir].dist;
+        }
+        if (forward->edge[dir].dest->type == NODE_SENSOR) {
+            foundNextSensor = true;
+        }
+        forward = forward->edge[dir].dest;
+    }
+
+    return true;
 }

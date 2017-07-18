@@ -8,14 +8,14 @@ using namespace ctl;
 
 namespace ctl {
     void assert(const char *) {
+        std::abort();
     }
 }
 
 int main() {
-    TrackNode nodes[TRACK_MAX];
-    init_tracka(nodes);
+    auto track = init_tracka();
 
-    auto ss = dijkstra(Graph{nodes}, 66);
+    auto ss = dijkstra(Graph{track.nodes}, 45);
 
     for (const auto &sse : ss.states) {
         std::cout << "Switch state: " << sse<<"\n";

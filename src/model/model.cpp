@@ -8,12 +8,6 @@
 #include <reservations.h>
 
 namespace {
-// TODO: move to some standard header
-template <typename T>
-const T &min(const T &a, const T &b) {
-    return a <= b ? a : b;
-}
-
 enum class MsgType {
     SetTrainSpeed,
     GetTrainState,

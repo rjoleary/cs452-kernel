@@ -28,10 +28,29 @@ public:
         }
         return -1;
     }
+    CacheIndex getIdx(const K &key) const {
+        for (Size i = 0; i < size_; i++) {
+            if (keys_[i] == key) {
+                return i;
+            }
+        }
+        return -1;
+    }
 
     // Get a key from the given cache index.
     V &get(CacheIndex idx) {
         ASSERT(idx < size_);
         return values_[idx];
+    }
+    const V &get(CacheIndex idx) const {
+        ASSERT(idx < size_);
+        return values_[idx];
+    }
+
+    V &get(const K &key) {
+        return get(getIdx(key));
+    }
+    const V &get(const K &key) const {
+        return get(getIdx(key));
     }
 };

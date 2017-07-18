@@ -1,10 +1,11 @@
+#include <track_data_new.h>
+#include <std.h>
 /* THIS FILE IS GENERATED CODE -- DO NOT EDIT */
 
-#include "track_data_new.h"
-#include <std.h>
-
-void init_tracka(TrackNode *track) {
-  memset(track, 0, TRACK_MAX*sizeof(TrackNode));
+TrackData init_tracka() {
+    TrackData data;
+    auto &track = data.nodes;
+    memset(track, 0, TRACK_MAX);
   track[0].name = "A1";
   track[0].type = NODE_SENSOR;
   track[0].num = 0;
@@ -1185,8 +1186,9 @@ void init_tracka(TrackNode *track) {
   track[143].name = "EX10";
   track[143].type = NODE_EXIT;
   track[143].reverse = &track[142];
+  return data;
 }
-
+/*
 void init_trackb(TrackNode *track) {
   memset(track, 0, TRACK_MAX*sizeof(TrackNode));
   track[0].name = "A1";
@@ -2349,4 +2351,4 @@ void init_trackb(TrackNode *track) {
   track[139].name = "EX10";
   track[139].type = NODE_EXIT;
   track[139].reverse = &track[138];
-}
+}*/

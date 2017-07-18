@@ -6,5 +6,9 @@
 // The track initialization functions expect an array of this size.
 #define TRACK_MAX 144
 
-void init_tracka(TrackNode *track);
-void init_trackb(TrackNode *track);
+struct TrackData {
+    TrackNode nodes[TRACK_MAX];
+};
+
+TrackData init_tracka();
+//void init_trackb(TrackNode *track);

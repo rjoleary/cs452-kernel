@@ -64,7 +64,7 @@ public:
 struct ModelState {
     Time lastUpdate;
     Cache<MAX_CONCURRENT_TRAINS, Train, ModelServer::TrainState> trains;
-    Switch switches[NumSwitches];
+    SwitchState switches;
     void updateTrainStates();
     void updateTrainAtSensor(Train train, Sensor sensor);
 };

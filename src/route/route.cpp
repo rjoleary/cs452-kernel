@@ -31,9 +31,6 @@ struct RouteReply {
 } // unnamed namespace
 
 void routeMain() {
-    TrackNode trackNodes[TRACK_MAX];
-    init_tracka(trackNodes);
-    
     for (;;) {
         ctl::Tid tid;
         Message msg;
@@ -42,7 +39,7 @@ void routeMain() {
 
         switch (msg.type) {
             case MsgType::NewRoute: {
-                /*auto ss = */dijkstra(Graph{trackNodes},
+                /*auto ss = */dijkstra(Graph{Track.nodes},
                         msg.end.value());
             }
         }
