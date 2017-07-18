@@ -90,6 +90,8 @@ void modelMain() {
     Reservations reservations(state);
     Attribution attribution(state, reservations);
 
+    auto clock = ctl::whoIs(ctl::names::ClockServer).asValue();
+
     for (;;) {
         ctl::Tid tid;
         Message msg;
@@ -113,7 +115,8 @@ void modelMain() {
                 }
                 ts->velocity = msg.speed*10;
                 ts->speed = msg.speed;
-                // set time too, also stopping dist?
+                ts->stoppingDistance = 500;
+                ts->lastUpdate = time(clock).asValue();
                 // TODO: cut the middleman
                 trainServer.cmdSetSpeed(msg.train, msg.speed);
                 ~reply(tid, rply);
