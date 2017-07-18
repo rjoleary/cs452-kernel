@@ -181,7 +181,8 @@ void printUpdate(const SensorSet &prevSensors, const SensorSet &sensors, unsigne
                     bwputc(COM2, layout.character);
                     bwputstr(COM2, "\033[0m");
                 } else {
-                    bwputc(COM2, LAYOUT[(layout.row+1)*36+layout.col-1]);
+                    const int LAYOUT_WIDTH = 54;
+                    bwputc(COM2, LAYOUT[(layout.row+1)*LAYOUT_WIDTH+layout.col-1]);
                 }
                 restorecur();
                 flush(COM2);

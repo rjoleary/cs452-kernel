@@ -14,6 +14,23 @@ Reservations::Reservations(const ModelState &mod)
     : model(mod) {
 }
 
+void Reservations::printReservations() const {
+    int top = 3;
+    int left = 38;
+    for (const auto &tr : trainReservations.keys()) {
+        bwprintf(COM2, "\033[%d;%dH\033[K;Train %d: ", top, left, tr);
+        const auto &reses = trainReservations.get(tr);
+        for (Size i = 0; i < reses.length; i++) {
+            const auto &res = reses.reservations[i];
+            const auto &node = Track.nodes[res.node];
+            bwputstr(COM2, node.name);
+            bwputstr(COM2, "->");
+        }
+        flush(COM2);
+        top++;
+    }
+}
+
 bool Reservations::reserve(Train train, NodeIdx node, int dist, int length) {
     // TODO: Fix time
     auto clockServ = ctl::whoIs(ctl::names::ClockServer).asValue();
