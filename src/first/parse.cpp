@@ -214,10 +214,12 @@ int parseCmd(const char *cmd) {
             return 0;
         }
         ctl::Error err = model.setTrainSpeed(Train(number.val), speed.val);
-        if (err == ctl::Error::NoRes) {
-            bwputstr(COM2, "Error: too many concurrent trains\r\n");
-        } else {
-            bwprintf(COM2, "Error: %s\r\n", errorToString(err));
+        if (err != ctl::Error::Ok) {
+            if (err == ctl::Error::NoRes) {
+                bwputstr(COM2, "Error: too many concurrent trains\r\n");
+            } else {
+                bwprintf(COM2, "Error: %s\r\n", errorToString(err));
+            }
         }
     } else if (isIdent(t, "route")) {
         DecimalToken number = nextDec(&cmd);
