@@ -14,11 +14,6 @@ struct Position {
     Distance offset; // mm
 
 };
-inline bool operator==(const Position &lhs, const Position &rhs) {
-    return lhs.nodeIdx == rhs.nodeIdx && lhs.offset == rhs.offset;
-}
-
-constexpr Position INVALID_POSITION = {(NodeIdx)-1, -1};
 
 class TrainServer {
     ctl::Tid tid;

@@ -8,7 +8,7 @@ Attribution::Attribution(const ModelState &model, const Reservations &reservatio
 }
 
 ctl::ErrorOr<Train> Attribution::attribute(const Sensor &sensor) {
-    for (auto &t : model_.trains.keys()) {
+    for (const auto &t : model_.trains.keys()) {
         if (reservations_.hasReservation(t, sensor.value())) {
             return ctl::ErrorOr<Train>::fromValue(t);
         }

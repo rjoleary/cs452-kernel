@@ -17,7 +17,7 @@ public:
     }
 
     // Return whether using the given key will overflow.
-    bool willOverflow(const K &key) {
+    bool willOverflow(const K &key) const {
         for (Size i = 0; i < size_; i++) {
             if (keys_[i] == key) {
                 return false;
@@ -27,7 +27,7 @@ public:
     }
 
     // Return whether the given value is in the cache.
-    bool has(const K &key) {
+    bool has(const K &key) const {
         for (Size i = 0; i < size_; i++) {
             if (keys_[i] == key) {
                 return true;

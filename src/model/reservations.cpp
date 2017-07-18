@@ -105,6 +105,7 @@ bool Reservations::sensorTriggered(Train train, Sensor sensor) {
 }
 
 bool Reservations::hasReservation(Train train, NodeIdx idx) const {
+    if (!trainReservations.has(train)) return false;
     const TrainReservation &tr = trainReservations.get(train);
     for (Size i = 0; i < tr.length; i++) {
         // TODO: time-based hasReservation

@@ -79,8 +79,18 @@ void modelMain() {
                     ~reply(tid, rply);
                     break;
                 }
-                auto &ts = state.trains.get(msg.train);
-                ts.speed = msg.speed;
+                ModelServer::TrainState *ts;
+                if (!state.trains.has(msg.train)) {
+                    state.newTrain.has = true;
+                    state.newTrain.train = msg.train;
+                    ts = &state.newTrain.state;
+                }
+                else {
+                    ts = &state.trains.get(msg.train);
+                }
+                ts->velocity = msg.speed*10;
+                ts->speed = msg.speed;
+                // set time too, also stopping dist?
                 // TODO: cut the middleman
                 trainServer.cmdSetSpeed(msg.train, msg.speed);
                 ~reply(tid, rply);
@@ -118,11 +128,10 @@ void modelMain() {
                 auto erroror = attribution.attribute(msg.sensor);
                 Train t;
                 if (erroror.isError()) {
-                    for (auto &train : state.trains.keys()) {
-                        if (state.trains.get(train).position == INVALID_POSITION) {
-                            t = train;
-                            goto breakout;
-                        }
+                    // If we have a new train, we attribute the sensor to it
+                    if (state.newTrain.has) {
+                        t = state.newTrain.train;
+                        goto breakout;
                     }
                     bwprintf(COM2, "Unnattributed sensor %d\r\n", msg.sensor.value());
                     // TODO: no known attribution
@@ -132,13 +141,22 @@ void modelMain() {
                     t = erroror.asValue();
                 }
 breakout:
-                bwprintf(COM2, "Sensor %d attributed for %d\r\n", msg.sensor.value(), int(t.underlying()));
-                state.updateTrainAtSensor(t, msg.sensor);
+                bwprintf(COM2, "Sensor %d attributed for %d\r\n",
+                        msg.sensor.value(), int(t.underlying()));
+                // If this is a new train
+                if (state.newTrain.has) {
+                    state.newTrain.has = false;
+                    state.trains.get(state.newTrain.train) = state.newTrain.state;
+                }
+                else {
+                    state.updateTrainAtSensor(t, msg.sensor);
+                }
                 const bool TRAINS_WILL_COLLIDE = false;
                 if (reservations.sensorTriggered(t, msg.sensor) == TRAINS_WILL_COLLIDE) {
                     bwprintf(COM2, "SensorTriggered\r\n");
                     trainServer.cmdSetSpeed(t, 0);
                 }
+                bwprintf(COM2, "SensorTriggered\r\n");
                 break;
             }
         }

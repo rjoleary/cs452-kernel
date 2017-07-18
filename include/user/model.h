@@ -36,7 +36,7 @@ public:
         Speed speed = 0;
         Velocity velocity = 0;
         Distance stoppingDistance = 0;
-        Position position = INVALID_POSITION;
+        Position position;
         Sensor lastSensor;
         Gasp gasp;
     };
@@ -68,6 +68,12 @@ struct ModelState {
     Time lastUpdate; // last time positions were updated
     Cache<MAX_CONCURRENT_TRAINS, Train, ModelServer::TrainState> trains;
     SwitchState switches;
+    struct {
+        bool has = false;
+        Train train;
+        ModelServer::TrainState state;
+    } newTrain;
+
     // Return the next edge of the node.
     const TrackEdge &nodeEdge(NodeIdx) const;
     void updateTrainStates();
