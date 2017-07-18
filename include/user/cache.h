@@ -7,7 +7,7 @@ template <Size Cap, typename K, typename V>
 class Cache {
     K keys_[Cap];
     V values_[Cap];
-    Size size_;
+    Size size_ = 0;
 public:
     typedef Size CacheIndex;
 
