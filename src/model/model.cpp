@@ -16,6 +16,7 @@ enum class MsgType {
     GetTrainState,
     SetGasp,
     SensorNotify,
+    SwitchNotify,
 };
 
 struct alignas(4) Message {
@@ -23,6 +24,8 @@ struct alignas(4) Message {
     Train train;
     Speed speed;
     Sensor sensor;
+    char sw;
+    char state;
     Gasp gasp; // TODO: this is quite large for every message
 };
 
@@ -57,13 +60,33 @@ void sensorNotifierMain() {
     }
 }
 
+void switchNotifierMain() {
+    auto serv = whoIs(ModelServName).asValue();
+    Message msg;
+    msg.type = MsgType::SwitchNotify;
+    auto switches = getSwitchData();
+    for (;;) {
+        auto newSwitches = waitSwitchChange();
+        for (int i = 0; i < NumSwitches; ++i) {
+            if (switches.states[i] != newSwitches.states[i]) {
+                msg.sw = switches.fromIdx(i);
+                msg.state = newSwitches.states[i];
+                ~send(serv, msg, ctl::EmptyMessage);
+            }
+        }
+        switches = newSwitches;
+    }
+}
+
 // Shopkeeper
 void modelMain() {
     ~ctl::registerAs(ModelServName);
     ~ctl::create(ctl::Priority(24), sensorNotifierMain);
+    ~create(ctl::Priority(26), switchNotifierMain);
     TrainServer trainServer;
 
     ModelState state;
+    state.switches = getSwitchData();
     Reservations reservations(state);
     Attribution attribution(state, reservations);
 
@@ -157,6 +180,12 @@ void modelMain() {
                 }
                 reservations.printReservations();
                 bwprintf(COM2, "SensorTriggered\r\n");
+                break;
+            }
+
+            case MsgType::SwitchNotify: {
+                ~reply(tid, ctl::EmptyMessage);
+                state.switches[msg.sw] = msg.state;
                 break;
             }
         }
