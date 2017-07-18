@@ -3,6 +3,7 @@
 #include "heap.h"
 #include "std.h"
 #include "switch.h"
+#include "track.h"
 
 using ctl::Heap;
 
@@ -73,7 +74,7 @@ SwitchState dijkstra(const T &graph, NodeIdx end) {
             /* .distance = */ front.weight
         };
         if (graph.isSwitch(front.vertexIdx)) {
-            ss[graph.getSwitchNum(front.vertexIdx)] = 
+            ss[graph.getSwitchNum(front.vertexIdx)] =
                 graph.getSwitchPath(front.childIdx, front.vertexIdx);
         }
 
@@ -114,4 +115,94 @@ SwitchState dijkstra(const T &graph, NodeIdx end) {
         }
     }
     return ss;
+}
+
+template <Size MaxSize>
+Distance shortestDistance(const TrackData &graph, NodeIdx start, NodeIdx end) {
+    struct alignas(4) WeightedVertex {
+        I16 weight;
+        NodeIdx vertexIdx;
+    };
+
+    struct Comp {
+        bool operator()(const WeightedVertex &lhs, const WeightedVertex &rhs) const {
+            return lhs.weight < rhs.weight;
+        }
+    };
+
+    struct Tree {
+        // Distance to this node from the start node. Unreachable nodes have a
+        // value of -1.
+        I16 distance = -1;
+
+        U8 nNodes;
+    } tree[MaxSize];
+
+    // Push the first node onto the heap.
+    Heap<MaxSize, WeightedVertex, Comp> heap;
+    heap.push(WeightedVertex{
+        /* .weight    = */ 0,
+        /* .vertexIdx = */ start,
+    });
+
+    while (!heap.empty()) {
+        // Pop the shortest path from the heap.
+        WeightedVertex front = heap.pop();
+
+        if (tree[front.vertexIdx].distance != -1) continue;
+
+        // Update the weight and parent.
+        tree[front.vertexIdx] = Tree{
+            /* .distance = */ front.weight,
+        };
+
+        // Exit early if we reached the end node.
+        if (front.vertexIdx == end) {
+            break;
+        }
+
+        // Determine number of adjacent nodes.
+        Size adjacentN = 0;
+        switch (graph.nodes[front.vertexIdx].type) {
+			case NODE_BRANCH:
+				adjacentN = 2;
+				break;
+			case NODE_SENSOR:
+			case NODE_MERGE:
+			case NODE_BROKEN_SENSOR:
+			case NODE_BROKEN_SW_ST:
+			case NODE_BROKEN_SW_CV:
+			case NODE_ENTER:
+				adjacentN = 1;
+				break;
+			case NODE_EXIT:
+                adjacentN = 0;
+                break;
+		}
+
+        // Push all the adjacent nodes onto the heap.
+        for (Size i = 0; i < adjacentN; i++) {
+            const auto &edge = graph.nodes[front.vertexIdx].type == NODE_BROKEN_SW_CV ?
+                &graph.nodes[front.vertexIdx].edge[i+1] :
+                &graph.nodes[front.vertexIdx].edge[i];
+            NodeIdx vertexIdx = edge->dest - graph.nodes;
+            I16 weight = edge->dist;
+
+            // Skip if we have already found a path to this node.
+            if (tree[vertexIdx].distance != -1) {
+                continue;
+            }
+
+            heap.push(WeightedVertex{
+                /* .weight    = */ static_cast<I16>(front.weight + weight),
+                /* .vertexIdx = */ vertexIdx,
+            });
+        }
+    }
+
+    if (tree[end].distance == -1) {
+        return 0;
+    }
+
+    return tree[end].distance;
 }

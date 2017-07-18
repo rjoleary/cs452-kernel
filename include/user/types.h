@@ -1,5 +1,7 @@
 #pragma once
 
+#include "int.h"
+
 namespace ctl {
 template <typename T, typename Name>
 class NamedType {
@@ -25,3 +27,9 @@ using Priority = NamedType<unsigned, struct Priority_t>;
 
 constexpr Priority PRIORITY_MIN{0}, PRIORITY_MAX{31};
 }
+
+// TODO: make more strongly typed
+typedef I32 Distance; // mm
+typedef I32 Speed; // [0-15]
+typedef I32 Velocity; // mm/tick
+typedef I32 Time; // ticks

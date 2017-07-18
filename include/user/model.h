@@ -7,6 +7,7 @@
 #include "switch.h"
 #include "train.h"
 #include "types.h"
+#include "track_node.h"
 
 // Maximum number of trains that can be on the track at once.
 constexpr auto MAX_CONCURRENT_TRAINS = 8;
@@ -31,10 +32,12 @@ class ModelServer {
 public:
     // Representation of a train's state.
     struct TrainState {
-        Speed speed;
-        Velocity velocity;
-        Distance stoppingDistance;
+        Time lastUpdate = 0; // last time of sensor attribution
+        Speed speed = 0;
+        Velocity velocity = 0;
+        Distance stoppingDistance = 0;
         Position position;
+        Sensor lastSensor;
         Gasp gasp;
     };
 
@@ -62,9 +65,11 @@ public:
 };
 
 struct ModelState {
-    Time lastUpdate;
+    Time lastUpdate; // last time positions were updated
     Cache<MAX_CONCURRENT_TRAINS, Train, ModelServer::TrainState> trains;
     SwitchState switches;
+    // Return the next edge of the node.
+    const TrackEdge &nodeEdge(NodeIdx) const;
     void updateTrainStates();
     void updateTrainAtSensor(Train train, Sensor sensor);
 };

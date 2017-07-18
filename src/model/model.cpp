@@ -3,9 +3,12 @@
 #include <attribution.h>
 #include <itc.h>
 #include <ns.h>
+#include <reservations.h>
 #include <sensor.h>
 #include <task.h>
-#include <reservations.h>
+#include <track.h>
+#include <clock.h>
+#include <path_finding.h>
 
 namespace {
 enum class MsgType {
@@ -62,7 +65,7 @@ void modelMain() {
 
     ModelState state;
     Reservations reservations(state);
-    Attribution attribution(state);
+    Attribution attribution(state, reservations);
 
     for (;;) {
         ctl::Tid tid;
@@ -113,9 +116,17 @@ void modelMain() {
             case MsgType::SensorNotify: {
                 ~reply(tid, ctl::EmptyMessage);
                 state.updateTrainStates();
-                Train t = attribution.attribute(msg.sensor);
+                auto erroror = attribution.attribute(msg.sensor);
+                if (erroror.isError()) {
+                    // TODO: no known attribution
+                    break;
+                }
+                Train t = erroror.asValue();
                 state.updateTrainAtSensor(t, msg.sensor);
-                reservations.sensorTriggered(t, msg.sensor);
+                const bool TRAINS_WILL_COLLIDE = false;
+                if (reservations.sensorTriggered(t, msg.sensor) == TRAINS_WILL_COLLIDE) {
+                    trainServer.cmdSetSpeed(t, 0);
+                }
                 break;
             }
         }
@@ -123,14 +134,44 @@ void modelMain() {
 }
 } // anonymous namespace
 
+const TrackEdge &ModelState::nodeEdge(NodeIdx idx) const {
+    const auto &tn = Track.nodes[idx];
+    if (tn.type == NODE_BRANCH) {
+        return tn.edge[switches[tn.num] == 'C'];
+    }
+    return tn.edge[DIR_AHEAD];
+}
+
 void ModelState::updateTrainStates() {
-    // TODO
+    const static auto clock = whoIs(ctl::names::ClockServer).asValue();
+    const auto t = time(clock).asValue();
+
+    // Update the position of every train.
+    for (Size i = 0; i < trains.size(); i++) {
+        auto &ts = trains.get(i);
+        ts.position.offset += ts.velocity * (t - lastUpdate);
+
+        // Normalize the node.
+        while (ts.position.offset > nodeEdge(ts.position.nodeIdx).dist) {
+            ts.position.nodeIdx = nodeEdge(ts.position.nodeIdx).dest - Track.nodes;
+            ts.position.offset -= nodeEdge(ts.position.nodeIdx).dist;
+        }
+    }
+    lastUpdate = t;
 }
 
 void ModelState::updateTrainAtSensor(Train train, Sensor sensor) {
-    // TODO
-    (void) train;
-    (void) sensor;
+    const static auto clock = whoIs(ctl::names::ClockServer).asValue();
+    const auto t = time(clock).asValue();
+
+    // Update velocity based on sensor.
+    ModelServer::TrainState &ts = trains.get(train);
+    Distance d = shortestDistance<Graph::VSize>(Track, ts.lastSensor.value(), sensor.value());
+    ts.velocity = d / (t - ts.lastUpdate);
+    ts.lastUpdate = t;
+
+    // TODO: update stopping distance as a function of velocity
+    ts.stoppingDistance = 500;
 }
 
 void ModelServer::create() {

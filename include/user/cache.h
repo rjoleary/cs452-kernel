@@ -53,4 +53,13 @@ public:
     const V &get(const K &key) const {
         return get(getIdx(key));
     }
+
+    K &getKey(CacheIndex idx) {
+        ASSERT(idx < size_);
+        return keys_[idx];
+    }
+    const K &getKey(CacheIndex idx) const {
+        ASSERT(idx < size_);
+        return keys_[idx];
+    }
 };

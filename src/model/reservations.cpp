@@ -24,9 +24,9 @@ bool Reservations::reserve(Train train, NodeIdx node, int dist, int length) {
         for (Size j = 0; j < reses.length; ++j) {
             const auto &res = reses.reservations[j];
             if (res.node == node
-                    || Track.nodes[res.node].edge[DIR_AHEAD].dest->reverse - Track.nodes == node 
+                    || Track.nodes[res.node].edge[DIR_AHEAD].dest->reverse - Track.nodes == node
                     || (Track.nodes[res.node].type == NODE_BRANCH
-                        ? Track.nodes[res.node].edge[DIR_CURVED].dest->reverse - Track.nodes == node 
+                        ? Track.nodes[res.node].edge[DIR_CURVED].dest->reverse - Track.nodes == node
                         : false)) {
                 if (res.end < startTime) continue;
                 if (res.start > endTime) continue;
@@ -83,4 +83,15 @@ bool Reservations::sensorTriggered(Train train, Sensor sensor) {
     }
 
     return true;
+}
+
+bool Reservations::hasReservation(Train train, NodeIdx idx) const {
+    const TrainReservation &tr = trainReservations.get(train);
+    for (Size i = 0; i < tr.length; i++) {
+        // TODO: time-based hasReservation
+        if (tr.reservations[i].node == idx) {
+            return true;
+        }
+    }
+    return false;
 }

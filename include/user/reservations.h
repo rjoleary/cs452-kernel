@@ -23,5 +23,7 @@ class Reservations {
 
   public:
     Reservations(const ModelState &model);
+    // Return true if there is no contention.
     bool sensorTriggered(Train train, Sensor sensor);
+    bool hasReservation(Train, NodeIdx) const;
 };
