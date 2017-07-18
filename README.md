@@ -6,7 +6,7 @@ Students: Ryan O'Leary (rj2olear) and Elnar Dakeshov (edakesho)
 
 Student Ids: 20509502 and 20577578
 
-Date: June 29, 2017
+Date: July 18, 2017
 
 
 ## Overview
@@ -74,6 +74,7 @@ The following convenient features can be found on the user interface:
 - Percent user time spent in the idle task compared to other tasks
 - Top 10 most recent sensor triggers
 - Track A layout including 22 switch states and broken sensors
+- List of reservations for each train
 - Command prompt
 
 
@@ -88,12 +89,10 @@ Enter instructions at the `%` prompt. The available instructions are:
 - `q` - Quit and return to RedBoot.
 - `route TR SP SEN` - Route train to sensor at given speed.
 - `rv NUMBER` - Reverse the direction of the train.
-- `ssss NUMBER` - Set the stopping distance in mm.
 - `sw NUMBER DIR` - Set switch direction ('S' or 'C').
 - `task (TID|NAME)` - Return info about a task.
 - `taskall` - Return info about all tasks.
 - `tr NUMBER SPEED` - Set train speed (0 for stop).
-- `unbreak` - Mark all sensors as unbroken.
 
 Additionally, the Tab key will stop all trains in case of emergency.
 
@@ -104,7 +103,6 @@ Additionally, the Tab key will stop all trains in case of emergency.
 Features:
 - multiple trains without collisions
 - reverse trains during routing
-- short stops
 - free running mode
 
 Hazards: Some of these have meaning in the code, the rest are conceptual.
@@ -134,9 +132,9 @@ Routing Layer
   - Contention: The train has stopped to avoid collision. To resolve this
     issue, the routing layer generates a new GASP from a graph with the
     offending node removed.
-  - Broken switch: A switch is considered broken if having the opposite state is
-    . To resolve this issue, the routing layer generates a new GASP from a
-    graph with the offending node removed.
+  - Broken switch: A switch is considered broken if the train diverges from the
+    expected path. To resolve this issue, the routing layer generates a new
+    GASP from a graph with the offending node removed.
 
 Model Layer
 - Exposes a function for getting train state. The state contains:
@@ -146,15 +144,12 @@ Model Layer
   - estimated location of the train
 - Sensor attribution
 - Models all trains locations/velocities
-- Performs sensor attribution
 - Train state extrapolation
 
 Reservation System (part of the model layer)
 - Stores reservations: a list of track nodes reserved by each train
   - All trains have reservations regardless of whether they are being routed.
     This is required to support free-running mode.
-  - For each track node, it stores the absolute time the trains will be
-    expected to enter and leave it.
   - The reservation starts from the node immediately behind the train to the
     stopping distance from the next sensor.
   - Whenever the reservation is calculated, the previous reservation is thrown
@@ -174,27 +169,30 @@ Reservation System (part of the model layer)
   - No two reservations may contain the same track node
 - Listens to sensors
   - Update train reservations
-- Timeout
+- Timeout to prevent contention
   - If a train is blocked on another train's reservation for too long, signal
     to routing server to reroute. The routing server is given the offending
     node.
 
 Solutions:
 - One train following another: The leader behaves normally. The follower is
-  controlled via negative feedback to stay at the cusp of the yellow zone. That
-  is, when a train receives a yellow zone hazard and the offending train's
-  velocity is in the same direction, the follower matches the leader's velocity.
-  To prevent unstable velocities, the following train's speed must always
-  decrease while it is in the yellow zone.
+  controlled via negative feedback to stay at the cusp of the reserved zone.
+  That is, when a train receives a sensor notification and the offending
+  train's velocity is in the same direction, the follower matches the leader's
+  velocity. To prevent unstable velocities, the following train's speed must
+  always decrease.
 - Two trains on a collision course: There are three generalized situations in
   which trains may collide:
-  - Two trains on a straight:
-  - Two trains on the branches of a switch:
-  - One train on the branch, the other on the merge of a switch:
-- Short routes with much switching
-- Single failure of sensors
-- Single failure of switch
-- There are one or more switches in the path
+  - Two trains on a straight: There reserved zones collide and both trains are
+    stopped.
+  - Two trains on the branches of a switch: One reserved zone is laid down
+    first, the second is blocked. One train will wait for the other.
+  - One train on the branch, the other on the merge of a switch: This situation
+    is graphically identical to the straight case.
+- Single failure of sensors: Our reservations are large enough such that they
+  contain the next two sensors. When a sensor fails, the next sensor can be
+  used for attribution.
+- Single failure of a switch: Not solved.
 
 - Rerouting due to contention
   - Query the state of the train
