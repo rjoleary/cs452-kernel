@@ -74,14 +74,14 @@ void modelMain() {
         switch (msg.type) {
             case MsgType::SetTrainSpeed: {
                 SetTrainSpeedReply rply;
-                auto idx = state.trains.getIdx(msg.train);
-                if (idx == (Size)-1) {
+                if (state.trains.willOverflow(msg.train)) {
                     rply.error = ctl::Error::NoRes;
                     ~reply(tid, rply);
                     break;
                 }
+                auto &ts = state.trains.get(msg.train);
+                ts.speed = msg.speed;
                 // TODO: cut the middleman
-                state.trains.get(idx).speed = msg.speed;
                 trainServer.cmdSetSpeed(msg.train, msg.speed);
                 ~reply(tid, rply);
                 break;
@@ -89,27 +89,26 @@ void modelMain() {
 
             case MsgType::GetTrainState: {
                 GetTrainStateReply rply;
-                auto idx = state.trains.getIdx(msg.train);
-                if (idx == (Size)-1) {
+                if (state.trains.willOverflow(msg.train)) {
                     rply.error = ctl::Error::NoRes;
                     ~reply(tid, rply);
                     break;
                 }
                 // TODO: reduce copying
-                rply.state = state.trains.get(idx);
+                rply.state = state.trains.get(msg.train);
                 ~reply(tid, rply);
                 break;
             }
 
             case MsgType::SetGasp: {
                 SetGaspReply rply;
-                auto idx = state.trains.getIdx(msg.train);
-                if (idx == (Size)-1) {
+                if (state.trains.willOverflow(msg.train)) {
                     rply.error = ctl::Error::NoRes;
                     ~reply(tid, rply);
                     break;
                 }
-                state.trains.get(idx).gasp = msg.gasp;
+                auto &ts = state.trains.get(msg.train);
+                ts.gasp = msg.gasp;
                 ~reply(tid, rply);
             }
 
@@ -160,8 +159,7 @@ void ModelState::updateTrainStates() {
     const auto t = time(clock).asValue();
 
     // Update the position of every train.
-    for (Size i = 0; i < trains.size(); i++) {
-        auto &ts = trains.get(i);
+    for (auto &ts : trains.values()) {
         ts.position.offset += ts.velocity * (t - lastUpdate);
 
         // Normalize the node.

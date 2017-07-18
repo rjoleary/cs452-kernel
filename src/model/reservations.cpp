@@ -22,8 +22,7 @@ bool Reservations::reserve(Train train, NodeIdx node, int dist, int length) {
          endTime = startTime + length/velocity;
     startTime -= TimeError;
     endTime += TimeError;
-    for (Size i = 0; i < trainReservations.size(); ++i) {
-        auto reses = trainReservations.get(i);
+    for (auto &reses : trainReservations.values()) {
         for (Size j = 0; j < reses.length; ++j) {
             const auto &res = reses.reservations[j];
             if (res.node == node

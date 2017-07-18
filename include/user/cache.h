@@ -16,51 +16,84 @@ public:
         return size_;
     }
 
-    // Returns the cache index or -1 if full
-    CacheIndex getIdx(const K &key) {
+    // Return whether using the given key will overflow.
+    bool willOverflow(const K &key) {
         for (Size i = 0; i < size_; i++) {
             if (keys_[i] == key) {
-                return i;
+                return false;
             }
         }
-        if (size_ < Cap) {
-            keys_[size_] = key;
-            return size_++;
-        }
-        return -1;
+        return size_ == Cap;
     }
-    CacheIndex getIdx(const K &key) const {
+
+    // Return whether the given value is in the cache.
+    bool has(const K &key) {
         for (Size i = 0; i < size_; i++) {
             if (keys_[i] == key) {
-                return i;
+                return true;
             }
         }
-        return -1;
+        return false;
     }
 
-    // Get a key from the given cache index.
-    V &get(CacheIndex idx) {
-        ASSERT(idx < size_);
-        return values_[idx];
-    }
-    const V &get(CacheIndex idx) const {
-        ASSERT(idx < size_);
-        return values_[idx];
-    }
-
+    // Return value given a key.
     V &get(const K &key) {
-        return get(getIdx(key));
+        for (Size i = 0; i < size_; i++) {
+            if (keys_[i] == key) {
+                return values_[i];
+            }
+        }
+        ASSERT(size_ != Cap);
+        return values_[size_++];
     }
     const V &get(const K &key) const {
-        return get(getIdx(key));
+        for (Size i = 0; i < size_; i++) {
+            if (keys_[i] == key) {
+                return values_[i];
+            }
+        }
+        ctl::assert("key not found");
     }
 
-    K &getKey(CacheIndex idx) {
-        ASSERT(idx < size_);
-        return keys_[idx];
+    // Iterator for keys
+    struct Keys {
+        K *begin_, *end_;
+        K *begin() {
+            return begin_;
+        }
+        K *end() {
+            return end_;
+        }
+    };
+    Keys keys() {
+        return Keys{keys_, keys_ + size_};
     }
-    const K &getKey(CacheIndex idx) const {
-        ASSERT(idx < size_);
-        return keys_[idx];
+
+    // Const iterator for keys
+    struct CKeys {
+        const K *begin_, *end_;
+        const K *begin() {
+            return begin_;
+        }
+        const K *end() {
+            return end_;
+        }
+    };
+    CKeys keys() const {
+        return CKeys{keys_, keys_ + size_};
+    }
+
+    // Iterator for values
+    struct Values {
+        V *begin_, *end_;
+        V *begin() {
+            return begin_;
+        }
+        V *end() {
+            return end_;
+        }
+    };
+    Values values() {
+        return Values{values_, values_ + size_};
     }
 };

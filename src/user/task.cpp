@@ -25,6 +25,7 @@ void pass() {
 }
 void exeunt() {
     SYSCALL0(kernel::Syscall::Exeunt)
+    __builtin_unreachable();
 }
 void destroy() {
     SYSCALL0(kernel::Syscall::Destroy)

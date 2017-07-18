@@ -20,7 +20,7 @@ void fast_memcpy(unsigned *dest, const unsigned *source, int num);
 } while (false)
 
 namespace ctl {
-void assert(const char *description);
+[[noreturn]] void assert(const char *description);
 
 template <typename T>
 void swap(T &lhs, T &rhs) {

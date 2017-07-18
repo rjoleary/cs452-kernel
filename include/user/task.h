@@ -79,7 +79,7 @@ void pass();
 // Returns:
 //   exeunt does not return. If a point occurs where all tasks have exited the
 //   kernel should return cleanly to RedBoot.
-void exeunt();
+[[noreturn]] void exeunt();
 
 // destroy
 // TODO: Please see the separate document for destroy. Re-using resources is complicated.
