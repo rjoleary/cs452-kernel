@@ -108,7 +108,7 @@ void Reservations::doReservations(Train train, Sensor sensor, Speed speed) {
     }
     for (Size i = 0; i < waitlist.length; ++i) {
         if (!sensorTriggered(waitlist.items[i].train, waitlist.items[i].sensor)) {
-            newList.items[newList.length++] = {waitlist.items[i].train, waitlist.items[i].sensor};
+            newList.items[newList.length++] = waitlist.items[i];
             bwprintf(COM2, "Train %d rewaitlisted\r\n", waitlist.items[i].train);
         }
         else {

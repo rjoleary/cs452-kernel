@@ -115,7 +115,7 @@ void modelMain() {
                 }
                 ts->velocity = msg.speed*10;
                 ts->speed = msg.speed;
-                ts->stoppingDistance = 500;
+                ts->stoppingDistance = msg.speed*38;
                 ts->lastUpdate = time(clock).asValue();
                 // TODO: cut the middleman
                 trainServer.cmdSetSpeed(msg.train, msg.speed);
@@ -231,7 +231,7 @@ void ModelState::updateTrainAtSensor(Train train, Sensor sensor) {
     ts.position.offset = 0;
 
     // TODO: update stopping distance as a function of velocity
-    ts.stoppingDistance = 500;
+    //ts.stoppingDistance = 500;
 }
 
 void ModelServer::create() {
