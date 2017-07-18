@@ -109,7 +109,7 @@ void modelMain() {
             }
 
             case MsgType::SensorNotify: {
-                ~reply(tid, EmptyMessage);
+                ~reply(tid, ctl::EmptyMessage);
                 state.updateTrainStates();
                 Train t = attribution.attribute(msg.sensor);
                 state.updateTrainAtSensor(t, msg.sensor);

@@ -213,8 +213,8 @@ int parseCmd(const char *cmd) {
         if (terminateCmd(cmdStart, cmd)) {
             return 0;
         }
-        Error err = model.setTrainSpeed(Train(number.val), speed.val);
-        if (err == Error::NoRes) {
+        ctl::Error err = model.setTrainSpeed(Train(number.val), speed.val);
+        if (err == ctl::Error::NoRes) {
             bwputstr(COM2, "Error: too many concurrent trains\r\n");
         } else {
             bwprintf(COM2, "Error: %s\r\n", errorToString(err));

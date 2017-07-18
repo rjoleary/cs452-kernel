@@ -5,8 +5,6 @@
 #include "err.h"
 #include "int.h"
 
-using namespace ctl;
-
 constexpr Size NUM_SENSOR_MODULES = 5;
 constexpr Size NUM_SENSORS_PER_MODULE = 16;
 constexpr Size NUM_SENSORS = NUM_SENSOR_MODULES * NUM_SENSORS_PER_MODULE;
@@ -25,38 +23,38 @@ class Sensor {
 
 public:
     // Range: [0-79]
-    static ErrorOr<Sensor> fromInt(I32 value) {
+    static ctl::ErrorOr<Sensor> fromInt(I32 value) {
         if (value < 0 || 79 < value) {
-            return ErrorOr<Sensor>::fromError(Error::BadArg);
+            return ctl::ErrorOr<Sensor>::fromError(ctl::Error::BadArg);
         }
         Sensor s;
         s.module_ = value / 16;
         s.sensor_ = value % 16;
-        return ErrorOr<Sensor>::fromValue(s);
+        return ctl::ErrorOr<Sensor>::fromValue(s);
     }
 
     // Must be: [A-Ea-e]{1-16}
-    static ErrorOr<Sensor> fromString(const char *str, Size len) {
+    static ctl::ErrorOr<Sensor> fromString(const char *str, Size len) {
         if (len != 2 && len != 3) {
-            return ErrorOr<Sensor>::fromError(Error::BadArg);
+            return ctl::ErrorOr<Sensor>::fromError(ctl::Error::BadArg);
         }
         if (!isModule(str[0]) || !isDigit(str[1])) {
-            return ErrorOr<Sensor>::fromError(Error::BadArg);
+            return ctl::ErrorOr<Sensor>::fromError(ctl::Error::BadArg);
         }
         Sensor s;
         s.module_ = (str[0] | 0x20) - 'a';
         s.sensor_ = str[1] - '0';
         if (len == 3) {
             if (!isDigit(str[2])) {
-                return ErrorOr<Sensor>::fromError(Error::BadArg);
+                return ctl::ErrorOr<Sensor>::fromError(ctl::Error::BadArg);
             }
             s.sensor_ = s.sensor_ * 10 + (str[2] - '0');
         }
         if (s.sensor_ < 1 || 16 < s.sensor_) {
-            return ErrorOr<Sensor>::fromError(Error::BadArg);
+            return ctl::ErrorOr<Sensor>::fromError(ctl::Error::BadArg);
         }
         s.sensor_--;
-        return ErrorOr<Sensor>::fromValue(s);
+        return ctl::ErrorOr<Sensor>::fromValue(s);
     }
 
     U8 module() const {
