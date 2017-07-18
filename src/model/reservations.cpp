@@ -59,21 +59,6 @@ bool Reservations::sensorTriggered(Train train, Sensor sensor) {
     const auto &startNode = Track().nodes[sensor.value()];
     bwprintf(COM2, "%d %s\r\n", sensor.value(), startNode.name);
 
-    // Reserve backwards
-    int backwardsDistance = 0;
-    auto reverse = startNode.reverse;
-    while (backwardsDistance < ReverseReservation && reverse->type != NODE_EXIT) {
-        auto dir = DIR_AHEAD;
-        // If it was a branch, get the correct previous node
-        if (reverse->type == NODE_BRANCH) {
-            if (model.switches[reverse->num] == 'C')
-                dir = DIR_CURVED;
-        }
-        backwardsDistance += reverse->edge[dir].dist;
-        reverse = reverse->edge[dir].dest;
-        if (!reserve(train, reverse->reverse - Track().nodes)) return false;
-    }
-
     // Reserve forwards, to next sensor + stopping distance
     int forwardDistance = 0;
     bool foundNextSensor = false;
@@ -95,6 +80,21 @@ bool Reservations::sensorTriggered(Train train, Sensor sensor) {
         forward = forward->edge[dir].dest;
     }
 
+    // Reserve backwards
+    int backwardsDistance = 0;
+    auto reverse = startNode.reverse;
+    while (backwardsDistance < ReverseReservation && reverse->type != NODE_EXIT) {
+        auto dir = DIR_AHEAD;
+        // If it was a branch, get the correct previous node
+        if (reverse->type == NODE_BRANCH) {
+            if (model.switches[reverse->num] == 'C')
+                dir = DIR_CURVED;
+        }
+        backwardsDistance += reverse->edge[dir].dist;
+        reverse = reverse->edge[dir].dest;
+        if (!reserve(train, reverse->reverse - Track().nodes)) return false;
+    }
+
     return true;
 }
 
@@ -113,7 +113,7 @@ void Reservations::doReservations(Train train, Sensor sensor, Speed speed) {
         }
         else {
             ts.cmdSetSpeed(waitlist.items[i].train, waitlist.items[i].speed);
-            bwprintf(COM2, "Train %d unwaitlisted %d\r\n", 
+            bwprintf(COM2, "Train %d unwaitlisted %d\r\n",
                     waitlist.items[i].train, waitlist.items[i].speed);
         }
     }
