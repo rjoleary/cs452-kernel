@@ -181,6 +181,10 @@ void ModelState::updateTrainAtSensor(Train train, Sensor sensor) {
     ts.velocity = d / (t - ts.lastUpdate);
     ts.lastUpdate = t;
 
+    // Update the train's current position to be ontop of the sensor.
+    ts.position.nodeIdx = sensor.value();
+    ts.position.offset = 0;
+
     // TODO: update stopping distance as a function of velocity
     ts.stoppingDistance = 500;
 }
