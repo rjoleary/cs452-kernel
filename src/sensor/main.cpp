@@ -151,7 +151,7 @@ void printUpdate(const SensorSet &prevSensors, const SensorSet &sensors, unsigne
         for (Size j = 0; j < NUM_SENSORS_PER_MODULE; j++) {
             if (sensors(i, j) != prevSensors(i, j)) {
                 savecur();
-                setpos(4 + startOfTriggers, 40);
+                setpos(4 + startOfTriggers, 39);
                 startOfTriggers = (startOfTriggers + 1) % 11;
                 bwprintf(COM2, "%c%d ", 'a' + i, j + 1);
                 if (sensors(i, j)) {
@@ -165,7 +165,7 @@ void printUpdate(const SensorSet &prevSensors, const SensorSet &sensors, unsigne
         }
     }
     savecur();
-    setpos(4 + startOfTriggers, 40);
+    setpos(4 + startOfTriggers, 39);
     bwputstr(COM2, "_______");
     restorecur();
     flush(COM2);
