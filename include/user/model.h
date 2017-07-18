@@ -36,7 +36,7 @@ public:
         Speed speed = 0;
         Velocity velocity = 0;
         Distance stoppingDistance = 0;
-        Position position;
+        Position position = INVALID_POSITION;
         Sensor lastSensor;
         Gasp gasp;
     };

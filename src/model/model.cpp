@@ -117,14 +117,27 @@ void modelMain() {
                 ~reply(tid, ctl::EmptyMessage);
                 state.updateTrainStates();
                 auto erroror = attribution.attribute(msg.sensor);
+                Train t;
                 if (erroror.isError()) {
+                    for (Size i = 0; i < state.trains.size(); ++i) {
+                        if (state.trains.get(i).position == INVALID_POSITION) {
+                            t = state.trains.getKey(i);
+                            goto breakout;
+                        }
+                    }
+                    bwprintf(COM2, "Unnattributed sensor %d\r\n", msg.sensor.value());
                     // TODO: no known attribution
                     break;
                 }
-                Train t = erroror.asValue();
+                else {
+                    t = erroror.asValue();
+                }
+breakout:
+                bwprintf(COM2, "Sensor %d attributed for %d\r\n", msg.sensor.value(), int(t.underlying()));
                 state.updateTrainAtSensor(t, msg.sensor);
                 const bool TRAINS_WILL_COLLIDE = false;
                 if (reservations.sensorTriggered(t, msg.sensor) == TRAINS_WILL_COLLIDE) {
+                    bwprintf(COM2, "SensorTriggered\r\n");
                     trainServer.cmdSetSpeed(t, 0);
                 }
                 break;

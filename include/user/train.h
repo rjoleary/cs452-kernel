@@ -6,13 +6,19 @@
 #include "path_finding.h"
 
 using Train = ctl::NamedType<char, struct Train_t>;
-constexpr Train INVALID_TRAIN(0);
+constexpr Train INVALID_TRAIN{0};
 
 // Representation of a position offset from a node.
 struct Position {
     NodeIdx nodeIdx;
     Distance offset; // mm
+
 };
+inline bool operator==(const Position &lhs, const Position &rhs) {
+    return lhs.nodeIdx == rhs.nodeIdx && lhs.offset == rhs.offset;
+}
+
+constexpr Position INVALID_POSITION = {(NodeIdx)-1, -1};
 
 class TrainServer {
     ctl::Tid tid;

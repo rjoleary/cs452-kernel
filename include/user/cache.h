@@ -24,6 +24,7 @@ public:
             }
         }
         if (size_ < Cap) {
+            keys_[size_] = key;
             return size_++;
         }
         return -1;
