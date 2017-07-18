@@ -60,7 +60,7 @@ void sensorNotifierMain() {
 // Shopkeeper
 void modelMain() {
     ~ctl::registerAs(ModelServName);
-    ~ctl::create(ctl::Priority(26), sensorNotifierMain);
+    ~ctl::create(ctl::Priority(24), sensorNotifierMain);
     TrainServer trainServer;
 
     ModelState state;
@@ -175,7 +175,7 @@ void ModelState::updateTrainAtSensor(Train train, Sensor sensor) {
 }
 
 void ModelServer::create() {
-    ~ctl::create(ctl::Priority(25), modelMain);
+    ~ctl::create(ctl::Priority(23), modelMain);
 }
 
 ModelServer::ModelServer()

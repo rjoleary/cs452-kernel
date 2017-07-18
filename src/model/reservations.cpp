@@ -7,6 +7,7 @@
 
 namespace {
 constexpr auto ReverseReservation = 200;
+constexpr auto TimeError = 1;
 }
 
 Reservations::Reservations(const ModelState &mod)
@@ -19,6 +20,8 @@ bool Reservations::reserve(Train train, NodeIdx node, int dist, int length) {
     auto velocity = model.trains.get(train).velocity;
     auto startTime = ctl::time(clockServ).asValue() + dist/velocity,
          endTime = startTime + length/velocity;
+    startTime -= TimeError;
+    endTime += TimeError;
     for (Size i = 0; i < trainReservations.size(); ++i) {
         auto reses = trainReservations.get(i);
         for (Size j = 0; j < reses.length; ++j) {

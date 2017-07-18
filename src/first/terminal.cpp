@@ -11,6 +11,7 @@
 #include <sensor.h>
 #include <switch.h>
 #include <track.h>
+#include <model.h>
 
 using namespace ctl;
 
@@ -140,6 +141,8 @@ void runTerminal() {
 
     // Create sensors task.
     ~create(Priority(25), sensorsMain);
+
+    ModelServer::create();
 
     bool isStopped = false;
     unsigned cmdsz = 0;

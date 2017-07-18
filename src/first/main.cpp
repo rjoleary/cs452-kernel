@@ -8,7 +8,6 @@
 #include <itc.h>
 #include <io.h>
 #include <train.h>
-#include <model.h>
 
 // Forward declaration.
 void idleMain();
@@ -37,7 +36,6 @@ void firstMain() {
     ~create(Priority(29), io::uart1RxMain);
     ~create(Priority(29), clockMain);
     ~create(Priority(25), trainManMain);
-    ModelServer::create();
 
     runTerminal();
 }
