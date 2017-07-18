@@ -1,5 +1,6 @@
 #include <itc.h>
 #include <def.h>
+#include <ns.h>
 #include <model.h>
 #include <sensor.h>
 #include <path_finding.h>
@@ -11,6 +12,7 @@
 namespace {
 
 constexpr auto MAX_PATH = 30;
+constexpr ctl::Name RouteServName = {"Route"};
 
 enum class MsgType {
     NewRoute
@@ -20,17 +22,17 @@ struct Message {
     MsgType type;
     // Expand to union when new types added
     Train train;
-    Sensor start, end;
+    Sensor end;
 };
 
 struct RouteReply {
     SwitchState ss;
-    int length;
 };
 
 } // unnamed namespace
 
 void routeMain() {
+    ~ctl::registerAs(RouteServName);
     for (;;) {
         ctl::Tid tid;
         Message msg;
@@ -39,14 +41,17 @@ void routeMain() {
 
         switch (msg.type) {
             case MsgType::NewRoute: {
-                /*auto ss = */dijkstra(Graph{Track.nodes},
+                auto ss = dijkstra(Graph{Track.nodes},
                         msg.end.value());
+                ctl::reply(tid, RouteReply{ss});
             }
         }
     }
 }
 
-// Idk what interface good
-void getRoute(Train train, Sensor end) {
-    (void) train; (void) end;
+SwitchState getRoute(Train train, Sensor end) {
+    auto server = ctl::whoIs(RouteServName).asValue();
+    RouteReply rr;
+    ctl::send(server, Message{MsgType::NewRoute, train, end}, rr);
+    return rr.ss;
 }

@@ -36,8 +36,10 @@ struct alignas(4) SetGaspReply {
     ctl::Error error = ctl::Error::Ok;
 };
 
+constexpr ctl::Name ModelServName = {"Model"};
+
 void sensorNotifierMain() {
-    auto serv = whoIs(ctl::Name{"Model"}).asValue();
+    auto serv = whoIs(ModelServName).asValue();
     Message msg;
     msg.type = MsgType::SensorNotify;
     for (;;) {
@@ -54,7 +56,7 @@ void sensorNotifierMain() {
 
 // Shopkeeper
 void modelMain() {
-    ~ctl::registerAs(ctl::Name{"Model"});
+    ~ctl::registerAs(ModelServName);
     ~ctl::create(ctl::Priority(26), sensorNotifierMain);
     TrainServer trainServer;
 
@@ -136,7 +138,7 @@ void ModelServer::create() {
 }
 
 ModelServer::ModelServer()
-    : tid(ctl::whoIs(ctl::Name{"Model"}).asValue()) {
+    : tid(ctl::whoIs(ModelServName).asValue()) {
 }
 
 ctl::Error ModelServer::setTrainSpeed(Train train, Speed speed) {
@@ -165,6 +167,6 @@ ctl::Error ModelServer::setGasp(Train train, const Gasp &gasp) {
     msg.train = train;
     msg.gasp = gasp;
     SetGaspReply reply;
-    ~send(tid, msg, EmptyMessage);
+    ~send(tid, msg, ctl::EmptyMessage);
     return reply.error;
 }
