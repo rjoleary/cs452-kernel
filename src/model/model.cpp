@@ -131,16 +131,15 @@ void modelMain() {
                     // If we have a new train, we attribute the sensor to it
                     if (state.newTrain.has) {
                         t = state.newTrain.train;
-                        goto breakout;
+                    } else {
+                        bwprintf(COM2, "Unnattributed sensor %d\r\n", msg.sensor.value());
+                        // TODO: no known attribution
+                        break;
                     }
-                    bwprintf(COM2, "Unnattributed sensor %d\r\n", msg.sensor.value());
-                    // TODO: no known attribution
-                    break;
                 }
                 else {
                     t = erroror.asValue();
                 }
-breakout:
                 bwprintf(COM2, "Sensor %d attributed for %d\r\n",
                         msg.sensor.value(), int(t.underlying()));
                 // If this is a new train
@@ -156,6 +155,7 @@ breakout:
                     bwprintf(COM2, "SensorTriggered\r\n");
                     trainServer.cmdSetSpeed(t, 0);
                 }
+                reservations.printReservations();
                 bwprintf(COM2, "SensorTriggered\r\n");
                 break;
             }
