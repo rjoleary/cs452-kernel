@@ -10,15 +10,19 @@ constexpr auto ReverseReservation = 200;
 constexpr auto TimeError = 1;
 }
 
+void savecur();
+void restorecur();
+
 Reservations::Reservations(const ModelState &mod)
     : model(mod) {
 }
 
 void Reservations::printReservations() const {
     int top = 3;
-    int left = 48;
+    int left = 49;
     for (const auto &tr : trainReservations.keys()) {
-        bwprintf(COM2, "\033[%d;%dH\033[K;Train %d: ", top, left, tr);
+        savecur();
+        bwprintf(COM2, "\033[%d;%dH\033[KTrain %d: ", top, left, tr);
         const auto &reses = trainReservations.get(tr);
         for (Size i = 0; i < reses.length; i++) {
             const auto &res = reses.reservations[i];
@@ -26,6 +30,7 @@ void Reservations::printReservations() const {
             bwputstr(COM2, node.name);
             bwputstr(COM2, "->");
         }
+        restorecur();
         flush(COM2);
         top++;
     }
