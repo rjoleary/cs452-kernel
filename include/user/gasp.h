@@ -14,4 +14,5 @@ enum class SwitchGradient : U8 {
 struct Gasp {
     SwitchState gradient;
     Position end;
+    Speed speed;
 };

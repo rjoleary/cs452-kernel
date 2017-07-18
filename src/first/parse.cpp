@@ -12,6 +12,7 @@
 #include <std.h>
 #include <def.h>
 #include <model.h>
+#include <route.h>
 
 // forward declare
 void setpos(unsigned row, unsigned col);
@@ -245,7 +246,15 @@ int parseCmd(const char *cmd) {
         if (terminateCmd(cmdStart, cmd)) {
             return 0;
         }
-        cmdRoute(number.val, speed.val, sensorParsed.asValue().value());
+        if (number.val < 1 || 80 < number.val) {
+            tokenErr("train number must be between 1 and 80 inclusive", number.token.start - cmdStart + 2, number.token.len);
+            return 0;
+        }
+        if (speed.val < 0 || 14 < speed.val) {
+            tokenErr("Error: speed must be between 0 and 14 inclusive", speed.token.start - cmdStart + 2, speed.token.len);
+            return 0;
+        }
+        updateRoute(Train(number.val), speed.val, Position{sensorParsed.asValue().value(), 0});
     } else if (isIdent(t, "rv")) {
         DecimalToken number = nextDec(&cmd);
         if (number.err) {

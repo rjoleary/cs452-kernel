@@ -22,6 +22,7 @@ struct Message {
     MsgType type;
     // Expand to union when new types added
     Train train;
+    Speed speed;
     Position end;
 };
 
@@ -50,7 +51,7 @@ void routeMain() {
     }
 }
 
-void updateRoute(Train train, Position end) {
+void updateRoute(Train train, Speed speed, Position end) {
     auto server = ctl::whoIs(RouteServName).asValue();
-    ctl::send(server, Message{MsgType::UpdateRoute, train, end}, ctl::EmptyMessage);
+    ctl::send(server, Message{MsgType::UpdateRoute, train, speed, end}, ctl::EmptyMessage);
 }
