@@ -116,7 +116,6 @@ void modelMain() {
                 ts->velocity = msg.speed*10;
                 ts->speed = msg.speed;
                 ts->stoppingDistance = msg.speed*38;
-                ts->lastUpdate = time(clock).asValue();
                 // TODO: cut the middleman
                 trainServer.cmdSetSpeed(msg.train, msg.speed);
                 ~reply(tid, rply);
@@ -171,6 +170,8 @@ void modelMain() {
                 // If this is a new train
                 if (erroror.isError()) {
                     state.newTrain.has = false;
+                    state.newTrain.state.lastSensor = msg.sensor;
+                    state.newTrain.state.lastUpdate = time(clock).asValue();
                     state.trains.get(state.newTrain.train) = state.newTrain.state;
                 }
                 else {
@@ -223,15 +224,16 @@ void ModelState::updateTrainAtSensor(Train train, Sensor sensor) {
     // Update velocity based on sensor.
     ModelServer::TrainState &ts = trains.get(train);
     Distance d = shortestDistance<Graph::VSize>(Track(), ts.lastSensor.value(), sensor.value());
+    ts.lastSensor = sensor;
     ts.velocity = d / (t - ts.lastUpdate);
+    //ts.stoppingDistance = ctl::max(ctl::min(d*100 / (t - ts.lastUpdate), 650), 250);
     ts.lastUpdate = t;
 
     // Update the train's current position to be ontop of the sensor.
     ts.position.nodeIdx = sensor.value();
     ts.position.offset = 0;
 
-    // TODO: update stopping distance as a function of velocity
-    //ts.stoppingDistance = 500;
+    bwprintf(COM2, "Velocity: %d\r\n", ts.velocity);
 }
 
 void ModelServer::create() {

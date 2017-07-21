@@ -21,7 +21,8 @@ void Reservations::printReservations() const {
     int left = 49;
     for (const auto &tr : trainReservations.keys()) {
         savecur();
-        bwprintf(COM2, "\033[%d;%dH\033[KTrain %d: ", top, left, tr);
+        bwprintf(COM2, "\033[%d;%dH\033[KTrain %d, stop %d: ",
+                top, left, tr, model.trains.get(tr).stoppingDistance);
         const auto &reses = trainReservations.get(tr);
         for (Size i = 0; i < reses.length; i++) {
             const auto &res = reses.reservations[i];
