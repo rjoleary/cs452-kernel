@@ -12,6 +12,7 @@
 #include <switch.h>
 #include <track.h>
 #include <model.h>
+#include <route.h>
 
 using namespace ctl;
 
@@ -138,12 +139,14 @@ void runTerminal() {
 
     auto clock = whoIs(names::ClockServer).asValue();
     // Delay for switches to finish initializing
-    delay(clock, 600);
+    delay(clock, 350);
 
     // Create sensors task.
     ~create(Priority(25), sensorsMain);
 
     ModelServer::create();
+
+    ~create(Priority(23), routeMain);
 
     bool isStopped = false;
     unsigned cmdsz = 0;

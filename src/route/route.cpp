@@ -36,11 +36,11 @@ void routeMain() {
         ctl::Tid tid;
         Message msg;
 
-        ctl::receive(&tid, msg);
+        ~ctl::receive(&tid, msg);
 
         switch (msg.type) {
             case MsgType::UpdateRoute: {
-                ctl::reply(tid, ctl::EmptyMessage);
+                ~ctl::reply(tid, ctl::EmptyMessage);
                 auto ss = dijkstra(Graph{Track().nodes}, msg.end.nodeIdx);
                 Gasp gasp;
                 gasp.gradient = ss;
@@ -53,5 +53,5 @@ void routeMain() {
 
 void updateRoute(Train train, Speed speed, Position end) {
     auto server = ctl::whoIs(RouteServName).asValue();
-    ctl::send(server, Message{MsgType::UpdateRoute, train, speed, end}, ctl::EmptyMessage);
+    ~ctl::send(server, Message{MsgType::UpdateRoute, train, speed, end}, ctl::EmptyMessage);
 }

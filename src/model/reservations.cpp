@@ -36,7 +36,7 @@ void Reservations::printReservations() const {
     }
 }
 
-bool Reservations::reserve(Train train, NodeIdx node) {
+bool Reservations::reserveNode(Train train, NodeIdx node) {
     for (auto &reses : trainReservations.values()) {
         for (Size j = 0; j < reses.length; ++j) {
             const auto &res = reses.reservations[j];
@@ -54,7 +54,7 @@ bool Reservations::reserve(Train train, NodeIdx node) {
     return true;
 }
 
-bool Reservations::sensorTriggered(Train train, Sensor sensor) {
+bool Reservations::reserveForSensor(Train train, Sensor sensor) {
     trainReservations.get(train).length = 0;
 
     const auto &startNode = Track().nodes[sensor.value()];
@@ -64,14 +64,14 @@ bool Reservations::sensorTriggered(Train train, Sensor sensor) {
     int forwardDistance = 0;
     bool foundNextSensor = false;
     auto forward = &startNode;
-    while (!(foundNextSensor && forwardDistance >= model.trains.get(train).stoppingDistance)) {
+    while (!(foundNextSensor && forwardDistance > model.trains.get(train).stoppingDistance)) {
         if (forward->type == NODE_EXIT) return false;
         auto dir = DIR_AHEAD;
         if (forward->type == NODE_BRANCH) {
             if (model.switches[forward->num] == 'C')
                 dir = DIR_CURVED;
         }
-        if (!reserve(train, forward - Track().nodes)) return false;
+        if (!reserveNode(train, forward - Track().nodes)) return false;
         if (foundNextSensor) {
             forwardDistance += forward->edge[dir].dist;
         }
@@ -93,22 +93,22 @@ bool Reservations::sensorTriggered(Train train, Sensor sensor) {
         }
         backwardsDistance += reverse->edge[dir].dist;
         reverse = reverse->edge[dir].dest;
-        if (!reserve(train, reverse->reverse - Track().nodes)) return false;
+        if (!reserveNode(train, reverse->reverse - Track().nodes)) return false;
     }
 
     return true;
 }
 
-void Reservations::doReservations(Train train, Sensor sensor, Speed speed) {
+void Reservations::processSensor(Train train, Sensor sensor, Speed speed) {
     TrainServer ts;
     Waitlist newList;
-    if (!sensorTriggered(train, sensor)) {
+    if (!reserveForSensor(train, sensor)) {
         newList.items[newList.length++] = {train, sensor, speed};
         ts.cmdSetSpeed(train, 0);
         bwprintf(COM2, "Train %d waitlisted\r\n", train);
     }
     for (Size i = 0; i < waitlist.length; ++i) {
-        if (!sensorTriggered(waitlist.items[i].train, waitlist.items[i].sensor)) {
+        if (!reserveForSensor(waitlist.items[i].train, waitlist.items[i].sensor)) {
             newList.items[newList.length++] = waitlist.items[i];
             bwprintf(COM2, "Train %d rewaitlisted\r\n", waitlist.items[i].train);
         }

@@ -17,6 +17,7 @@ enum class MsgType {
     SetGasp,
     SensorNotify,
     SwitchNotify,
+    Calibrate,
 };
 
 struct alignas(4) Message {
@@ -26,7 +27,7 @@ struct alignas(4) Message {
     Sensor sensor;
     char sw;
     char state;
-    Gasp gasp; // TODO: this is quite large for every message
+    Gasp gasp; // TODO: this is quite large for every message. Possibly use a union?
 };
 
 struct alignas(4) SetTrainSpeedReply {
@@ -90,6 +91,11 @@ void modelMain() {
     Reservations reservations(state);
     Attribution attribution(state, reservations);
 
+    struct {
+        Train train = INVALID_TRAIN;
+        Sensor sensor;
+    } calibration;
+
     auto clock = ctl::whoIs(ctl::names::ClockServer).asValue();
 
     for (;;) {
@@ -113,7 +119,7 @@ void modelMain() {
                 else {
                     ts = &state.trains.get(msg.train);
                 }
-                ts->velocity = msg.speed*10;
+                ts->velocity = msg.speed/2;
                 ts->speed = msg.speed;
                 ts->stoppingDistance = msg.speed*38;
                 // TODO: cut the middleman
@@ -149,6 +155,15 @@ void modelMain() {
 
             case MsgType::SensorNotify: {
                 ~reply(tid, ctl::EmptyMessage);
+                // if calibrating:
+                if (calibration.train != INVALID_TRAIN) {
+                    if (msg.sensor == calibration.sensor) {
+                        trainServer.cmdToggleLight(calibration.train);
+                        trainServer.cmdSetSpeed(calibration.train, 0);
+                        calibration.train = INVALID_TRAIN;
+                    }
+                }
+
                 state.updateTrainStates();
                 auto erroror = attribution.attribute(msg.sensor);
                 Train t;
@@ -177,7 +192,7 @@ void modelMain() {
                 else {
                     state.updateTrainAtSensor(t, msg.sensor);
                 }
-                reservations.doReservations(t, msg.sensor, state.trains.get(t).speed);
+                reservations.processSensor(t, msg.sensor, state.trains.get(t).speed);
                 reservations.printReservations();
                 break;
             }
@@ -185,6 +200,15 @@ void modelMain() {
             case MsgType::SwitchNotify: {
                 ~reply(tid, ctl::EmptyMessage);
                 state.switches[msg.sw] = msg.state;
+                break;
+            }
+
+            case MsgType::Calibrate: {
+                calibration.train = msg.train;
+                calibration.sensor = msg.sensor;
+                trainServer.cmdToggleLight(msg.train);
+                trainServer.cmdSetSpeed(msg.train, msg.speed);
+                ~reply(tid, ctl::EmptyMessage);
                 break;
             }
         }
@@ -270,6 +294,15 @@ ctl::Error ModelServer::setGasp(Train train, const Gasp &gasp) {
     msg.train = train;
     msg.gasp = gasp;
     SetGaspReply reply;
-    ~send(tid, msg, ctl::EmptyMessage);
+    ~send(tid, msg, reply);
     return reply.error;
+}
+
+void ModelServer::calibrate(Train train, Sensor sensor, Speed speed) {
+    Message msg;
+    msg.type = MsgType::Calibrate;
+    msg.train = train;
+    msg.sensor = sensor;
+    msg.speed = speed;
+    ~send(tid, msg, ctl::EmptyMessage);
 }

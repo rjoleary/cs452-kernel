@@ -25,12 +25,12 @@ class Reservations {
 
     const ModelState &model;
     Cache<MAX_CONCURRENT_TRAINS, Train, TrainReservation> trainReservations;
-    bool reserve(Train train, NodeIdx node);
-    bool sensorTriggered(Train train, Sensor sensor);
+    bool reserveNode(Train train, NodeIdx node);
+    bool reserveForSensor(Train train, Sensor sensor);
   public:
     Reservations(const ModelState &model);
     void printReservations() const;
     // Return true if there is no contention.
-    void doReservations(Train train, Sensor sensor, Speed speed);
+    void processSensor(Train train, Sensor sensor, Speed speed);
     bool hasReservation(Train, NodeIdx) const;
 };

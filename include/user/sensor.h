@@ -74,6 +74,10 @@ public:
     }
 };
 
+inline bool operator==(const Sensor &lhs, const Sensor &rhs) {
+    return lhs.value() == rhs.value();
+}
+
 struct alignas(4) SensorSet {
     // One bit array per module.
     U16 values[NUM_SENSOR_MODULES] = {0};

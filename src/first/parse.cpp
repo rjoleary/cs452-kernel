@@ -157,17 +157,7 @@ int parseCmd(const char *cmd) {
         if (terminateCmd(cmdStart, cmd)) {
             return 0;
         }
-        Train train(number.val);
-        trainServer.cmdToggleLight(train);
-        trainServer.cmdSetSpeed(train, speed.val);
-        for (;;) {
-            auto sensors = waitTrigger();
-            if (sensors(sensorParsed.asValue())) {
-                break;
-            }
-        }
-        trainServer.cmdSetSpeed(train, 0);
-        trainServer.cmdToggleLight(train);
+        model.calibrate(Train(number.val), sensorParsed.asValue(), speed.val);
     } else if (isIdent(t, "com")) {
         DecimalToken com = nextDec(&cmd);
         if (com.err || (com.val != 1 && com.val != 2)) {
