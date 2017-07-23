@@ -200,6 +200,14 @@ int parseCmd(const char *cmd) {
         if (terminateCmd(cmdStart, cmd)) {
             return 0;
         }
+        if (number.val < 1 || 80 < number.val) {
+            bwputstr(COM2, "Error: train number must be between 1 and 80 inclusive\r\n");
+            return 0;
+        }
+        if (speed.val < 0 || 14 < speed.val) {
+            bwputstr(COM2, "Error: speed must be between 0 and 14 inclusive\r\n");
+            return 0;
+        }
         ctl::Error err = safety.setTrainSpeed(Train(number.val), speed.val);
         if (err != ctl::Error::Ok) {
             if (err == ctl::Error::NoRes) {
@@ -250,7 +258,11 @@ int parseCmd(const char *cmd) {
         if (terminateCmd(cmdStart, cmd)) {
             return 0;
         }
-        trainServer.cmdReverse(Train(number.val));
+        if (number.val < 1 || 80 < number.val) {
+            bwputstr(COM2, "Error: train number must be between 1 and 80 inclusive\r\n");
+            return 0;
+        }
+        trainServer.reverseTrain(Train(number.val));
     } else if (isIdent(t, "sw")) {
         DecimalToken number = nextDec(&cmd);
         if (number.err) {

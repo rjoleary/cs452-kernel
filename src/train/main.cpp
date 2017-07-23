@@ -162,24 +162,12 @@ void TrainServer::goTrains() {
     flush(COM1);
 }
 
-void TrainServer::cmdSetSpeed(Train train, int speed) {
-    if (train.underlying() < 1 || 80 < train.underlying()) {
-        bwputstr(COM2, "Error: train number must be between 1 and 80 inclusive\r\n");
-        return;
-    }
-    if (speed < 0 || 14 < speed) {
-        bwputstr(COM2, "Error: speed must be between 0 and 14 inclusive\r\n");
-        return;
-    }
+void TrainServer::setTrainSpeed(Train train, int speed) {
     Message msg{MsgType::SetSpeed, train, char(speed)};
     ~send(tid, msg, ctl::EmptyMessage);
 }
 
-void TrainServer::cmdReverse(Train train) {
-    if (train.underlying() < 1 || 80 < train.underlying()) {
-        bwputstr(COM2, "Error: train number must be between 1 and 80 inclusive\r\n");
-        return;
-    }
-    Message msg{MsgType::Reverse};
+void TrainServer::reverseTrain(Train train) {
+    Message msg{MsgType::Reverse, train};
     ~send(tid, msg, ctl::EmptyMessage);
 }

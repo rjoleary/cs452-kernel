@@ -25,8 +25,8 @@ class TrainServer {
 
     // train: [1, 80]
     // speed: [0, 14]
-    void cmdSetSpeed(Train train, int speed);
+    void setTrainSpeed(Train train, int speed);
 
     // train: [1, 80]
-    void cmdReverse(Train train);
+    void reverseTrain(Train train);
 };

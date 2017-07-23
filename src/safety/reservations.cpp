@@ -112,7 +112,7 @@ void Reservations::processSensor(Train train, Sensor sensor, Speed speed) {
     Waitlist newList;
     if (!reserveForSensor(train, sensor)) {
         newList.items[newList.length++] = {train, sensor, speed};
-        ts.cmdSetSpeed(train, 0);
+        ts.setTrainSpeed(train, 0);
         bwprintf(COM2, "Train %d waitlisted\r\n", train);
     }
     for (Size i = 0; i < waitlist.length; ++i) {
@@ -121,7 +121,7 @@ void Reservations::processSensor(Train train, Sensor sensor, Speed speed) {
             bwprintf(COM2, "Train %d rewaitlisted\r\n", waitlist.items[i].train);
         }
         else {
-            ts.cmdSetSpeed(waitlist.items[i].train, waitlist.items[i].speed);
+            ts.setTrainSpeed(waitlist.items[i].train, waitlist.items[i].speed);
             bwprintf(COM2, "Train %d unwaitlisted %d\r\n",
                     waitlist.items[i].train, waitlist.items[i].speed);
         }

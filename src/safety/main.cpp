@@ -126,7 +126,7 @@ void modelMain() {
                 ts->speed = msg.speed;
                 ts->stoppingDistance = msg.speed*38;
                 // TODO: cut the middleman
-                trainServer.cmdSetSpeed(msg.train, msg.speed);
+                trainServer.setTrainSpeed(msg.train, msg.speed);
                 ~reply(tid, rply);
                 break;
             }
@@ -162,7 +162,7 @@ void modelMain() {
                 // if calibrating:
                 if (calibration.train != INVALID_TRAIN) {
                     if (msg.sensor == calibration.sensor) {
-                        trainServer.cmdSetSpeed(calibration.train, 0);
+                        trainServer.setTrainSpeed(calibration.train, 0);
                         calibration.train = INVALID_TRAIN;
                     }
                 }
@@ -215,7 +215,7 @@ void modelMain() {
                 }
                 calibration.train = msg.train;
                 calibration.sensor = msg.sensor;
-                trainServer.cmdSetSpeed(msg.train, msg.speed);
+                trainServer.setTrainSpeed(msg.train, msg.speed);
                 ~reply(tid, rply);
                 break;
             }
