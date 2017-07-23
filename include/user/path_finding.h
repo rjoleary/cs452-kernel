@@ -26,7 +26,7 @@ typedef U8 NodeIdx;
 //
 // Returns: length of the path, or 0 if no path found
 template <typename T>
-SwitchState dijkstra(const T &graph, NodeIdx end) {
+SwitchStates dijkstra(const T &graph, NodeIdx end) {
     struct alignas(4) WeightedVertex {
         I16 weight;
         NodeIdx vertexIdx;
@@ -57,7 +57,7 @@ SwitchState dijkstra(const T &graph, NodeIdx end) {
         /* .childIdx  = */ end
     });
 
-    SwitchState ss;
+    SwitchStates ss;
 
     while (!heap.empty()) {
         // Pop the shortest path from the heap.

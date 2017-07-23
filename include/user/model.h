@@ -69,7 +69,7 @@ public:
 struct ModelState {
     Time lastUpdate; // last time positions were updated
     Cache<MAX_CONCURRENT_TRAINS, Train, ModelServer::TrainState> trains;
-    SwitchState switches;
+    SwitchStates switches;
     struct {
         bool has = false;
         Train train;

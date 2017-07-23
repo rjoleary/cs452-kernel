@@ -79,8 +79,8 @@ const struct {
     {6, 20, '#', '|'},
 };
 
-void updateGui(int sw, char dir, const SwitchState &ss) {
-    const int idx = SwitchState::toIdx(sw);
+void updateGui(int sw, char dir, const SwitchStates &ss) {
+    const int idx = SwitchStates::toIdx(sw);
     const auto &layoutPos = LAYOUT_POS[idx];
 
     char c = dir == 'C' ? layoutPos.curved : layoutPos.straight;
@@ -139,7 +139,7 @@ void cmdSetSwitch(int sw, char dir) {
 
 void switchMan() {
     ~ctl::registerAs(SwitchServ);
-    SwitchState ss;
+    SwitchStates ss;
     for (int i = 0; i < NumSwitches; ++i) ss.states[i] = 'U';
     ~create(ctl::Priority(26), notifMain);
     auto notifier = ctl::INVALID_TID;
@@ -192,16 +192,16 @@ void switchMan() {
     }
 }
 
-SwitchState getSwitchData() {
+SwitchStates getSwitchData() {
     auto switchServTid = whoIs(SwitchServ).asValue();
-    SwitchState ss;
+    SwitchStates ss;
     ~send(switchServTid, Message{MsgType::GetData}, ss);
     return ss;
 }
 
-SwitchState waitSwitchChange() {
+SwitchStates waitSwitchChange() {
     auto switchServTid = whoIs(SwitchServ).asValue();
-    SwitchState ss;
+    SwitchStates ss;
     ~send(switchServTid, Message{MsgType::WaitChange}, ss);
     return ss;
 }

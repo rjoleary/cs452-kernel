@@ -5,7 +5,7 @@
 
 // Gradient Absolute Switch Profile
 struct Gasp {
-    SwitchState gradient;
+    SwitchStates gradient;
     Position end;
     Speed speed;
 };

@@ -9,7 +9,7 @@ void switchMan();
 
 constexpr auto NumSwitches = 22;
 
-struct alignas(4) SwitchState {
+struct alignas(4) SwitchStates {
     char states[NumSwitches];
     static inline int toIdx(int sw) {
         if (1 <= sw && sw <= 18)
@@ -33,5 +33,5 @@ struct alignas(4) SwitchState {
     }
 };
 
-SwitchState getSwitchData();
-SwitchState waitSwitchChange();
+SwitchStates getSwitchData();
+SwitchStates waitSwitchChange();
