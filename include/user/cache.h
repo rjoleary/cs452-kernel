@@ -18,12 +18,7 @@ public:
 
     // Return whether using the given key will overflow.
     bool willOverflow(const K &key) const {
-        for (Size i = 0; i < size_; i++) {
-            if (keys_[i] == key) {
-                return false;
-            }
-        }
-        return size_ == Cap;
+        return !(has(key) || size_ < Cap);
     }
 
     // Return whether the given value is in the cache.
@@ -43,7 +38,7 @@ public:
                 return values_[i];
             }
         }
-        ASSERT(size_ != Cap);
+        ASSERT(size_ <= Cap);
         keys_[size_] = key;
         return values_[size_++];
     }

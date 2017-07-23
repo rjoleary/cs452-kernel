@@ -208,11 +208,17 @@ void modelMain() {
             }
 
             case MsgType::Calibrate: {
+                CalibrateReply rply;
+                if (state.trains.willOverflow(msg.train)) {
+                    rply.error = ctl::Error::NoRes;
+                    ~reply(tid, rply);
+                    break;
+                }
                 calibration.train = msg.train;
                 calibration.sensor = msg.sensor;
                 trainServer.cmdToggleLight(msg.train);
                 trainServer.cmdSetSpeed(msg.train, msg.speed);
-                ~reply(tid, ctl::EmptyMessage);
+                ~reply(tid, rply);
                 break;
             }
         }
