@@ -2,7 +2,6 @@
 #include <user/err.h>
 #include <interrupt.h>
 #include <panic.h>
-#include <profiler.h>
 #include <scheduler.h>
 #include <syscall.h>
 #include <task.h>
@@ -96,12 +95,6 @@ void initSwi() {
     *SVC_ADDR = &kernelEntry;
 }
 
-void initProfiler() {
-#ifdef PROF_INTERVAL
-    profilerStart(PROF_INTERVAL);
-#endif // PROF_INTERVAL
-}
-
 int main() {
     // Approximately the starting address of the kernel stack.
     unsigned *kernelStack = (unsigned*)(&kernelStack + 1);
@@ -111,7 +104,6 @@ int main() {
     initSerial();
     printEarlyDebug(kernelStack);
     initTimers();
-    initProfiler();
     initSwi();
 
     // Kernel state
@@ -124,11 +116,6 @@ int main() {
     void mainLoop(Scheduler &scheduler, TdManager &tdManager, InterruptController &intControl);
     mainLoop(scheduler, tdManager, intControl);
     useBusyWait = true;
-
-#ifdef PROF_INTERVAL
-    profilerStop();
-    profilerDump();
-#endif // PROF_INTERVAL
 
     return 0;
 }

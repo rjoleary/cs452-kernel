@@ -4,7 +4,6 @@
 #include "track_data_new.h"
 #include "std.h"
 
-void cmdRoute(int train, int speed, int sensor);
 void cmdSetStoppingDistance(int mm);
 void cmdClearBrokenSwitches();
 
