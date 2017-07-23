@@ -9,24 +9,6 @@
 #include "train.h"
 #include "types.h"
 
-// Maximum number of trains that can be on the track at once.
-constexpr auto MAX_CONCURRENT_TRAINS = 8;
-
-// Train red zone - the minimum distance between stopped trains, measured in mm.
-constexpr auto TRAIN_RED_ZONE = 100;
-// Train yellow zone - the minimum distance between stopped trains before the routing
-// layer is notified, measured in mm.
-constexpr auto TRAIN_YELLOW_ZONE = 200;
-static_assert(TRAIN_RED_ZONE < TRAIN_YELLOW_ZONE, "Red zone must be subset of yellow zone");
-
-// Switch red zone - the distance surrounding a switch for which the switch may
-// not be toggled, measured in mm.
-constexpr auto SWITCH_RED_ZONE = 200;
-// Switch yellow zone - the distance surrounding a switch for which the routing
-// layer will be notified of a train's approach.
-constexpr auto SWITCH_YELLOW_ZONE = 400;
-static_assert(SWITCH_RED_ZONE < SWITCH_YELLOW_ZONE, "Red zone must be subset of yellow zone");
-
 class SafetyServer {
     ctl::Tid tid;
 public:
