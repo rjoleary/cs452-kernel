@@ -43,6 +43,10 @@ struct alignas(4) SetGaspReply {
     ctl::Error error = ctl::Error::Ok;
 };
 
+struct alignas(4) CalibrateReply {
+    ctl::Error error = ctl::Error::Ok;
+};
+
 constexpr ctl::Name ModelServName = {"Model"};
 
 void sensorNotifierMain() {
@@ -115,8 +119,7 @@ void modelMain() {
                     state.newTrain.has = true;
                     state.newTrain.train = msg.train;
                     ts = &state.newTrain.state;
-                }
-                else {
+                } else {
                     ts = &state.trains.get(msg.train);
                 }
                 ts->velocity = msg.speed/2;
@@ -151,6 +154,7 @@ void modelMain() {
                 auto &ts = state.trains.get(msg.train);
                 ts.gasp = msg.gasp;
                 ~reply(tid, rply);
+                break;
             }
 
             case MsgType::SensorNotify: {
@@ -298,11 +302,13 @@ ctl::Error ModelServer::setGasp(Train train, const Gasp &gasp) {
     return reply.error;
 }
 
-void ModelServer::calibrate(Train train, Sensor sensor, Speed speed) {
+ctl::Error ModelServer::calibrate(Train train, Sensor sensor, Speed speed) {
     Message msg;
     msg.type = MsgType::Calibrate;
     msg.train = train;
     msg.sensor = sensor;
     msg.speed = speed;
-    ~send(tid, msg, ctl::EmptyMessage);
+    CalibrateReply reply;
+    ~send(tid, msg, reply);
+    return reply.error;
 }

@@ -157,7 +157,14 @@ int parseCmd(const char *cmd) {
         if (terminateCmd(cmdStart, cmd)) {
             return 0;
         }
-        model.calibrate(Train(number.val), sensorParsed.asValue(), speed.val);
+        ctl::Error err = model.calibrate(Train(number.val), sensorParsed.asValue(), speed.val);
+        if (err != ctl::Error::Ok) {
+            if (err == ctl::Error::NoRes) {
+                bwputstr(COM2, "Error: too many concurrent trains\r\n");
+            } else {
+                bwprintf(COM2, "Error: %s\r\n", errorToString(err));
+            }
+        }
     } else if (isIdent(t, "com")) {
         DecimalToken com = nextDec(&cmd);
         if (com.err || (com.val != 1 && com.val != 2)) {

@@ -63,7 +63,12 @@ public:
     //   ctl::Error::NoRes: more than MAX_CONCURRENT_TRAINS
     ctl::Error setGasp(Train train, const Gasp &gasp);
 
-    void calibrate(Train train, Sensor sensor, Speed speed);
+    // Start calibration for a train.
+    // TODO: this should be done in application layer
+    // Returns:
+    //   ctl::Error::Ok: success
+    //   ctl::Error::NoRes: more than MAX_CONCURRENT_TRAINS
+    ctl::Error calibrate(Train train, Sensor sensor, Speed speed);
 };
 
 struct ModelState {
