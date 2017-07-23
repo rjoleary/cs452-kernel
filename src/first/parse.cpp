@@ -262,7 +262,7 @@ int parseCmd(const char *cmd) {
             bwputstr(COM2, "Error: train number must be between 1 and 80 inclusive\r\n");
             return 0;
         }
-        trainServer.reverseTrain(Train(number.val));
+        safety.reverseTrain(Train(number.val));
     } else if (isIdent(t, "sw")) {
         DecimalToken number = nextDec(&cmd);
         if (number.err) {

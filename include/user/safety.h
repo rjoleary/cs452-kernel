@@ -9,6 +9,9 @@
 #include "train.h"
 #include "types.h"
 
+// Maximum number of trains that can be on the track at once.
+constexpr auto MAX_CONCURRENT_TRAINS = 8;
+
 class SafetyServer {
     ctl::Tid tid;
 public:
@@ -32,6 +35,12 @@ public:
     //   ctl::Error::Ok: success
     //   ctl::Error::NoRes: more than MAX_CONCURRENT_TRAINS
     ctl::Error setTrainSpeed(Train train, Speed speed);
+
+    // Reverse a train.
+    // Returns:
+    //   ctl::Error::Ok: success
+    //   ctl::Error::NoRes: more than MAX_CONCURRENT_TRAINS
+    ctl::Error reverseTrain(Train train);
 
     // Get the state of a train.
     // Returns:

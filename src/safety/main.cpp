@@ -13,6 +13,7 @@
 namespace {
 enum class MsgType {
     SetTrainSpeed,
+    ReverseTrain,
     GetTrainState,
     SetGasp,
     SensorNotify,
@@ -31,6 +32,10 @@ struct alignas(4) Message {
 };
 
 struct alignas(4) SetTrainSpeedReply {
+    ctl::Error error = ctl::Error::Ok;
+};
+
+struct alignas(4) ReverseTrainReply {
     ctl::Error error = ctl::Error::Ok;
 };
 
@@ -127,6 +132,18 @@ void modelMain() {
                 ts->stoppingDistance = msg.speed*38;
                 // TODO: cut the middleman
                 trainServer.setTrainSpeed(msg.train, msg.speed);
+                ~reply(tid, rply);
+                break;
+            }
+
+            case MsgType::ReverseTrain: {
+                ReverseTrainReply rply;
+                if (state.trains.willOverflow(msg.train)) {
+                    rply.error = ctl::Error::NoRes;
+                    ~reply(tid, rply);
+                    break;
+                }
+                trainServer.reverseTrain(msg.train);
                 ~reply(tid, rply);
                 break;
             }
@@ -282,6 +299,15 @@ ctl::Error SafetyServer::setTrainSpeed(Train train, Speed speed) {
     msg.train = train;
     msg.speed = speed;
     SetTrainSpeedReply reply;
+    ~send(tid, msg, reply);
+    return reply.error;
+}
+
+ctl::Error SafetyServer::reverseTrain(Train train) {
+    Message msg;
+    msg.type = MsgType::ReverseTrain;
+    msg.train = train;
+    ReverseTrainReply reply;
     ~send(tid, msg, reply);
     return reply.error;
 }
