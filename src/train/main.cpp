@@ -12,9 +12,6 @@
 namespace {
 enum class MsgType : char {
     CheckIn,
-    LightOn,
-    LightOff,
-    LightToggle,
     SetSpeed,
     Reverse,
 };
@@ -22,13 +19,25 @@ enum class MsgType : char {
 struct alignas(4) Message {
     MsgType type;
     Train train;
-    char speed;
+    U8 speed;
 };
 
 // Message sent to new trains.
 struct alignas(4) InitMessage {
     Train train;
 };
+
+const char LIGHT_MASK = 0x10;
+const char SPEED_MASK = 0x0f;
+
+void setTrainSpeed(Train train, U8 speed) {
+    if (speed) {
+        speed |= LIGHT_MASK;
+    }
+    bwputc(COM1, speed);
+    bwputc(COM1, train.underlying());
+    flush(COM1);
+}
 
 // Manages a single train.
 void trainMain() {
@@ -52,8 +61,6 @@ void trainMain() {
 
     // Train state
     char speed = 0; // light and speed
-    const char LIGHT_MASK = 0x10;
-    const char SPEED_MASK = 0x0f;
 
     // Receive messages from the train man.
     Message msg{MsgType::CheckIn, number};
@@ -62,57 +69,25 @@ void trainMain() {
         ~send(trainMan, msg, rply);
 
         switch (rply.type) {
-            case MsgType::LightOn: {
-                speed = speed & LIGHT_MASK;
-                bwputc(COM1, speed);
-                bwputc(COM1, number.underlying());
-                flush(COM1);
-                break;
-            }
-
-            case MsgType::LightOff: {
-                speed = speed & ~LIGHT_MASK;
-                bwputc(COM1, speed);
-                bwputc(COM1, number.underlying());
-                flush(COM1);
-                break;
-            }
-
-            case MsgType::LightToggle: {
-                speed = speed ^ LIGHT_MASK;
-                bwputc(COM1, speed);
-                bwputc(COM1, number.underlying());
-                flush(COM1);
-                break;
-            }
-
             case MsgType::SetSpeed: {
                 speed = (speed & ~SPEED_MASK) | (rply.speed & SPEED_MASK);
-                bwputc(COM1, speed);
-                bwputc(COM1, number.underlying());
-                flush(COM1);
+                setTrainSpeed(number, speed);
                 break;
             }
 
             case MsgType::Reverse: {
                 if (speed & SPEED_MASK) {
                     // Stop
-                    bwputc(COM1, speed & ~SPEED_MASK);
-                    bwputc(COM1, number.underlying());
-                    flush(COM1);
+                    setTrainSpeed(number, speed & ~SPEED_MASK);
                     // 200 milliseconds for each train speed
                     ~ctl::delay(clockServer, 20 * (speed & SPEED_MASK));
                 }
                 // Reverse
-                bwputc(COM1, speed | SPEED_MASK);
-                bwputc(COM1, number.underlying());
-                flush(COM1);
+                setTrainSpeed(number, speed | SPEED_MASK);
                 // Without this delay, sometimes train does not reverse
                 ~ctl::delay(clockServer, 10);
                 // Set speed
-                bwputc(COM1, speed);
-                bwputc(COM1, number.underlying());
-                flush(COM1);
+                setTrainSpeed(number, speed);
                 break;
             }
 
@@ -185,15 +160,6 @@ void TrainServer::stopTrains() {
 void TrainServer::goTrains() {
     bwputc(COM1, 96);
     flush(COM1);
-}
-
-void TrainServer::cmdToggleLight(Train train) {
-    if (train.underlying() < 1 || 80 < train.underlying()) {
-        bwputstr(COM2, "Error: train number must be between 1 and 80 inclusive\r\n");
-        return;
-    }
-    Message msg{MsgType::LightToggle, train};
-    ~send(tid, msg, ctl::EmptyMessage);
 }
 
 void TrainServer::cmdSetSpeed(Train train, int speed) {

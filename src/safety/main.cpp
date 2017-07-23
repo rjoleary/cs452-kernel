@@ -162,7 +162,6 @@ void modelMain() {
                 // if calibrating:
                 if (calibration.train != INVALID_TRAIN) {
                     if (msg.sensor == calibration.sensor) {
-                        trainServer.cmdToggleLight(calibration.train);
                         trainServer.cmdSetSpeed(calibration.train, 0);
                         calibration.train = INVALID_TRAIN;
                     }
@@ -216,7 +215,6 @@ void modelMain() {
                 }
                 calibration.train = msg.train;
                 calibration.sensor = msg.sensor;
-                trainServer.cmdToggleLight(msg.train);
                 trainServer.cmdSetSpeed(msg.train, msg.speed);
                 ~reply(tid, rply);
                 break;

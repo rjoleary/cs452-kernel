@@ -24,9 +24,6 @@ class TrainServer {
     void goTrains();
 
     // train: [1, 80]
-    void cmdToggleLight(Train train);
-
-    // train: [1, 80]
     // speed: [0, 14]
     void cmdSetSpeed(Train train, int speed);
 

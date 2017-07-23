@@ -23,7 +23,6 @@ void printHelp() {
         "   cal TR SP SEN    - stop train on the next trigger.\r\n"
         "   com i [BYTE...]  - Send arbitrary byte over COMi.\r\n"
         "   help             - Display this help information.\r\n"
-        "   li NUMBER        - Toggle train lights.\r\n"
         "   q                - Quit and return to RedBoot.\r\n"
         "   route TR SP SEN  - Route train to sensor at given speed.\r\n"
         "   rv NUMBER        - Reverse the direction of the train.\r\n"
@@ -187,16 +186,6 @@ int parseCmd(const char *cmd) {
             return 0;
         }
         printHelp();
-    } else if (isIdent(t, "li")) {
-        DecimalToken number = nextDec(&cmd);
-        if (number.err) {
-            tokenErr("invalid train number", number.token.start - cmdStart + 2, number.token.len);
-            return 0;
-        }
-        if (terminateCmd(cmdStart, cmd)) {
-            return 0;
-        }
-        trainServer.cmdToggleLight(Train(number.val));
     } else if (isIdent(t, "tr")) {
         DecimalToken number = nextDec(&cmd);
         if (number.err) {
