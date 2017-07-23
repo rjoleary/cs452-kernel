@@ -1,7 +1,5 @@
 #include <attribution.h>
 
-#include <cache.h>
-
 Attribution::Attribution(const SafetyState &safety, const Reservations &reservations)
     : safety_(safety)
     , reservations_(reservations) {

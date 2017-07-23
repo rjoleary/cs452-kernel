@@ -1,13 +1,13 @@
 #pragma once
 
-#include "cache.h"
 #include "err.h"
+#include "fixed_map.h"
 #include "gasp.h"
 #include "sensor.h"
 #include "switch.h"
+#include "track_node.h"
 #include "train.h"
 #include "types.h"
-#include "track_node.h"
 
 // Maximum number of trains that can be on the track at once.
 constexpr auto MAX_CONCURRENT_TRAINS = 8;
@@ -73,7 +73,7 @@ public:
 
 struct SafetyState {
     Time lastUpdate; // last time positions were updated
-    Cache<MAX_CONCURRENT_TRAINS, Train, SafetyServer::TrainState> trains;
+    FixedMap<MAX_CONCURRENT_TRAINS, Train, SafetyServer::TrainState> trains;
     SwitchStates switches;
     struct {
         bool has = false;

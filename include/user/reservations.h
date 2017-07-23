@@ -1,8 +1,8 @@
 #pragma once
 
-#include "cache.h"
-#include "safety.h"
+#include "fixed_map.h"
 #include "path_finding.h"
+#include "safety.h"
 #include "sensor.h"
 #include "std.h"
 #include "train.h"
@@ -24,7 +24,7 @@ class Reservations {
     } waitlist;
 
     const SafetyState &safety_;
-    Cache<MAX_CONCURRENT_TRAINS, Train, TrainReservation> trainReservations_;
+    FixedMap<MAX_CONCURRENT_TRAINS, Train, TrainReservation> trainReservations_;
 
     bool reserveNode(Train train, NodeIdx node);
     bool reserveForSensor(Train train, Sensor sensor);

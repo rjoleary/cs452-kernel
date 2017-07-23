@@ -2,15 +2,14 @@
 
 #include <std.h>
 
-// Key-value cache
+// Key-value map
+// Once the map is full, it's full - no more values can be added.
 template <Size Cap, typename K, typename V>
-class Cache {
+class FixedMap {
     K keys_[Cap];
     V values_[Cap];
     Size size_ = 0;
 public:
-    typedef Size CacheIndex;
-
     // Return the number of cached values.
     Size size() const {
         return size_;
