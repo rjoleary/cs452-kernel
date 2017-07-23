@@ -11,7 +11,7 @@
 #include <sensor.h>
 #include <switch.h>
 #include <track.h>
-#include <model.h>
+#include <safety.h>
 #include <route.h>
 
 using namespace ctl;
@@ -144,7 +144,7 @@ void runTerminal() {
     // Create sensors task.
     ~create(Priority(25), sensorsMain);
 
-    ModelServer::create();
+    SafetyServer::create();
 
     ~create(Priority(23), routeMain);
 

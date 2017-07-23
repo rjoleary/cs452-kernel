@@ -1,7 +1,7 @@
 #include <itc.h>
 #include <def.h>
 #include <ns.h>
-#include <model.h>
+#include <safety.h>
 #include <sensor.h>
 #include <path_finding.h>
 #include <train.h>
@@ -31,7 +31,7 @@ struct Message {
 // New routes are created with low priority.
 void routeMain() {
     ~ctl::registerAs(RouteServName);
-    ModelServer modelServer;
+    SafetyServer safetyServer;
     for (;;) {
         ctl::Tid tid;
         Message msg;
@@ -45,7 +45,7 @@ void routeMain() {
                 Gasp gasp;
                 gasp.gradient = ss;
                 gasp.end = msg.end;
-                modelServer.setGasp(msg.train, gasp);
+                safetyServer.setGasp(msg.train, gasp);
             }
         }
     }

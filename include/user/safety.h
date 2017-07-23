@@ -27,7 +27,7 @@ constexpr auto SWITCH_RED_ZONE = 200;
 constexpr auto SWITCH_YELLOW_ZONE = 400;
 static_assert(SWITCH_RED_ZONE < SWITCH_YELLOW_ZONE, "Red zone must be subset of yellow zone");
 
-class ModelServer {
+class SafetyServer {
     ctl::Tid tid;
 public:
     // Representation of a train's state.
@@ -43,7 +43,7 @@ public:
 
     static void create();
 
-    ModelServer();
+    SafetyServer();
 
     // Set the speed of a train.
     // Returns:
@@ -71,14 +71,14 @@ public:
     ctl::Error calibrate(Train train, Sensor sensor, Speed speed);
 };
 
-struct ModelState {
+struct SafetyState {
     Time lastUpdate; // last time positions were updated
-    Cache<MAX_CONCURRENT_TRAINS, Train, ModelServer::TrainState> trains;
+    Cache<MAX_CONCURRENT_TRAINS, Train, SafetyServer::TrainState> trains;
     SwitchStates switches;
     struct {
         bool has = false;
         Train train;
-        ModelServer::TrainState state;
+        SafetyServer::TrainState state;
     } newTrain;
 
     // Return the next edge of the node.

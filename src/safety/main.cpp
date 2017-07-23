@@ -1,4 +1,4 @@
-#include <model.h>
+#include <safety.h>
 
 #include <attribution.h>
 #include <itc.h>
@@ -36,7 +36,7 @@ struct alignas(4) SetTrainSpeedReply {
 
 struct alignas(4) GetTrainStateReply {
     ctl::Error error = ctl::Error::Ok;
-    ModelServer::TrainState state; // TODO: must copy, a bit inefficient
+    SafetyServer::TrainState state; // TODO: must copy, a bit inefficient
 };
 
 struct alignas(4) SetGaspReply {
@@ -47,10 +47,10 @@ struct alignas(4) CalibrateReply {
     ctl::Error error = ctl::Error::Ok;
 };
 
-constexpr ctl::Name ModelServName = {"Model"};
+constexpr ctl::Name SafetyServName = {"Safety"};
 
 void sensorNotifierMain() {
-    auto serv = whoIs(ModelServName).asValue();
+    auto serv = whoIs(SafetyServName).asValue();
     Message msg;
     msg.type = MsgType::SensorNotify;
     for (;;) {
@@ -66,7 +66,7 @@ void sensorNotifierMain() {
 }
 
 void switchNotifierMain() {
-    auto serv = whoIs(ModelServName).asValue();
+    auto serv = whoIs(SafetyServName).asValue();
     Message msg;
     msg.type = MsgType::SwitchNotify;
     auto switches = getSwitchData();
@@ -85,12 +85,12 @@ void switchNotifierMain() {
 
 // Shopkeeper
 void modelMain() {
-    ~ctl::registerAs(ModelServName);
+    ~ctl::registerAs(SafetyServName);
     ~ctl::create(ctl::Priority(24), sensorNotifierMain);
     ~create(ctl::Priority(26), switchNotifierMain);
     TrainServer trainServer;
 
-    ModelState state;
+    SafetyState state;
     state.switches = getSwitchData();
     Reservations reservations(state);
     Attribution attribution(state, reservations);
@@ -114,7 +114,7 @@ void modelMain() {
                     ~reply(tid, rply);
                     break;
                 }
-                ModelServer::TrainState *ts;
+                SafetyServer::TrainState *ts;
                 if (!state.trains.has(msg.train)) {
                     state.newTrain.has = true;
                     state.newTrain.train = msg.train;
@@ -226,7 +226,7 @@ void modelMain() {
 }
 } // anonymous namespace
 
-const TrackEdge &ModelState::nodeEdge(NodeIdx idx) const {
+const TrackEdge &SafetyState::nodeEdge(NodeIdx idx) const {
     const auto &tn = Track().nodes[idx];
     if (tn.type == NODE_BRANCH) {
         return tn.edge[switches[tn.num] == SwitchState::Curved];
@@ -234,7 +234,7 @@ const TrackEdge &ModelState::nodeEdge(NodeIdx idx) const {
     return tn.edge[DIR_AHEAD];
 }
 
-void ModelState::updateTrainStates() {
+void SafetyState::updateTrainStates() {
     const static auto clock = whoIs(ctl::names::ClockServer).asValue();
     const auto t = time(clock).asValue();
 
@@ -251,12 +251,12 @@ void ModelState::updateTrainStates() {
     lastUpdate = t;
 }
 
-void ModelState::updateTrainAtSensor(Train train, Sensor sensor) {
+void SafetyState::updateTrainAtSensor(Train train, Sensor sensor) {
     const static auto clock = whoIs(ctl::names::ClockServer).asValue();
     const auto t = time(clock).asValue();
 
     // Update velocity based on sensor.
-    ModelServer::TrainState &ts = trains.get(train);
+    SafetyServer::TrainState &ts = trains.get(train);
     Distance d = shortestDistance<Graph::VSize>(Track(), ts.lastSensor.value(), sensor.value());
     ts.lastSensor = sensor;
     ts.velocity = d / (t - ts.lastUpdate);
@@ -270,15 +270,15 @@ void ModelState::updateTrainAtSensor(Train train, Sensor sensor) {
     bwprintf(COM2, "Velocity: %d\r\n", ts.velocity);
 }
 
-void ModelServer::create() {
+void SafetyServer::create() {
     ~ctl::create(ctl::Priority(23), modelMain);
 }
 
-ModelServer::ModelServer()
-    : tid(ctl::whoIs(ModelServName).asValue()) {
+SafetyServer::SafetyServer()
+    : tid(ctl::whoIs(SafetyServName).asValue()) {
 }
 
-ctl::Error ModelServer::setTrainSpeed(Train train, Speed speed) {
+ctl::Error SafetyServer::setTrainSpeed(Train train, Speed speed) {
     Message msg;
     msg.type = MsgType::SetTrainSpeed;
     msg.train = train;
@@ -288,7 +288,7 @@ ctl::Error ModelServer::setTrainSpeed(Train train, Speed speed) {
     return reply.error;
 }
 
-ctl::Error ModelServer::getTrainState(Train train, TrainState *state) {
+ctl::Error SafetyServer::getTrainState(Train train, TrainState *state) {
     Message msg;
     msg.type = MsgType::GetTrainState;
     msg.train = train;
@@ -298,7 +298,7 @@ ctl::Error ModelServer::getTrainState(Train train, TrainState *state) {
     return reply.error;
 }
 
-ctl::Error ModelServer::setGasp(Train train, const Gasp &gasp) {
+ctl::Error SafetyServer::setGasp(Train train, const Gasp &gasp) {
     Message msg;
     msg.type = MsgType::SetGasp;
     msg.train = train;
@@ -308,7 +308,7 @@ ctl::Error ModelServer::setGasp(Train train, const Gasp &gasp) {
     return reply.error;
 }
 
-ctl::Error ModelServer::calibrate(Train train, Sensor sensor, Speed speed) {
+ctl::Error SafetyServer::calibrate(Train train, Sensor sensor, Speed speed) {
     Message msg;
     msg.type = MsgType::Calibrate;
     msg.train = train;

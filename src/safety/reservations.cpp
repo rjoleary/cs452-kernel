@@ -1,5 +1,5 @@
 #include "reservations.h"
-#include "model.h"
+#include "safety.h"
 #include "track.h"
 #include "track_node.h"
 #include "ns.h"
@@ -12,18 +12,18 @@ constexpr auto ReverseReservation = 200;
 void savecur();
 void restorecur();
 
-Reservations::Reservations(const ModelState &mod)
-    : model(mod) {
+Reservations::Reservations(const SafetyState &safety)
+    : safety_(safety) {
 }
 
 void Reservations::printReservations() const {
     int top = 3;
     int left = 49;
-    for (const auto &tr : trainReservations.keys()) {
+    for (const auto &tr : trainReservations_.keys()) {
         savecur();
         bwprintf(COM2, "\033[%d;%dH\033[KTrain %d, stop %d: ",
-                top, left, tr, model.trains.get(tr).stoppingDistance);
-        const auto &reses = trainReservations.get(tr);
+                top, left, tr, safety_.trains.get(tr).stoppingDistance);
+        const auto &reses = trainReservations_.get(tr);
         for (Size i = 0; i < reses.length; i++) {
             const auto &res = reses.reservations[i];
             const auto &node = Track().nodes[res];
@@ -37,7 +37,7 @@ void Reservations::printReservations() const {
 }
 
 bool Reservations::reserveNode(Train train, NodeIdx node) {
-    for (auto &reses : trainReservations.values()) {
+    for (auto &reses : trainReservations_.values()) {
         for (Size j = 0; j < reses.length; ++j) {
             const auto &res = reses.reservations[j];
             if (res == node
@@ -49,13 +49,13 @@ bool Reservations::reserveNode(Train train, NodeIdx node) {
             }
         }
     }
-    auto &myRes = trainReservations.get(train);
+    auto &myRes = trainReservations_.get(train);
     myRes.reservations[myRes.length++] = node;
     return true;
 }
 
 bool Reservations::reserveForSensor(Train train, Sensor sensor) {
-    trainReservations.get(train).length = 0;
+    trainReservations_.get(train).length = 0;
 
     const auto &startNode = Track().nodes[sensor.value()];
     bwprintf(COM2, "%d %s\r\n", sensor.value(), startNode.name);
@@ -64,13 +64,13 @@ bool Reservations::reserveForSensor(Train train, Sensor sensor) {
     int forwardDistance = 0;
     bool foundNextSensor = false;
     auto forward = &startNode;
-    while (!(foundNextSensor && forwardDistance > model.trains.get(train).stoppingDistance)) {
+    while (!(foundNextSensor && forwardDistance > safety_.trains.get(train).stoppingDistance)) {
         if (forward->type == NODE_EXIT) {
             return false;
         }
         auto dir = DIR_AHEAD;
         if (forward->type == NODE_BRANCH) {
-            if (model.switches[forward->num] == SwitchState::Curved) {
+            if (safety_.switches[forward->num] == SwitchState::Curved) {
                 dir = DIR_CURVED;
             }
         }
@@ -93,7 +93,7 @@ bool Reservations::reserveForSensor(Train train, Sensor sensor) {
         auto dir = DIR_AHEAD;
         // If it was a branch, get the correct previous node
         if (reverse->type == NODE_BRANCH) {
-            if (model.switches[reverse->num] == SwitchState::Curved) {
+            if (safety_.switches[reverse->num] == SwitchState::Curved) {
                 dir = DIR_CURVED;
             }
         }
@@ -131,10 +131,10 @@ void Reservations::processSensor(Train train, Sensor sensor, Speed speed) {
 }
 
 bool Reservations::hasReservation(Train train, NodeIdx idx) const {
-    if (!trainReservations.has(train)) {
+    if (!trainReservations_.has(train)) {
         return false;
     }
-    const TrainReservation &tr = trainReservations.get(train);
+    const TrainReservation &tr = trainReservations_.get(train);
     for (Size i = 0; i < tr.length; i++) {
         // TODO: time-based hasReservation
         if (tr.reservations[i] == idx) {

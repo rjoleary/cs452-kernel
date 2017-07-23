@@ -11,7 +11,7 @@
 #include <err.h>
 #include <std.h>
 #include <def.h>
-#include <model.h>
+#include <safety.h>
 #include <route.h>
 
 // forward declare
@@ -126,7 +126,7 @@ int parseCmd(const char *cmd) {
 
     // TODO: Make the parser a class too!
     static TrainServer trainServer;
-    static ModelServer model;
+    static SafetyServer safety;
 
     const char *cmdStart = cmd;
     // Error checking is really messy =(
@@ -157,7 +157,7 @@ int parseCmd(const char *cmd) {
         if (terminateCmd(cmdStart, cmd)) {
             return 0;
         }
-        ctl::Error err = model.calibrate(Train(number.val), sensorParsed.asValue(), speed.val);
+        ctl::Error err = safety.calibrate(Train(number.val), sensorParsed.asValue(), speed.val);
         if (err != ctl::Error::Ok) {
             if (err == ctl::Error::NoRes) {
                 bwputstr(COM2, "Error: too many concurrent trains\r\n");
@@ -211,7 +211,7 @@ int parseCmd(const char *cmd) {
         if (terminateCmd(cmdStart, cmd)) {
             return 0;
         }
-        ctl::Error err = model.setTrainSpeed(Train(number.val), speed.val);
+        ctl::Error err = safety.setTrainSpeed(Train(number.val), speed.val);
         if (err != ctl::Error::Ok) {
             if (err == ctl::Error::NoRes) {
                 bwputstr(COM2, "Error: too many concurrent trains\r\n");

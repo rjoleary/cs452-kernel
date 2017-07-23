@@ -1,13 +1,13 @@
 #pragma once
 
 #include "cache.h"
-#include "model.h"
+#include "safety.h"
 #include "path_finding.h"
 #include "sensor.h"
 #include "std.h"
 #include "train.h"
 
-// Keeps track of reservations for the model layer.
+// Keeps track of reservations for the safety layer.
 class Reservations {
     struct TrainReservation {
         Size length = 0;
@@ -23,12 +23,13 @@ class Reservations {
         } items[15];
     } waitlist;
 
-    const ModelState &model;
-    Cache<MAX_CONCURRENT_TRAINS, Train, TrainReservation> trainReservations;
+    const SafetyState &safety_;
+    Cache<MAX_CONCURRENT_TRAINS, Train, TrainReservation> trainReservations_;
+
     bool reserveNode(Train train, NodeIdx node);
     bool reserveForSensor(Train train, Sensor sensor);
   public:
-    Reservations(const ModelState &model);
+    Reservations(const SafetyState &safety);
     void printReservations() const;
     // Return true if there is no contention.
     void processSensor(Train train, Sensor sensor, Speed speed);

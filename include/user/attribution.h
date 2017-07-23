@@ -1,16 +1,16 @@
 #pragma once
 
 #include "err.h"
-#include "model.h"
+#include "safety.h"
 #include "reservations.h"
 #include "sensor.h"
 #include "train.h"
 
 class Attribution {
-    const ModelState &model_;
+    const SafetyState &safety_;
     const Reservations &reservations_;
 
   public:
-    Attribution(const ModelState &model, const Reservations &reservations_);
+    Attribution(const SafetyState &safety, const Reservations &reservations_);
     ctl::ErrorOr<Train> attribute(const Sensor &sensor);
 };
