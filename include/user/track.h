@@ -1,8 +1,9 @@
 #pragma once
 
-#include "track_node.h"
-#include "track_data_new.h"
 #include "std.h"
+#include "switch.h"
+#include "track_data_new.h"
+#include "track_node.h"
 
 void cmdSetStoppingDistance(int mm);
 void cmdClearBrokenSwitches();
@@ -51,13 +52,13 @@ struct Graph {
     int getSwitchNum(int idx) const {
         return vertices[idx].num;
     }
-    char getSwitchPath(int childIdx, int idx) const {
+    SwitchState getSwitchPath(int childIdx, int idx) const {
         if (vertices[idx].type == NODE_MERGE)
-            return 'N';
+            return SwitchState::Neither;
         if (vertices[idx].edge[DIR_STRAIGHT].dest == &vertices[childIdx])
-            return 'S';
+            return SwitchState::Straight;
         if (vertices[idx].edge[DIR_CURVED].dest == &vertices[childIdx])
-            return 'C';
-        return 'X';
+            return SwitchState::Curved;
+        return SwitchState::DontCare;
     }
 };

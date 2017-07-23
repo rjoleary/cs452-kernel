@@ -1,10 +1,11 @@
 #include <switch.h>
-#include <ns.h>
-#include <circularbuffer.h>
-#include <itc.h>
+
 #include <bwio.h>
+#include <circularbuffer.h>
 #include <clock.h>
 #include <def.h>
+#include <itc.h>
+#include <ns.h>
 
 void savecur();
 void restorecur();
@@ -19,8 +20,8 @@ enum class MsgType {
 
 struct Message {
     MsgType type;
-    int sw;
-    char dir;
+    Switch sw;
+    SwitchState dir;
 };
 
 void notifMain() {
@@ -33,7 +34,7 @@ void notifMain() {
     for (;;) {
         msg.type = MsgType::Ready;
         ~ctl::send(ss, msg, msg);
-        bwputc(COM1, msg.dir == 'C' ? 34: 33);
+        bwputc(COM1, msg.dir == SwitchState::Curved ? 34 : 33);
         bwputc(COM1, msg.sw);
         flush(COM1);
 
@@ -79,21 +80,21 @@ const struct {
     {6, 20, '#', '|'},
 };
 
-void updateGui(int sw, char dir, const SwitchStates &ss) {
+void updateGui(int sw, SwitchState dir, const SwitchStates &ss) {
     const int idx = SwitchStates::toIdx(sw);
     const auto &layoutPos = LAYOUT_POS[idx];
 
-    char c = dir == 'C' ? layoutPos.curved : layoutPos.straight;
+    char c = dir == SwitchState::Curved ? layoutPos.curved : layoutPos.straight;
     if ((sw == 153 || sw == 154) && (ss[153] != ss[154])) {
-        if (ss[153] == 'C') {
+        if (ss[153] == SwitchState::Curved) {
             c = '/';
-        } else if (ss[154] == 'C') {
+        } else if (ss[154] == SwitchState::Curved) {
             c = '\\';
         }
     } else if ((sw == 155 || sw == 156) && (ss[155] != ss[156])) {
-        if (ss[155] == 'C') {
+        if (ss[155] == SwitchState::Curved) {
             c = '/';
-        } else if (ss[156] == 'C') {
+        } else if (ss[156] == SwitchState::Curved) {
             c = '\\';
         }
     }
@@ -107,27 +108,19 @@ void updateGui(int sw, char dir, const SwitchStates &ss) {
     flush(COM2);
 }
 
-} // unnamed namespace
+} // anonymous namespace
 
 void setupSwitches() {
-    for (int i = 1; i <= 18; ++i)
-        cmdSetSwitch(i, 'C');
-    cmdSetSwitch(153, 'C');
-    cmdSetSwitch(154, 'S');
-    cmdSetSwitch(155, 'C');
-    cmdSetSwitch(156, 'S');
-
-    /*cmdSetSwitch(11, 'S');
-    cmdSetSwitch(12, 'S');
-    cmdSetSwitch(14, 'S');
-    cmdSetSwitch(15, 'S');
-    cmdSetSwitch(9, 'S');
-    cmdSetSwitch(8, 'S');
-    cmdSetSwitch(7, 'S');
-    cmdSetSwitch(6, 'S');*/
+    for (int i = 1; i <= 18; ++i) {
+        cmdSetSwitch(i, SwitchState::Curved);
+    }
+    cmdSetSwitch(153, SwitchState::Curved);
+    cmdSetSwitch(154, SwitchState::Straight);
+    cmdSetSwitch(155, SwitchState::Curved);
+    cmdSetSwitch(156, SwitchState::Straight);
 }
 
-void cmdSetSwitch(int sw, char dir) {
+void cmdSetSwitch(Switch sw, SwitchState dir) {
     if ((sw < 1 || 18 < sw) && (sw < 153 || 156 < sw)) {
         bwputstr(COM2, "Error: switch number must be [1..18] or [153..156]\r\n");
         return;
@@ -140,7 +133,9 @@ void cmdSetSwitch(int sw, char dir) {
 void switchMan() {
     ~ctl::registerAs(SwitchServ);
     SwitchStates ss;
-    for (int i = 0; i < NumSwitches; ++i) ss.states[i] = 'U';
+    for (int i = 0; i < NumSwitches; ++i) {
+        ss.states[i] = SwitchState::Unknown;
+    }
     ~create(ctl::Priority(26), notifMain);
     auto notifier = ctl::INVALID_TID;
 

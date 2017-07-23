@@ -25,8 +25,8 @@ struct alignas(4) Message {
     Train train;
     Speed speed;
     Sensor sensor;
-    char sw;
-    char state;
+    Switch sw;
+    SwitchState state;
     Gasp gasp; // TODO: this is quite large for every message. Possibly use a union?
 };
 
@@ -219,7 +219,7 @@ void modelMain() {
 const TrackEdge &ModelState::nodeEdge(NodeIdx idx) const {
     const auto &tn = Track().nodes[idx];
     if (tn.type == NODE_BRANCH) {
-        return tn.edge[switches[tn.num] == 'C'];
+        return tn.edge[switches[tn.num] == SwitchState::Curved];
     }
     return tn.edge[DIR_AHEAD];
 }

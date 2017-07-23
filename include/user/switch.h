@@ -3,14 +3,18 @@
 // TODO: make stongly typed
 typedef int Switch;
 
-void cmdSetSwitch(int sw, char dir);
-void setupSwitches();
-void switchMan();
-
 constexpr auto NumSwitches = 22;
 
+enum class SwitchState : char {
+    Unknown  = 'U',
+    DontCare = 'X',
+    Straight = 'S',
+    Curved   = 'C',
+    Neither  = 'N',
+};
+
 struct alignas(4) SwitchStates {
-    char states[NumSwitches];
+    SwitchState states[NumSwitches];
     static inline int toIdx(int sw) {
         if (1 <= sw && sw <= 18)
             return sw - 1;
@@ -24,14 +28,18 @@ struct alignas(4) SwitchStates {
             return sw + 153 - 18;
     }
 
-    char & operator[](int sw) {
+    SwitchState & operator[](int sw) {
         return states[toIdx(sw)];
     }
 
-    const char & operator[](int sw) const {
+    SwitchState operator[](int sw) const {
         return states[toIdx(sw)];
     }
 };
+
+void cmdSetSwitch(Switch sw, SwitchState dir);
+void setupSwitches();
+void switchMan();
 
 SwitchStates getSwitchData();
 SwitchStates waitSwitchChange();

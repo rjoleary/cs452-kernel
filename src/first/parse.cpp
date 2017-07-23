@@ -273,7 +273,7 @@ int parseCmd(const char *cmd) {
         if (terminateCmd(cmdStart, cmd)) {
             return 0;
         }
-        cmdSetSwitch(number.val, dir.start[0]);
+        cmdSetSwitch(number.val, SwitchState(dir.start[0]));
     } else if (isIdent(t, "task")) {
         ctl::Tid tid;
         DecimalToken number = nextDec(&cmd);

@@ -65,13 +65,18 @@ bool Reservations::reserveForSensor(Train train, Sensor sensor) {
     bool foundNextSensor = false;
     auto forward = &startNode;
     while (!(foundNextSensor && forwardDistance > model.trains.get(train).stoppingDistance)) {
-        if (forward->type == NODE_EXIT) return false;
+        if (forward->type == NODE_EXIT) {
+            return false;
+        }
         auto dir = DIR_AHEAD;
         if (forward->type == NODE_BRANCH) {
-            if (model.switches[forward->num] == 'C')
+            if (model.switches[forward->num] == SwitchState::Curved) {
                 dir = DIR_CURVED;
+            }
         }
-        if (!reserveNode(train, forward - Track().nodes)) return false;
+        if (!reserveNode(train, forward - Track().nodes)) {
+            return false;
+        }
         if (foundNextSensor) {
             forwardDistance += forward->edge[dir].dist;
         }
@@ -88,12 +93,15 @@ bool Reservations::reserveForSensor(Train train, Sensor sensor) {
         auto dir = DIR_AHEAD;
         // If it was a branch, get the correct previous node
         if (reverse->type == NODE_BRANCH) {
-            if (model.switches[reverse->num] == 'C')
+            if (model.switches[reverse->num] == SwitchState::Curved) {
                 dir = DIR_CURVED;
+            }
         }
         backwardsDistance += reverse->edge[dir].dist;
         reverse = reverse->edge[dir].dest;
-        if (!reserveNode(train, reverse->reverse - Track().nodes)) return false;
+        if (!reserveNode(train, reverse->reverse - Track().nodes)) {
+            return false;
+        }
     }
 
     return true;
@@ -123,7 +131,9 @@ void Reservations::processSensor(Train train, Sensor sensor, Speed speed) {
 }
 
 bool Reservations::hasReservation(Train train, NodeIdx idx) const {
-    if (!trainReservations.has(train)) return false;
+    if (!trainReservations.has(train)) {
+        return false;
+    }
     const TrainReservation &tr = trainReservations.get(train);
     for (Size i = 0; i < tr.length; i++) {
         // TODO: time-based hasReservation
