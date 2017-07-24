@@ -37,7 +37,7 @@ public:
                 return values_[i];
             }
         }
-        ASSERT(size_ <= Cap);
+        ASSERT(size_ < Cap);
         keys_[size_] = key;
         return values_[size_++];
     }
