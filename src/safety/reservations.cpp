@@ -64,9 +64,11 @@ bool Reservations::reserveForSensor(Train train, Sensor sensor) {
     int forwardDistance = 0;
     bool foundNextSensor = false;
     auto forward = &startNode;
+    bool reservedAll = true;
     while (!(foundNextSensor && forwardDistance > safety_.trains.get(train).stoppingDistance)) {
         if (forward->type == NODE_EXIT) {
-            return false;
+            reservedAll = false;
+            break;
         }
         auto dir = DIR_AHEAD;
         if (forward->type == NODE_BRANCH) {
@@ -75,7 +77,8 @@ bool Reservations::reserveForSensor(Train train, Sensor sensor) {
             }
         }
         if (!reserveNode(train, forward - Track().nodes)) {
-            return false;
+            reservedAll = false;
+            break;
         }
         if (foundNextSensor) {
             forwardDistance += forward->edge[dir].dist;
@@ -100,11 +103,12 @@ bool Reservations::reserveForSensor(Train train, Sensor sensor) {
         backwardsDistance += reverse->edge[dir].dist;
         reverse = reverse->edge[dir].dest;
         if (!reserveNode(train, reverse->reverse - Track().nodes)) {
-            return false;
+            reservedAll = false;
+            break;
         }
     }
 
-    return true;
+    return reservedAll;
 }
 
 void Reservations::processSensor(Train train, Sensor sensor, Speed speed) {

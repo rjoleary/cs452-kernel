@@ -120,10 +120,12 @@ void modelMain() {
                     break;
                 }
                 SafetyServer::TrainState *ts;
+                bool newTrain = false;
                 if (!state.trains.has(msg.train)) {
                     state.newTrain.has = true;
                     state.newTrain.train = msg.train;
                     ts = &state.newTrain.state;
+                    newTrain = true;
                 } else {
                     ts = &state.trains.get(msg.train);
                 }
@@ -131,7 +133,12 @@ void modelMain() {
                 ts->speed = msg.speed;
                 ts->stoppingDistance = msg.speed*38;
                 // TODO: cut the middleman
-                trainServer.setTrainSpeed(msg.train, msg.speed);
+                if (newTrain) {
+                    trainServer.setTrainSpeed(msg.train, msg.speed);
+                }
+                else {
+                    reservations.processSensor(msg.train, ts->lastSensor, msg.speed);
+                }
                 ~reply(tid, rply);
                 break;
             }
