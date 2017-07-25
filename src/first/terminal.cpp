@@ -55,24 +55,6 @@ void printLayout() {
     bwputstr(COM2, LAYOUT);
 }
 
-// Set position of cursor to (row, col).
-void setpos(unsigned row, unsigned col) {
-    char str[] = "\033[%d;%dH";
-    bwprintf(COM2, str, row, col);
-}
-
-// Save cursor position.
-void savecur() {
-    char save[] = "\033[s\033[?25l";
-    bwputstr(COM2, save);
-}
-
-// Restore cursor position.
-void restorecur() {
-    char restore[] = "\033[u\033[?25h";
-    bwputstr(COM2, restore);
-}
-
 void timerMain() {
     ~registerAs(Name{"Timer"});
 

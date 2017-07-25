@@ -193,7 +193,7 @@ void safetyMain() {
                         ts.lastUpdate = time(clock).asValue();
                         ts.position = {msg.sensor.value(), 0};
                     } else {
-                        bwprintf(COM2, "\033[45;1HUnnattributed sensor %d\r\n", msg.sensor.value());
+                        INFOF(45, "Unnattributed sensor %d\r\n", msg.sensor.value());
                         break;
                     }
                 } else {
@@ -201,7 +201,7 @@ void safetyMain() {
                     t = erroror.asValue();
                     state.updateTrainAtSensor(t, msg.sensor);
                 }
-                bwprintf(COM2, "\033[45;1HSensor %d attributed for %d\r\n",
+                INFOF(45, "Sensor %d attributed for %d\r\n",
                         msg.sensor.value(), int(t.underlying()));
                 reservations.processUpdate(t);
                 reservations.printReservations();
@@ -235,7 +235,7 @@ ctl::Error SafetyState::getTrainStateOrUnattributed(Train t, SafetyServer::Train
             return ctl::Error::Ok;
         }
         if (unattributedTrain != INVALID_TRAIN) {
-            bwprintf(COM2, "Error: cannot attribute train %d and %d at the same time",
+            INFOF(44, "Error: cannot attribute train %d and %d at the same time",
                     t, unattributedTrain);
             flush(COM2);
             return ctl::Error::BadArg;
@@ -302,7 +302,7 @@ void SafetyState::updateTrainAtSensor(Train train, Sensor sensor) {
     ts.position.nodeIdx = sensor.value();
     ts.position.offset = 0;
 
-    bwprintf(COM2, "Velocity: %d\r\n", ts.velocity);
+    INFOF(46, "Velocity: %d\r\n", ts.velocity);
 }
 
 void SafetyServer::create() {
