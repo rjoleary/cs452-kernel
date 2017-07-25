@@ -8,6 +8,7 @@
 using ctl::Heap;
 
 typedef U8 NodeIdx;
+constexpr NodeIdx INVALID_NODE = 255;
 
 // dijkstra find shortest path from start node to all other nodes.
 //

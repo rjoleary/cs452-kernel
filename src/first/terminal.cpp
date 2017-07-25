@@ -186,7 +186,8 @@ void runTerminal() {
             }
             break;
         case '\r': // enter
-            bwputstr(COM2, "\033[G\033[J\r\n");
+            setpos(LAYOUT_HEIGHT + 1, 1);
+            bwputstr(COM2, "\033[J\r\n");
             flush(COM2);
             cmdbuf[cmdsz] = '\0'; // null-terminate
             if (cmdsz > 0) {

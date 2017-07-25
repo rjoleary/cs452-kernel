@@ -31,25 +31,13 @@ struct alignas(4) Message {
     Gasp gasp; // TODO: this is quite large for every message. Possibly use a union?
 };
 
-struct alignas(4) SetTrainSpeedReply {
-    ctl::Error error = ctl::Error::Ok;
-};
-
-struct alignas(4) ReverseTrainReply {
+struct alignas(4) ErrorReply {
     ctl::Error error = ctl::Error::Ok;
 };
 
 struct alignas(4) GetTrainStateReply {
     ctl::Error error = ctl::Error::Ok;
     SafetyServer::TrainState state; // TODO: must copy, a bit inefficient
-};
-
-struct alignas(4) SetGaspReply {
-    ctl::Error error = ctl::Error::Ok;
-};
-
-struct alignas(4) CalibrateReply {
-    ctl::Error error = ctl::Error::Ok;
 };
 
 constexpr ctl::Name SafetyServName = {"Safety"};
@@ -89,6 +77,13 @@ void switchNotifierMain() {
 }
 
 constexpr auto VELOCITY_CONSTANT = 1000;
+Velocity speedToVelocity(Speed x) {
+    return x / 2 * VELOCITY_CONSTANT;
+}
+
+Distance speedToStoppingDistance(Speed x) {
+    return x * 38;
+}
 
 // Shopkeeper
 void safetyMain() {
@@ -113,54 +108,46 @@ void safetyMain() {
         ctl::Tid tid;
         Message msg;
         ~receive(&tid, msg);
+
         switch (msg.type) {
             case MsgType::SetTrainSpeed: {
-                SetTrainSpeedReply rply;
-                if (state.trains.willOverflow(msg.train)) {
-                    rply.error = ctl::Error::NoRes;
-                    ~reply(tid, rply);
+                SafetyServer::TrainState *ts;
+                auto err = state.getTrainStateOrUnattributed(msg.train, &ts);
+                if (err != ctl::Error::Ok) {
+                    ~reply(tid, ErrorReply{err});
                     break;
                 }
-                SafetyServer::TrainState *ts;
-                bool newTrain = false;
-                if (!state.trains.has(msg.train)) {
-                    state.newTrain.has = true;
-                    state.newTrain.train = msg.train;
-                    // Initially in free running mode.
-                    state.newTrain.state.gasp.gradient.fill(SwitchState::DontCare);
-                    ts = &state.newTrain.state;
-                    newTrain = true;
-                } else {
-                    ts = &state.trains.get(msg.train);
-                }
-                ts->velocity = msg.speed/2 * VELOCITY_CONSTANT;
+                ts->velocity = speedToVelocity(msg.speed);
                 ts->speed = msg.speed;
-                ts->stoppingDistance = msg.speed*38;
-                if (newTrain) {
-                    trainServer.setTrainSpeed(msg.train, msg.speed);
-                } else {
-                    reservations.processUpdate(msg.train);
-                }
-                ~reply(tid, rply);
+                ts->stoppingDistance = speedToStoppingDistance(msg.speed);
+                // TODO: take safety into account
+                //if (newTrain) {
+                trainServer.setTrainSpeed(msg.train, msg.speed);
+                //} else {
+                //    reservations.processUpdate(msg.train);
+                //}
+                ~reply(tid, ErrorReply{});
                 break;
             }
 
             case MsgType::ReverseTrain: {
-                ReverseTrainReply rply;
-                if (state.trains.willOverflow(msg.train)) {
-                    rply.error = ctl::Error::NoRes;
-                    ~reply(tid, rply);
+                SafetyServer::TrainState *ts;
+                auto err = state.getTrainStateOrUnattributed(msg.train, &ts);
+                if (err != ctl::Error::Ok) {
+                    ~reply(tid, ErrorReply{err});
                     break;
                 }
+                // TODO: safety
+                (void)ts;
                 trainServer.reverseTrain(msg.train);
-                ~reply(tid, rply);
+                ~reply(tid, ErrorReply{});
                 break;
             }
 
             case MsgType::GetTrainState: {
                 GetTrainStateReply rply;
-                if (state.trains.willOverflow(msg.train)) {
-                    rply.error = ctl::Error::NoRes;
+                if (!state.trains.has(msg.train)) {
+                    rply.error = ctl::Error::BadArg;
                     ~reply(tid, rply);
                     break;
                 }
@@ -171,15 +158,14 @@ void safetyMain() {
             }
 
             case MsgType::SetGasp: {
-                SetGaspReply rply;
-                if (state.trains.willOverflow(msg.train)) {
-                    rply.error = ctl::Error::NoRes;
-                    ~reply(tid, rply);
+                SafetyServer::TrainState *ts;
+                auto err = state.getTrainStateOrUnattributed(msg.train, &ts);
+                if (err != ctl::Error::Ok) {
+                    ~reply(tid, ErrorReply{err});
                     break;
                 }
-                auto &ts = state.trains.get(msg.train);
-                ts.gasp = msg.gasp;
-                ~reply(tid, rply);
+                ts->gasp = msg.gasp;
+                ~reply(tid, ErrorReply{});
                 break;
             }
 
@@ -197,31 +183,26 @@ void safetyMain() {
                 auto erroror = attribution.attribute(msg.sensor);
                 Train t;
                 if (erroror.isError()) {
-                    // If we have a new train, we attribute the sensor to it
-                    if (state.newTrain.has) {
-                        t = state.newTrain.train;
+                    // Attempt to attribute the sensor to a new train.
+                    if (state.unattributedTrain != INVALID_TRAIN) {
+                        t = state.unattributedTrain;
+                        state.unattributedTrain = INVALID_TRAIN;
+                        auto &ts = state.trains.get(t);
+                        ts = state.unattributedTrainState;
+                        ts.lastSensor = msg.sensor;
+                        ts.lastUpdate = time(clock).asValue();
+                        ts.position = {msg.sensor.value(), 0};
                     } else {
                         bwprintf(COM2, "\033[45;1HUnnattributed sensor %d\r\n", msg.sensor.value());
-                        // TODO: no known attribution
                         break;
                     }
-                }
-                else {
+                } else {
+                    // Attribute a train with an already known position.
                     t = erroror.asValue();
+                    state.updateTrainAtSensor(t, msg.sensor);
                 }
                 bwprintf(COM2, "\033[45;1HSensor %d attributed for %d\r\n",
                         msg.sensor.value(), int(t.underlying()));
-                // If this is a new train
-                if (erroror.isError()) {
-                    state.newTrain.has = false;
-                    state.newTrain.state.lastSensor = msg.sensor;
-                    state.newTrain.state.lastUpdate = time(clock).asValue();
-                    state.newTrain.state.position = {msg.sensor.value(), 0};
-                    state.trains.get(state.newTrain.train) = state.newTrain.state;
-                }
-                else {
-                    state.updateTrainAtSensor(t, msg.sensor);
-                }
                 reservations.processUpdate(t);
                 reservations.printReservations();
                 break;
@@ -233,23 +214,48 @@ void safetyMain() {
                 break;
             }
 
+            // TODO: move to application layer
             case MsgType::Calibrate: {
-                CalibrateReply rply;
-                if (state.trains.willOverflow(msg.train)) {
-                    rply.error = ctl::Error::NoRes;
-                    ~reply(tid, rply);
-                    break;
-                }
                 calibration.train = msg.train;
                 calibration.sensor = msg.sensor;
                 trainServer.setTrainSpeed(msg.train, msg.speed);
-                ~reply(tid, rply);
+                ~reply(tid, ErrorReply{});
                 break;
             }
         }
     }
 }
 } // anonymous namespace
+
+ctl::Error SafetyState::getTrainStateOrUnattributed(Train t, SafetyServer::TrainState **ts) {
+    // If the train is new
+    if (!trains.has(t)) {
+        if (unattributedTrain != INVALID_TRAIN) {
+            bwprintf(COM2, "Error: cannot attribute train %d and %d at the same time",
+                    t, unattributedTrain);
+            flush(COM2);
+            return ctl::Error::BadArg;
+        }
+        if (trains.willOverflow(t)) {
+            return ctl::Error::NoRes;
+        }
+
+        // Set the train's initial state.
+        unattributedTrain = t;
+        unattributedTrainState.lastUpdate = SafetyServer::TrainState::NEVER_ATTRIBUTED;
+        unattributedTrainState.speed = 0;
+        unattributedTrainState.velocity = 0;
+        unattributedTrainState.stoppingDistance = 0;
+        unattributedTrainState.position = INVALID_POSITION;
+        unattributedTrainState.gasp.gradient.fill(SwitchState::DontCare); // free running mode
+        unattributedTrainState.gasp.end = INVALID_POSITION;
+        *ts = &unattributedTrainState;
+    } else {
+        // The train is not new.
+        *ts = &trains.get(t);
+    }
+    return ctl::Error::Ok;
+}
 
 const TrackEdge &SafetyState::nodeEdge(NodeIdx idx) const {
     const auto &tn = Track().nodes[idx];
@@ -308,7 +314,7 @@ ctl::Error SafetyServer::setTrainSpeed(Train train, Speed speed) {
     msg.type = MsgType::SetTrainSpeed;
     msg.train = train;
     msg.speed = speed;
-    SetTrainSpeedReply reply;
+    ErrorReply reply;
     ~send(tid, msg, reply);
     return reply.error;
 }
@@ -317,7 +323,7 @@ ctl::Error SafetyServer::reverseTrain(Train train) {
     Message msg;
     msg.type = MsgType::ReverseTrain;
     msg.train = train;
-    ReverseTrainReply reply;
+    ErrorReply reply;
     ~send(tid, msg, reply);
     return reply.error;
 }
@@ -337,7 +343,7 @@ ctl::Error SafetyServer::setGasp(Train train, const Gasp &gasp) {
     msg.type = MsgType::SetGasp;
     msg.train = train;
     msg.gasp = gasp;
-    SetGaspReply reply;
+    ErrorReply reply;
     ~send(tid, msg, reply);
     return reply.error;
 }
@@ -348,7 +354,7 @@ ctl::Error SafetyServer::calibrate(Train train, Sensor sensor, Speed speed) {
     msg.train = train;
     msg.sensor = sensor;
     msg.speed = speed;
-    CalibrateReply reply;
+    ErrorReply reply;
     ~send(tid, msg, reply);
     return reply.error;
 }

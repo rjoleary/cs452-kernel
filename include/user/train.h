@@ -18,6 +18,7 @@ struct Position {
     NodeIdx nodeIdx;
     Distance offset; // mm
 };
+constexpr Position INVALID_POSITION{INVALID_NODE, 0};
 
 class TrainServer {
     ctl::Tid tid;
