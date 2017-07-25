@@ -152,6 +152,12 @@ TrainServer::TrainServer()
     : tid(whoIs(TrManName).asValue()) {
 }
 
+void TrainServer::setupTrains() {
+    for (auto train : AnticipatedTrains) {
+        setTrainSpeed(train, 0);
+    }
+}
+
 void TrainServer::stopTrains() {
     bwputc(COM1, 97);
     flush(COM1);

@@ -122,6 +122,7 @@ void runTerminal() {
     bwputstr(COM2, clear);
 
     TrainServer trainServer;
+    trainServer.setupTrains();
     trainServer.goTrains();
 
     // Print initial text.

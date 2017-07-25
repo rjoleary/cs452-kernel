@@ -8,6 +8,11 @@
 using Train = ctl::NamedType<char, struct Train_t>;
 constexpr Train INVALID_TRAIN{0};
 
+const Train AnticipatedTrains[] = {
+    Train(58), Train(63), Train(69), Train(70),
+    Train(71), Train(73), Train(74), Train(76),
+};
+
 // Representation of a position offset from a node.
 struct Position {
     NodeIdx nodeIdx;
@@ -19,6 +24,7 @@ class TrainServer {
   public:
     TrainServer();
 
+    void setupTrains();
     void stopTrains();
     void goTrains();
 
