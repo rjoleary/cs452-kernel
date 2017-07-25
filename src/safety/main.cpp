@@ -138,8 +138,7 @@ void safetyMain() {
                 ts->stoppingDistance = msg.speed*38;
                 if (newTrain) {
                     trainServer.setTrainSpeed(msg.train, msg.speed);
-                }
-                else {
+                } else {
                     reservations.processUpdate(msg.train);
                 }
                 ~reply(tid, rply);

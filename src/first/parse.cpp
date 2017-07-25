@@ -14,9 +14,6 @@
 #include <safety.h>
 #include <route.h>
 
-// forward declare
-void setpos(unsigned row, unsigned col);
-
 void printHelp() {
     bwputstr(COM2,
         "Commands:\r\n"

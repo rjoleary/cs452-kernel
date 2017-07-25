@@ -189,9 +189,11 @@ void runTerminal() {
             bwputstr(COM2, "\033[G\033[J\r\n");
             flush(COM2);
             cmdbuf[cmdsz] = '\0'; // null-terminate
-            bwputstr(COM2, prompt);
-            bwputstr(COM2, cmdbuf);
-            bwputstr(COM2, "\r\n");
+            if (cmdsz > 0) {
+                bwputstr(COM2, prompt);
+                bwputstr(COM2, cmdbuf);
+                bwputstr(COM2, "\r\n");
+            }
             flush(COM2);
             if (parseCmd(cmdbuf)) {
                 flush(COM2);
