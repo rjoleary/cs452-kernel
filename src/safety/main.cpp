@@ -230,6 +230,10 @@ void safetyMain() {
 ctl::Error SafetyState::getTrainStateOrUnattributed(Train t, SafetyServer::TrainState **ts) {
     // If the train is new
     if (!trains.has(t)) {
+        if (unattributedTrain == t) {
+            *ts = &unattributedTrainState;
+            return ctl::Error::Ok;
+        }
         if (unattributedTrain != INVALID_TRAIN) {
             bwprintf(COM2, "Error: cannot attribute train %d and %d at the same time",
                     t, unattributedTrain);
