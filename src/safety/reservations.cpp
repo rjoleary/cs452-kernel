@@ -12,8 +12,27 @@ constexpr auto ReverseReservation = 200;
 void savecur();
 void restorecur();
 
-Reservations::Reservations(const SafetyState &safety)
-    : safety_(safety) {
+Reservations::Reservations(const SafetyState &safety, TrainServer &ts)
+    : safety_(safety)
+    , trainServer_(ts) {
+}
+
+void Reservations::flipSwitchesInReservation(Train t, const TrainReservation &r) {
+    for (Size i = 0; i < r.length; i++) {
+        const auto &res = r.reservations[i];
+        const auto &node = Track().nodes[res];
+        const auto &n = node.type;
+        if (n == NODE_BRANCH || n == NODE_MERGE) {
+            const auto &gasp = safety_.trains.get(t).gasp.gradient[node.num];
+            if (n == NODE_BRANCH && (gasp == SwitchState::Straight || gasp == SwitchState::Curved)) {
+                cmdSetSwitch(node.num, gasp);
+            } else if (n == NODE_BRANCH && gasp == SwitchState::Neither) {
+                trainServer_.reverseTrain(t);
+            } else if (n == NODE_MERGE && (gasp == SwitchState::Straight || gasp == SwitchState::Curved)) {
+                trainServer_.reverseTrain(t);
+            }
+        }
+    }
 }
 
 void Reservations::printReservations() const {
@@ -60,7 +79,8 @@ bool Reservations::reserveNode(Train train, NodeIdx node) {
 }
 
 bool Reservations::reserveForTrain(Train train) {
-    trainReservations_.get(train).length = 0;
+    auto &r = trainReservations_.get(train);
+    r.length = 0;
 
     const auto &trModel = safety_.trains.get(train);
     const auto &startNode = Track().nodes[trModel.lastSensor.value()];
@@ -94,6 +114,9 @@ bool Reservations::reserveForTrain(Train train) {
         }
         forward = forward->edge[dir].dest;
     }
+
+    // Flip switches, but only on the forwards reservation.
+    flipSwitchesInReservation(train, r);
 
     // Reserve backwards
     int backwardsDistance = 0;

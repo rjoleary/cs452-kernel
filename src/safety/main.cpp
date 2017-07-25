@@ -94,7 +94,7 @@ void safetyMain() {
 
     SafetyState state;
     state.switches = getSwitchData();
-    Reservations reservations(state);
+    Reservations reservations(state, trainServer);
     Attribution attribution(state, reservations);
 
     struct {

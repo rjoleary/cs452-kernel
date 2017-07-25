@@ -19,14 +19,15 @@ class Reservations {
         Train trains[15];
     } waitlist;
 
-    TrainServer trainServer_;
     const SafetyState &safety_;
+    TrainServer trainServer_;
     FixedMap<MAX_CONCURRENT_TRAINS, Train, TrainReservation> trainReservations_;
 
+    void flipSwitchesInReservation(Train t, const TrainReservation &r);
     bool reserveNode(Train train, NodeIdx node);
     bool reserveForTrain(Train train);
   public:
-    Reservations(const SafetyState &safety);
+    Reservations(const SafetyState &safety, TrainServer &ts);
     void printReservations() const;
     // Return true if there is no contention.
     void processUpdate(Train train);
