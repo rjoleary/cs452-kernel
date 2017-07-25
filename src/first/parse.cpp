@@ -88,7 +88,6 @@ DecimalToken nextDec(const char **cmd) {
 
 // Print error message relating to a bad parse.
 void tokenErr(const char *msg, int start, int len) {
-    setpos(36, 1);
     if (len) {
         int i;
         for (i = 0; i < start; i++) {
@@ -230,7 +229,7 @@ int parseCmd(const char *cmd) {
         }
         Token sensor = nextToken(&cmd);
         if (sensor.len == 0) {
-            bwputstr(COM2, "Error: expected a direction\r\n");
+            bwputstr(COM2, "Error: expected a sensor\r\n");
             return 0;
         }
         auto sensorParsed = Sensor::fromString(sensor.start, sensor.len);

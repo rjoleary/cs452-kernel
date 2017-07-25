@@ -27,7 +27,8 @@ using namespace ctl;
 
 static const char prompt[] = "% ";
 
-// Warning: When changing the layout, grep for and update LAYOUT_WIDTH.
+// Warning: When changing the layout, grep for and update LAYOUT_WIDTH and LAYOUT_HEIGHT.
+const int LAYOUT_HEIGHT = 20;
 const char *LAYOUT =
         R"(00:00.0          Idle Time: 0%     | Sensors:  | Reservations:)""\r\n"
         R"(                                   |           |              )""\r\n"
@@ -127,8 +128,10 @@ void runTerminal() {
 
     // Print initial text.
     printLayout();
+    savecur();
     setpos(1, 11);
     bwputstr(COM2, "\033[32m GO \033[37m");
+    restorecur();
 
     // Create timer and idle task counter.
     ~create(Priority(20), timerMain);
@@ -151,7 +154,6 @@ void runTerminal() {
     bool isStopped = false;
     unsigned cmdsz = 0;
     char cmdbuf[MAX_CMDSZ+1];
-    setpos(35, 1);
     bwputstr(COM2, prompt);
 
     Tid rx = whoIs(names::Uart2RxServer).asValue();
@@ -184,16 +186,19 @@ void runTerminal() {
             }
             break;
         case '\r': // enter
-            setpos(21,1);
-            bwputstr(COM2, "\033[J");
+            bwputstr(COM2, "\033[G\033[J\r\n");
             flush(COM2);
             cmdbuf[cmdsz] = '\0'; // null-terminate
+            bwputstr(COM2, prompt);
+            bwputstr(COM2, cmdbuf);
+            bwputstr(COM2, "\r\n");
+            flush(COM2);
             if (parseCmd(cmdbuf)) {
                 flush(COM2);
                 goto Return;
             }
             cmdsz = 0;
-            setpos(35,1);
+            setpos(LAYOUT_HEIGHT + 1, 1);
             bwputstr(COM2, prompt);
             break;
         default:
