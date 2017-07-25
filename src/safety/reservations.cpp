@@ -21,8 +21,13 @@ void Reservations::printReservations() const {
     int left = 49;
     for (const auto &tr : trainReservations_.keys()) {
         savecur();
-        bwprintf(COM2, "\033[%d;%dH\033[KTrain %d, stop %d: ",
-                top, left, tr, safety_.trains.get(tr).stoppingDistance);
+        const auto &trModel = safety_.trains.get(tr);
+        bwprintf(COM2, "\033[%d;%dH\033[KTrain %d, stop %d: pos: %s +%d",
+                top, left,
+                tr,
+                trModel.stoppingDistance,
+                Track().nodes[trModel.position.nodeIdx].name,
+                trModel.position.offset);
         const auto &reses = trainReservations_.get(tr);
         for (Size i = 0; i < reses.length; i++) {
             const auto &res = reses.reservations[i];
@@ -54,18 +59,19 @@ bool Reservations::reserveNode(Train train, NodeIdx node) {
     return true;
 }
 
-bool Reservations::reserveForSensor(Train train, Sensor sensor) {
+bool Reservations::reserveForTrain(Train train) {
     trainReservations_.get(train).length = 0;
 
-    const auto &startNode = Track().nodes[sensor.value()];
-    bwprintf(COM2, "%d %s\r\n", sensor.value(), startNode.name);
+    const auto &trModel = safety_.trains.get(train);
+    const auto &startNode = Track().nodes[trModel.lastSensor.value()];
+    bwprintf(COM2, "%d %s\r\n", trModel.lastSensor.value(), startNode.name);
 
     // Reserve forwards, to next sensor + stopping distance
     int forwardDistance = 0;
     bool foundNextSensor = false;
     auto forward = &startNode;
     bool reservedAll = true;
-    while (!(foundNextSensor && forwardDistance > safety_.trains.get(train).stoppingDistance)) {
+    while (!(foundNextSensor && forwardDistance > trModel.stoppingDistance)) {
         if (forward->type == NODE_EXIT) {
             reservedAll = false;
             break;
@@ -111,23 +117,24 @@ bool Reservations::reserveForSensor(Train train, Sensor sensor) {
     return reservedAll;
 }
 
-void Reservations::processSensor(Train train, Sensor sensor, Speed speed) {
+void Reservations::processUpdate(Train train) {
     TrainServer ts;
     Waitlist newList;
-    if (!reserveForSensor(train, sensor)) {
-        newList.items[newList.length++] = {train, sensor, speed};
+    const auto &trModel = safety_.trains.get(train);
+    if (!reserveForTrain(train)) {
+        newList.trains[newList.length++] = train;
         ts.setTrainSpeed(train, 0);
         bwprintf(COM2, "Train %d waitlisted\r\n", train);
     }
     for (Size i = 0; i < waitlist.length; ++i) {
-        if (!reserveForSensor(waitlist.items[i].train, waitlist.items[i].sensor)) {
-            newList.items[newList.length++] = waitlist.items[i];
-            bwprintf(COM2, "Train %d rewaitlisted\r\n", waitlist.items[i].train);
+        if (!reserveForTrain(waitlist.trains[i])) {
+            newList.trains[newList.length++] = waitlist.trains[i];
+            bwprintf(COM2, "Train %d rewaitlisted\r\n", waitlist.trains[i]);
         }
         else {
-            ts.setTrainSpeed(waitlist.items[i].train, waitlist.items[i].speed);
-            bwprintf(COM2, "Train %d unwaitlisted %d\r\n",
-                    waitlist.items[i].train, waitlist.items[i].speed);
+            ts.setTrainSpeed(waitlist.trains[i], trModel.speed);
+            bwprintf(COM2, "Train %d unwaitlisted\r\n",
+                    waitlist.trains[i]);
         }
     }
     waitlist = newList;

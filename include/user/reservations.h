@@ -16,22 +16,18 @@ class Reservations {
 
     struct Waitlist {
         Size length = 0;
-        struct {
-            Train train;
-            Sensor sensor;
-            Speed speed;
-        } items[15];
+        Train trains[15];
     } waitlist;
 
     const SafetyState &safety_;
     FixedMap<MAX_CONCURRENT_TRAINS, Train, TrainReservation> trainReservations_;
 
     bool reserveNode(Train train, NodeIdx node);
-    bool reserveForSensor(Train train, Sensor sensor);
+    bool reserveForTrain(Train train);
   public:
     Reservations(const SafetyState &safety);
     void printReservations() const;
     // Return true if there is no contention.
-    void processSensor(Train train, Sensor sensor, Speed speed);
+    void processUpdate(Train train);
     bool hasReservation(Train, NodeIdx) const;
 };

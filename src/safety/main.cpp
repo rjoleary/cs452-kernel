@@ -88,6 +88,8 @@ void switchNotifierMain() {
     }
 }
 
+constexpr auto VELOCITY_CONSTANT = 1000;
+
 // Shopkeeper
 void modelMain() {
     ~ctl::registerAs(SafetyServName);
@@ -129,15 +131,14 @@ void modelMain() {
                 } else {
                     ts = &state.trains.get(msg.train);
                 }
-                ts->velocity = msg.speed/2;
+                ts->velocity = msg.speed/2 * VELOCITY_CONSTANT;
                 ts->speed = msg.speed;
                 ts->stoppingDistance = msg.speed*38;
-                // TODO: cut the middleman
                 if (newTrain) {
                     trainServer.setTrainSpeed(msg.train, msg.speed);
                 }
                 else {
-                    reservations.processSensor(msg.train, ts->lastSensor, msg.speed);
+                    reservations.processUpdate(msg.train);
                 }
                 ~reply(tid, rply);
                 break;
@@ -214,12 +215,13 @@ void modelMain() {
                     state.newTrain.has = false;
                     state.newTrain.state.lastSensor = msg.sensor;
                     state.newTrain.state.lastUpdate = time(clock).asValue();
+                    state.newTrain.state.position = {msg.sensor.value(), 0};
                     state.trains.get(state.newTrain.train) = state.newTrain.state;
                 }
                 else {
                     state.updateTrainAtSensor(t, msg.sensor);
                 }
-                reservations.processSensor(t, msg.sensor, state.trains.get(t).speed);
+                reservations.processUpdate(t);
                 reservations.printReservations();
                 break;
             }
@@ -265,9 +267,9 @@ void SafetyState::updateTrainStates() {
         ts.position.offset += ts.velocity * (t - lastUpdate);
 
         // Normalize the node.
-        while (ts.position.offset > nodeEdge(ts.position.nodeIdx).dist) {
+        while (ts.position.offset/VELOCITY_CONSTANT > nodeEdge(ts.position.nodeIdx).dist) {
             ts.position.nodeIdx = nodeEdge(ts.position.nodeIdx).dest - Track().nodes;
-            ts.position.offset -= nodeEdge(ts.position.nodeIdx).dist;
+            ts.position.offset -= nodeEdge(ts.position.nodeIdx).dist * VELOCITY_CONSTANT;
         }
     }
     lastUpdate = t;
@@ -281,7 +283,7 @@ void SafetyState::updateTrainAtSensor(Train train, Sensor sensor) {
     SafetyServer::TrainState &ts = trains.get(train);
     Distance d = shortestDistance<Graph::VSize>(Track(), ts.lastSensor.value(), sensor.value());
     ts.lastSensor = sensor;
-    ts.velocity = d / (t - ts.lastUpdate);
+    ts.velocity = d / (t - ts.lastUpdate) * VELOCITY_CONSTANT;
     //ts.stoppingDistance = ctl::max(ctl::min(d*100 / (t - ts.lastUpdate), 650), 250);
     ts.lastUpdate = t;
 
