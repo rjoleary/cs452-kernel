@@ -7,6 +7,7 @@
 
 namespace {
 constexpr auto ReverseReservation = 200;
+constexpr auto SwitchClearance = 200;
 }
 
 void savecur();
@@ -19,20 +20,34 @@ Reservations::Reservations(const SafetyState &safety, TrainServer &ts)
 
 void Reservations::flipSwitchesInReservation(Train t, const TrainReservation &r) {
     for (Size i = 0; i < r.length; i++) {
-        const auto &res = r.reservations[i];
-        const auto &node = Track().nodes[res];
-        const auto &n = node.type;
-        if (n == NODE_BRANCH || n == NODE_MERGE) {
+        const auto &node = Track().nodes[r.reservations[i]];
+        if (node.type == NODE_BRANCH) {
             const auto &gasp = safety_.trains.get(t).gasp.gradient[node.num];
-            if (n == NODE_BRANCH && (gasp == SwitchState::Straight || gasp == SwitchState::Curved)) {
+            if (gasp == SwitchState::Straight || gasp == SwitchState::Curved) {
                 cmdSetSwitch(node.num, gasp);
-            } else if (n == NODE_BRANCH && gasp == SwitchState::Neither) {
-                trainServer_.reverseTrain(t);
-            } else if (n == NODE_MERGE && (gasp == SwitchState::Straight || gasp == SwitchState::Curved)) {
-                trainServer_.reverseTrain(t);
             }
         }
     }
+}
+
+bool Reservations::checkForRerverseInReservation(Train t,
+        const TrainReservation &r, Distance *out) {
+    Distance d = 0; // TODO: does not take into account offset into the node
+    for (Size i = 0; i < r.length; i++) {
+        d += safety_.nodeEdge(r.reservations[i]).dist;
+        const auto &node = Track().nodes[r.reservations[i]];
+        const auto &n = node.type;
+        if (n == NODE_BRANCH || n == NODE_MERGE) {
+            const auto &gasp = safety_.trains.get(t).gasp.gradient[node.num];
+            if ((n == NODE_BRANCH && gasp == SwitchState::Neither) ||
+                    (n == NODE_MERGE && (gasp == SwitchState::Straight ||
+                                         gasp == SwitchState::Curved))) {
+                *out = d + SwitchClearance;
+                return true;
+            }
+        }
+    }
+    return false;
 }
 
 void Reservations::printReservations() const {
@@ -117,6 +132,22 @@ bool Reservations::reserveForTrain(Train train) {
 
     // Flip switches, but only on the forwards reservation.
     flipSwitchesInReservation(train, r);
+    // Reverse trains, but only on the forwards reservation.
+    Distance d;
+    if (!r.isReversing && checkForRerverseInReservation(train, r, &d)) {
+        // Ignore the case where there is not sufficient stopping distance for
+        // a reverse. It should not happen and the routing will find another
+        // route.
+        if (d > trModel.stoppingDistance && trModel.velocity > 0) {
+            Time duration = (d - trModel.stoppingDistance) * VELOCITY_CONSTANT /
+                    trModel.velocity + 1;
+            INFOF(59, "DURATION: %d\r\n", duration);
+            // TODO: these two train operations are not atomic
+            trainServer_.addDelay(train, duration);
+            trainServer_.reverseTrain(train);
+            r.isReversing = true;
+        }
+    }
 
     // Reserve backwards
     int backwardsDistance = 0;

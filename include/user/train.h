@@ -9,6 +9,7 @@ using Train = ctl::NamedType<char, struct Train_t>;
 constexpr Train INVALID_TRAIN{0};
 
 const Train AnticipatedTrains[] = {
+    Train(24),
     Train(58), Train(63), Train(69), Train(70),
     Train(71), Train(73), Train(74), Train(76),
 };
@@ -28,6 +29,9 @@ class TrainServer {
     void setupTrains();
     void stopTrains();
     void goTrains();
+
+    // Inserts a delay before the next command.
+    void addDelay(Train train, Time delay);
 
     // train: [1, 80]
     // speed: [0, 14]

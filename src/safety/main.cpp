@@ -76,7 +76,6 @@ void switchNotifierMain() {
     }
 }
 
-constexpr auto VELOCITY_CONSTANT = 1000;
 Velocity speedToVelocity(Speed x) {
     return x / 2 * VELOCITY_CONSTANT;
 }
@@ -171,6 +170,7 @@ void safetyMain() {
 
             case MsgType::SensorNotify: {
                 ~reply(tid, ctl::EmptyMessage);
+
                 // if calibrating:
                 if (calibration.train != INVALID_TRAIN) {
                     if (msg.sensor == calibration.sensor) {
@@ -203,6 +203,7 @@ void safetyMain() {
                 }
                 INFOF(45, "Sensor %d attributed for %d\r\n",
                         msg.sensor.value(), int(t.underlying()));
+                // Reservations stay fixed while the train is reversing.
                 reservations.processUpdate(t);
                 reservations.printReservations();
                 break;

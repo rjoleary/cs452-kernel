@@ -12,6 +12,7 @@
 namespace {
 enum class MsgType : char {
     CheckIn,
+    Delay,
     SetSpeed,
     Reverse,
 };
@@ -20,6 +21,7 @@ struct alignas(4) Message {
     MsgType type;
     Train train;
     U8 speed;
+    Time duration;
 };
 
 // Message sent to new trains.
@@ -60,7 +62,7 @@ void trainMain() {
     ctl::Tid clockServer = whoIs(ctl::names::ClockServer).asValue();
 
     // Train state
-    char speed = 0; // light and speed
+    char speed = 0; // speed
 
     // Receive messages from the train man.
     Message msg{MsgType::CheckIn, number};
@@ -69,6 +71,11 @@ void trainMain() {
         ~send(trainMan, msg, rply);
 
         switch (rply.type) {
+            case MsgType::Delay: {
+                ~ctl::delay(clockServer, rply.duration);
+                break;
+            }
+
             case MsgType::SetSpeed: {
                 speed = (speed & ~SPEED_MASK) | (rply.speed & SPEED_MASK);
                 setTrainSpeed(number, speed);
@@ -166,6 +173,14 @@ void TrainServer::stopTrains() {
 void TrainServer::goTrains() {
     bwputc(COM1, 96);
     flush(COM1);
+}
+
+void TrainServer::addDelay(Train train, Time duration) {
+    Message msg;
+    msg.type = MsgType::Delay;
+    msg.train = train;
+    msg.duration = duration;
+    ~send(tid, msg, ctl::EmptyMessage);
 }
 
 void TrainServer::setTrainSpeed(Train train, int speed) {

@@ -12,6 +12,7 @@ class Reservations {
     struct TrainReservation {
         Size length = 0;
         NodeIdx reservations[15];
+        bool isReversing = false;
     };
 
     struct Waitlist {
@@ -24,6 +25,8 @@ class Reservations {
     FixedMap<MAX_CONCURRENT_TRAINS, Train, TrainReservation> trainReservations_;
 
     void flipSwitchesInReservation(Train t, const TrainReservation &r);
+    bool checkForRerverseInReservation(Train t,
+            const TrainReservation &r, Distance *out);
     bool reserveNode(Train train, NodeIdx node);
     bool reserveForTrain(Train train);
   public:

@@ -31,5 +31,7 @@ constexpr Priority PRIORITY_MIN{0}, PRIORITY_MAX{31};
 // TODO: make more strongly typed
 typedef I32 Distance; // mm
 typedef I32 Speed; // [0-15]
-typedef I32 Velocity; // mm/tick
+typedef I32 Velocity; // mm/tick * 1000
 typedef I32 Time; // ticks
+
+constexpr auto VELOCITY_CONSTANT = 1000;
