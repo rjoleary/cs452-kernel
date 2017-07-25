@@ -12,7 +12,6 @@ constexpr Train INVALID_TRAIN{0};
 struct Position {
     NodeIdx nodeIdx;
     Distance offset; // mm
-
 };
 
 class TrainServer {

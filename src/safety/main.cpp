@@ -91,7 +91,7 @@ void switchNotifierMain() {
 constexpr auto VELOCITY_CONSTANT = 1000;
 
 // Shopkeeper
-void modelMain() {
+void safetyMain() {
     ~ctl::registerAs(SafetyServName);
     ~ctl::create(ctl::Priority(24), sensorNotifierMain);
     ~create(ctl::Priority(26), switchNotifierMain);
@@ -126,6 +126,8 @@ void modelMain() {
                 if (!state.trains.has(msg.train)) {
                     state.newTrain.has = true;
                     state.newTrain.train = msg.train;
+                    // Initially in free running mode.
+                    state.newTrain.state.gasp.gradient.fill(SwitchState::DontCare);
                     ts = &state.newTrain.state;
                     newTrain = true;
                 } else {
@@ -295,7 +297,7 @@ void SafetyState::updateTrainAtSensor(Train train, Sensor sensor) {
 }
 
 void SafetyServer::create() {
-    ~ctl::create(ctl::Priority(23), modelMain);
+    ~ctl::create(ctl::Priority(23), safetyMain);
 }
 
 SafetyServer::SafetyServer()

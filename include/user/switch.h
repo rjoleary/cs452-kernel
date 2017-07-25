@@ -35,6 +35,12 @@ struct alignas(4) SwitchStates {
     SwitchState operator[](int sw) const {
         return states[toIdx(sw)];
     }
+
+    void fill(SwitchState newState) {
+        for (auto &state : states) {
+            state = newState;
+        }
+    }
 };
 
 void cmdSetSwitch(Switch sw, SwitchState dir);

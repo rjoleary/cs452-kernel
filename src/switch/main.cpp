@@ -133,9 +133,7 @@ void cmdSetSwitch(Switch sw, SwitchState dir) {
 void switchMan() {
     ~ctl::registerAs(SwitchServ);
     SwitchStates ss;
-    for (int i = 0; i < NumSwitches; ++i) {
-        ss.states[i] = SwitchState::Unknown;
-    }
+    ss.fill(SwitchState::Unknown);
     ~create(ctl::Priority(26), notifMain);
     auto notifier = ctl::INVALID_TID;
 

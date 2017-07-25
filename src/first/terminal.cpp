@@ -145,8 +145,7 @@ void runTerminal() {
     ~create(Priority(25), sensorsMain);
 
     SafetyServer::create();
-
-    ~create(Priority(23), routeMain);
+    RouteServer::create();
 
     bool isStopped = false;
     unsigned cmdsz = 0;

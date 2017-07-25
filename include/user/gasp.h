@@ -7,5 +7,4 @@
 struct Gasp {
     SwitchStates gradient;
     Position end;
-    Speed speed;
 };

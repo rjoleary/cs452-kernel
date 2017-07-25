@@ -1,17 +1,18 @@
-#include <itc.h>
+#include <route.h>
+
 #include <def.h>
+#include <itc.h>
 #include <ns.h>
+#include <path_finding.h>
 #include <safety.h>
 #include <sensor.h>
-#include <path_finding.h>
-#include <train.h>
-#include <track_node.h>
-#include <track_data_new.h>
 #include <track.h>
+#include <track_data_new.h>
+#include <track_node.h>
+#include <train.h>
 
 namespace {
 
-constexpr auto MAX_PATH = 30;
 constexpr ctl::Name RouteServName = {"Route"};
 
 enum class MsgType {
@@ -20,13 +21,10 @@ enum class MsgType {
 
 struct Message {
     MsgType type;
-    // Expand to union when new types added
     Train train;
     Speed speed;
     Position end;
 };
-
-} // unnamed namespace
 
 // New routes are created with low priority.
 void routeMain() {
@@ -45,13 +43,23 @@ void routeMain() {
                 Gasp gasp;
                 gasp.gradient = ss;
                 gasp.end = msg.end;
-                safetyServer.setGasp(msg.train, gasp);
+                // TODO: should return the error and not assert
+                ASSERT(safetyServer.setGasp(msg.train, gasp) == ctl::Error::Ok);
+                ASSERT(safetyServer.setTrainSpeed(msg.train, msg.speed) == ctl::Error::Ok);
             }
         }
     }
 }
+} // anonymous namespace
 
-void updateRoute(Train train, Speed speed, Position end) {
-    auto server = ctl::whoIs(RouteServName).asValue();
-    ~ctl::send(server, Message{MsgType::UpdateRoute, train, speed, end}, ctl::EmptyMessage);
+RouteServer::RouteServer()
+    : tid_(ctl::whoIs(RouteServName).asValue()) {
+}
+
+void RouteServer::create() {
+    ~ctl::create(ctl::Priority(22), routeMain);
+}
+
+void RouteServer::update(Train train, Speed speed, Position end) {
+    ~ctl::send(tid_, Message{MsgType::UpdateRoute, train, speed, end}, ctl::EmptyMessage);
 }

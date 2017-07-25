@@ -19,6 +19,7 @@ class Reservations {
         Train trains[15];
     } waitlist;
 
+    TrainServer trainServer_;
     const SafetyState &safety_;
     FixedMap<MAX_CONCURRENT_TRAINS, Train, TrainReservation> trainReservations_;
 

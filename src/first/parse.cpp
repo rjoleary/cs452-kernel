@@ -126,6 +126,7 @@ int parseCmd(const char *cmd) {
     // TODO: Make the parser a class too!
     static TrainServer trainServer;
     static SafetyServer safety;
+    static RouteServer route;
 
     const char *cmdStart = cmd;
     // Error checking is really messy =(
@@ -248,7 +249,7 @@ int parseCmd(const char *cmd) {
             tokenErr("Error: speed must be between 0 and 14 inclusive", speed.token.start - cmdStart + 2, speed.token.len);
             return 0;
         }
-        updateRoute(Train(number.val), speed.val, Position{sensorParsed.asValue().value(), 0});
+        route.update(Train(number.val), speed.val, Position{sensorParsed.asValue().value(), 0});
     } else if (isIdent(t, "rv")) {
         DecimalToken number = nextDec(&cmd);
         if (number.err) {
