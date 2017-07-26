@@ -77,7 +77,7 @@ void switchNotifierMain() {
 }
 
 Velocity speedToVelocity(Speed x) {
-    return x / 2 * VELOCITY_CONSTANT;
+    return x * VELOCITY_CONSTANT / 2;
 }
 
 Distance speedToStoppingDistance(Speed x) {
@@ -295,7 +295,7 @@ void SafetyState::updateTrainAtSensor(Train train, Sensor sensor) {
     SafetyServer::TrainState &ts = trains.get(train);
     Distance d = shortestDistance<Graph::VSize>(Track(), ts.lastSensor.value(), sensor.value());
     ts.lastSensor = sensor;
-    ts.velocity = d / (t - ts.lastUpdate) * VELOCITY_CONSTANT;
+    ts.velocity = (ts.velocity + d * VELOCITY_CONSTANT / (t - ts.lastUpdate)) / 2;
     //ts.stoppingDistance = ctl::max(ctl::min(d*100 / (t - ts.lastUpdate), 650), 250);
     ts.lastUpdate = t;
 
