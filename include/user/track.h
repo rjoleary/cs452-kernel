@@ -5,7 +5,6 @@
 #include "track_data_new.h"
 #include "track_node.h"
 
-void cmdSetStoppingDistance(int mm);
 void cmdClearBrokenSwitches();
 
 const TrackData &Track();

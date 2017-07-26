@@ -8,10 +8,6 @@ const TrackData &Track() {
     return trackData;
 }
 
-void cmdSetStoppingDistance(int ) {
-    // TODO: repurpose
-}
-
 void cmdClearBrokenSwitches() {
     // TODO: repurpose
 }

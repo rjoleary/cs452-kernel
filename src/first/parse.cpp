@@ -13,6 +13,7 @@
 #include <def.h>
 #include <safety.h>
 #include <route.h>
+#include <callibration.h>
 
 void printHelp() {
     bwputstr(COM2,
@@ -23,7 +24,7 @@ void printHelp() {
         "   q                - Quit and return to RedBoot.\r\n"
         "   route TR SP SEN  - Route train to sensor at given speed.\r\n"
         "   rv NUMBER        - Reverse the direction of the train.\r\n"
-        "   ssss NUMBER      - Set the stopping distance in mm.\r\n"
+        "   ssd TR SP NUMBER - Set the stopping distance in mm.\r\n"
         "   sw NUMBER DIR    - Set switch direction ('S' or 'C').\r\n"
         "   task (TID|NAME)  - Return info about a task.\r\n"
         "   taskall          - Return info about all tasks.\r\n"
@@ -131,12 +132,12 @@ int parseCmd(const char *cmd) {
         return 0;
     } else if (isIdent(t, "cal")) {
         DecimalToken number = nextDec(&cmd);
-        if (number.err) {
+        if (number.err || number.val < 1 || number.val > 80) {
             tokenErr("invalid train number", number.token.start - cmdStart + 2, number.token.len);
             return 0;
         }
         DecimalToken speed = nextDec(&cmd);
-        if (speed.err) {
+        if (speed.err || speed.val < 0 || speed.val > 14) {
             tokenErr("invalid train speed", speed.token.start - cmdStart + 2, speed.token.len);
             return 0;
         }
@@ -153,6 +154,7 @@ int parseCmd(const char *cmd) {
         if (terminateCmd(cmdStart, cmd)) {
             return 0;
         }
+        route.update(Train(number.val), Speed(speed.val), Position{sensorParsed.asValue().value(), 0});
         ctl::Error err = safety.calibrate(Train(number.val), sensorParsed.asValue(), speed.val);
         if (err != ctl::Error::Ok) {
             if (err == ctl::Error::NoRes) {
@@ -329,16 +331,26 @@ int parseCmd(const char *cmd) {
                     ti.tid, name.data, ti.ptid, ti.pri, ti.state, ti.userPercent, ti.sysPercent);
             }
         }
-    } else if (isIdent(t, "ssss")) {
+    } else if (isIdent(t, "ssd")) {
         DecimalToken number = nextDec(&cmd);
-        if (number.err) {
-            tokenErr("invalid millimeters", number.token.start - cmdStart + 2, number.token.len);
+        if (number.err || number.val < 0 || number.val > 80) {
+            tokenErr("invalid train number", number.token.start - cmdStart + 2, number.token.len);
+            return 0;
+        }
+        DecimalToken speed = nextDec(&cmd);
+        if (speed.err || speed.val < 0 || speed.val > 14) {
+            tokenErr("invalid train speed", speed.token.start - cmdStart + 2, speed.token.len);
+            return 0;
+        }
+        DecimalToken millis = nextDec(&cmd);
+        if (millis.err) {
+            tokenErr("invalid millimeters", millis.token.start - cmdStart + 2, millis.token.len);
             return 0;
         }
         if (terminateCmd(cmdStart, cmd)) {
             return 0;
         }
-        cmdSetStoppingDistance(number.val);
+        CallibrationServer().setStoppingDistance(Train(number.val), speed.val, millis.val);
     } else if (isIdent(t, "unbreak")) {
         if (terminateCmd(cmdStart, cmd)) {
             return 0;

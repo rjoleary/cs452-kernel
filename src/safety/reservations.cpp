@@ -105,7 +105,6 @@ bool Reservations::reserveForTrain(Train train) {
 
     const auto &trModel = safety_.trains.get(train);
     const auto &startNode = Track().nodes[trModel.lastKnownNode];
-    bwprintf(COM2, "%d %s\r\n", trModel.lastKnownNode, startNode.name);
 
     // Reserve forwards, to next sensor + stopping distance
     Distance forwardDistance = 0, totalDistance = 0;

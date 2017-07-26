@@ -1,14 +1,15 @@
 #include <safety.h>
 
 #include <attribution.h>
+#include <callibration.h>
+#include <clock.h>
 #include <itc.h>
 #include <ns.h>
+#include <path_finding.h>
 #include <reservations.h>
 #include <sensor.h>
 #include <task.h>
 #include <track.h>
-#include <clock.h>
-#include <path_finding.h>
 
 namespace {
 enum class MsgType {
@@ -81,16 +82,13 @@ Velocity speedToVelocity(Speed x) {
     return x * VELOCITY_CONSTANT / 2;
 }
 
-Distance speedToStoppingDistance(Speed x) {
-    return x * 38;
-}
-
 // Shopkeeper
 void safetyMain() {
     ~ctl::registerAs(SafetyServName);
     ~ctl::create(ctl::Priority(24), sensorNotifierMain);
     ~create(ctl::Priority(26), switchNotifierMain);
     TrainServer trainServer;
+    CallibrationServer callibration;
 
     SafetyState state;
     state.switches = getSwitchData();
@@ -119,7 +117,7 @@ void safetyMain() {
                 }
                 ts->velocity = speedToVelocity(msg.speed);
                 ts->speed = msg.speed;
-                ts->stoppingDistance = speedToStoppingDistance(msg.speed);
+                ts->stoppingDistance = callibration.getStoppingDistance(msg.train, msg.speed);
                 // TODO: take safety into account
                 //if (newTrain) {
                 trainServer.setTrainSpeed(msg.train, msg.speed);
