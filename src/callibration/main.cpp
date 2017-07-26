@@ -23,8 +23,33 @@ struct Reply {
     Distance distance;
 };
 
-Distance speedToStoppingDistance(Speed x) {
-    return x * 38;
+Distance speedToStoppingDistance(Train t, Speed s) {
+    switch (t.underlying()) {
+        default:
+        case 24:
+            // TODO: update
+            return s <= 6 ? 417 :
+                   s <= 8 ? 569 :
+                   s <= 10 ? 731 :
+                   s <= 12 ? 874 : 569;
+        case 63:
+            return s <= 6 ? 417 :
+                   s <= 8 ? 569 :
+                   s <= 10 ? 731 :
+                   s <= 12 ? 874 : 569;
+        case 71:
+            // TODO: update
+            return s <= 6 ? 417 :
+                   s <= 8 ? 569 :
+                   s <= 10 ? 731 :
+                   s <= 12 ? 874 : 569;
+        case 74:
+            // TODO: update
+            return s <= 6 ? 417 :
+                   s <= 8 ? 569 :
+                   s <= 10 ? 731 :
+                   s <= 12 ? 874 : 569;
+    }
 }
 
 void callibrationMain() {
@@ -50,7 +75,7 @@ void callibrationMain() {
                 Reply rply;
                 rply.distance = stoppingDistances[int(msg.train.underlying())][msg.speed] = msg.distance;
                 if (rply.distance == -1) {
-                    rply.distance = speedToStoppingDistance(msg.speed);
+                    rply.distance = speedToStoppingDistance(msg.train, msg.speed);
                 }
                 ~ctl::reply(tid, rply);
                 break;

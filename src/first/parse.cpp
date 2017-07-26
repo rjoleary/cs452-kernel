@@ -154,7 +154,6 @@ int parseCmd(const char *cmd) {
         if (terminateCmd(cmdStart, cmd)) {
             return 0;
         }
-        route.update(Train(number.val), Speed(speed.val), Position{sensorParsed.asValue().value(), 0});
         ctl::Error err = safety.calibrate(Train(number.val), sensorParsed.asValue(), speed.val);
         if (err != ctl::Error::Ok) {
             if (err == ctl::Error::NoRes) {
