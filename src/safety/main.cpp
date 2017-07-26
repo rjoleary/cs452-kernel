@@ -192,7 +192,7 @@ void safetyMain() {
                         ts.lastUpdate = time(clock).asValue();
                         ts.position = {msg.sensor.value(), 0};
                     } else {
-                        INFOF(45, "Unnattributed sensor %d\r\n", msg.sensor.value());
+                        INFOF(45, "\033[31mUnnattributed sensor %d\033[0m\r\n", msg.sensor.value());
                         break;
                     }
                 } else {

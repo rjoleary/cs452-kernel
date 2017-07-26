@@ -127,9 +127,10 @@ bool Reservations::reserveForTrain(Train train) {
     bool foundNextSensor = false;
     auto forward = &startNode;
     bool reservedAll = true;
+    bool exitNode = false;
     while (!(foundNextSensor && forwardDistance > trModel.stoppingDistance + SwitchClearance)) {
         if (forward->type == NODE_EXIT) {
-            reservedAll = false;
+            exitNode = true;
             break;
         }
         const auto &next = safety_.nodeEdge(forward - Track().nodes, train);
@@ -168,10 +169,12 @@ bool Reservations::reserveForTrain(Train train) {
     }
 
     // Reverse trains, but only on the forwards reservation.
-    if (!r.isReversing && !r.isStopping && checkForReverseInReservation(train, r, &d)) {
+    auto reverseInRes = checkForReverseInReservation(train, r, &d);
+    if (reservedAll && !r.isReversing && (reverseInRes || exitNode)) {
         // Ignore the case where there is not sufficient stopping distance for
         // a reverse. It should not happen and the routing will find another
         // route.
+        if (exitNode) d = totalDistance;
         if (d > trModel.stoppingDistance && trModel.velocity > 0) {
             Time duration = (d - trModel.stoppingDistance) * VELOCITY_CONSTANT /
                     trModel.velocity + 1;
