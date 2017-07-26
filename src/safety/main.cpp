@@ -19,6 +19,7 @@ enum class MsgType {
     SensorNotify,
     SwitchNotify,
     Calibrate,
+    ReverseComplete,
 };
 
 struct alignas(4) Message {
@@ -93,7 +94,7 @@ void safetyMain() {
 
     SafetyState state;
     state.switches = getSwitchData();
-    Reservations reservations(state, trainServer);
+    Reservations reservations(state);
     Attribution attribution(state, reservations);
 
     struct {
@@ -189,7 +190,7 @@ void safetyMain() {
                         state.unattributedTrain = INVALID_TRAIN;
                         auto &ts = state.trains.get(t);
                         ts = state.unattributedTrainState;
-                        ts.lastSensor = msg.sensor;
+                        ts.lastKnownNode = msg.sensor.value();
                         ts.lastUpdate = time(clock).asValue();
                         ts.position = {msg.sensor.value(), 0};
                     } else {
@@ -221,6 +222,13 @@ void safetyMain() {
                 calibration.sensor = msg.sensor;
                 trainServer.setTrainSpeed(msg.train, msg.speed);
                 ~reply(tid, ErrorReply{});
+                break;
+            }
+
+            case MsgType::ReverseComplete: {
+                ~reply(tid, ctl::EmptyMessage);
+                state.trains.get(msg.train).lastKnownNode = reservations.clearReversing(msg.train);
+                reservations.processUpdate(msg.train);
                 break;
             }
         }
@@ -270,6 +278,17 @@ const TrackEdge &SafetyState::nodeEdge(NodeIdx idx) const {
     return tn.edge[DIR_AHEAD];
 }
 
+const TrackEdge &SafetyState::nodeEdge(NodeIdx idx, Train tr) const {
+    const auto &tn = Track().nodes[idx];
+    const auto &t = trains.get(tr);
+    if (tn.type == NODE_BRANCH) {
+        if (t.gasp.gradient[tn.num] == SwitchState::DontCare)
+            return tn.edge[switches[tn.num] == SwitchState::Curved];
+        return tn.edge[t.gasp.gradient[tn.num] == SwitchState::Curved];
+    }
+    return tn.edge[DIR_AHEAD];
+}
+
 void SafetyState::updateTrainStates() {
     const static auto clock = whoIs(ctl::names::ClockServer).asValue();
     const auto t = time(clock).asValue();
@@ -293,8 +312,8 @@ void SafetyState::updateTrainAtSensor(Train train, Sensor sensor) {
 
     // Update velocity based on sensor.
     SafetyServer::TrainState &ts = trains.get(train);
-    Distance d = shortestDistance<Graph::VSize>(Track(), ts.lastSensor.value(), sensor.value());
-    ts.lastSensor = sensor;
+    Distance d = shortestDistance<Graph::VSize>(Track(), ts.lastKnownNode, sensor.value());
+    ts.lastKnownNode = sensor.value();
     ts.velocity = (ts.velocity + d * VELOCITY_CONSTANT / (t - ts.lastUpdate)) / 2;
     //ts.stoppingDistance = ctl::max(ctl::min(d*100 / (t - ts.lastUpdate), 650), 250);
     ts.lastUpdate = t;
@@ -362,4 +381,11 @@ ctl::Error SafetyServer::calibrate(Train train, Sensor sensor, Speed speed) {
     ErrorReply reply;
     ~send(tid, msg, reply);
     return reply.error;
+}
+
+void SafetyServer::reverseComplete(Train train) {
+    Message msg;
+    msg.type = MsgType::ReverseComplete;
+    msg.train = train;
+    ~send(tid, msg, ctl::EmptyMessage);
 }

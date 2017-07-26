@@ -23,7 +23,7 @@ public:
         Velocity velocity;
         Distance stoppingDistance;
         Position position;
-        Sensor lastSensor;
+        NodeIdx lastKnownNode;
         Gasp gasp;
     };
 
@@ -64,6 +64,8 @@ public:
     //   ctl::Error::Ok: success
     //   ctl::Error::NoRes: more than MAX_CONCURRENT_TRAINS
     ctl::Error calibrate(Train train, Sensor sensor, Speed speed);
+
+    void reverseComplete(Train train);
 };
 
 struct SafetyState {
@@ -78,6 +80,7 @@ struct SafetyState {
     ctl::Error getTrainStateOrUnattributed(Train, SafetyServer::TrainState**);
     // Return the next edge of the node.
     const TrackEdge &nodeEdge(NodeIdx) const;
+    const TrackEdge &nodeEdge(NodeIdx, Train) const;
     void updateTrainStates();
     void updateTrainAtSensor(Train train, Sensor sensor);
 };

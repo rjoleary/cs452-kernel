@@ -7,21 +7,25 @@
 
 namespace {
 constexpr auto ReverseReservation = 200;
-constexpr auto SwitchClearance = 200;
+constexpr auto SwitchClearance = 100;
 }
 
 void savecur();
 void restorecur();
 
-Reservations::Reservations(const SafetyState &safety, TrainServer &ts)
+Reservations::Reservations(const SafetyState &safety)
     : safety_(safety)
-    , trainServer_(ts) {
+{}
+
+NodeIdx Reservations::clearReversing(Train tr) {
+    trainReservations_.get(tr).isReversing = false;
+    return trainReservations_.get(tr).reverseNode;
 }
 
 void Reservations::flipSwitchesInReservation(Train t, const TrainReservation &r) {
     for (Size i = 0; i < r.length; i++) {
         const auto &node = Track().nodes[r.reservations[i]];
-        if (node.type == NODE_BRANCH) {
+        if (node.type == NODE_BRANCH || node.type == NODE_MERGE) {
             const auto &gasp = safety_.trains.get(t).gasp.gradient[node.num];
             if (gasp == SwitchState::Straight || gasp == SwitchState::Curved) {
                 cmdSetSwitch(node.num, gasp);
@@ -30,11 +34,12 @@ void Reservations::flipSwitchesInReservation(Train t, const TrainReservation &r)
     }
 }
 
-bool Reservations::checkForRerverseInReservation(Train t,
-        const TrainReservation &r, Distance *out) {
+bool Reservations::checkForReverseInReservation(Train t,
+        TrainReservation &r, Distance *out) {
     Distance d = 0; // TODO: does not take into account offset into the node
     for (Size i = 0; i < r.length; i++) {
-        d += safety_.nodeEdge(r.reservations[i]).dist;
+        if (d > r.totalDistance - SwitchClearance) break;
+        d += safety_.nodeEdge(r.reservations[i], t).dist;
         const auto &node = Track().nodes[r.reservations[i]];
         const auto &n = node.type;
         if (n == NODE_BRANCH || n == NODE_MERGE) {
@@ -43,6 +48,7 @@ bool Reservations::checkForRerverseInReservation(Train t,
                     (n == NODE_MERGE && (gasp == SwitchState::Straight ||
                                          gasp == SwitchState::Curved))) {
                 *out = d + SwitchClearance;
+                r.reverseNode = Track().nodes[r.reservations[i]].reverse - Track().nodes;
                 return true;
             }
         }
@@ -98,43 +104,40 @@ bool Reservations::reserveForTrain(Train train) {
     r.length = 0;
 
     const auto &trModel = safety_.trains.get(train);
-    const auto &startNode = Track().nodes[trModel.lastSensor.value()];
-    bwprintf(COM2, "%d %s\r\n", trModel.lastSensor.value(), startNode.name);
+    const auto &startNode = Track().nodes[trModel.lastKnownNode];
+    bwprintf(COM2, "%d %s\r\n", trModel.lastKnownNode, startNode.name);
 
     // Reserve forwards, to next sensor + stopping distance
-    int forwardDistance = 0;
+    Distance forwardDistance = 0, totalDistance = 0;
     bool foundNextSensor = false;
     auto forward = &startNode;
     bool reservedAll = true;
-    while (!(foundNextSensor && forwardDistance > trModel.stoppingDistance)) {
+    while (!(foundNextSensor && forwardDistance > trModel.stoppingDistance + SwitchClearance)) {
         if (forward->type == NODE_EXIT) {
             reservedAll = false;
             break;
         }
-        auto dir = DIR_AHEAD;
-        if (forward->type == NODE_BRANCH) {
-            if (safety_.switches[forward->num] == SwitchState::Curved) {
-                dir = DIR_CURVED;
-            }
-        }
+        const auto &next = safety_.nodeEdge(forward - Track().nodes, train);
+
         if (!reserveNode(train, forward - Track().nodes)) {
             reservedAll = false;
             break;
         }
+        totalDistance += next.dist;
         if (foundNextSensor) {
-            forwardDistance += forward->edge[dir].dist;
+            forwardDistance += next.dist;
         }
-        if (forward->edge[dir].dest->type == NODE_SENSOR) {
+        if (next.dest->type == NODE_SENSOR) {
             foundNextSensor = true;
         }
-        forward = forward->edge[dir].dest;
+        forward = next.dest;
     }
-
+    r.totalDistance = totalDistance;
     // Flip switches, but only on the forwards reservation.
     flipSwitchesInReservation(train, r);
     // Reverse trains, but only on the forwards reservation.
     Distance d;
-    if (!r.isReversing && checkForRerverseInReservation(train, r, &d)) {
+    if (!r.isReversing && checkForReverseInReservation(train, r, &d)) {
         // Ignore the case where there is not sufficient stopping distance for
         // a reverse. It should not happen and the routing will find another
         // route.

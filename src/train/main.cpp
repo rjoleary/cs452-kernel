@@ -8,6 +8,7 @@
 #include <ns.h>
 #include <std.h>
 #include <task.h>
+#include <safety.h>
 
 namespace {
 enum class MsgType : char {
@@ -95,6 +96,8 @@ void trainMain() {
                 ~ctl::delay(clockServer, 10);
                 // Set speed
                 setTrainSpeed(number, speed);
+                SafetyServer ss;
+                ss.reverseComplete(number);
                 break;
             }
 
@@ -117,7 +120,7 @@ void trainManMain() {
     struct Train {
         ctl::Tid tid = ctl::INVALID_TID;
         bool waiting = false;
-        ctl::CircularBuffer<Message, 4> messages;
+        ctl::CircularBuffer<Message, 8> messages;
     };
     Train trains[80];
 
