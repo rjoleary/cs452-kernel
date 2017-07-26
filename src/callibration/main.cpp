@@ -31,24 +31,23 @@ Distance speedToStoppingDistance(Train t, Speed s) {
             return s <= 6 ? 417 :
                    s <= 8 ? 569 :
                    s <= 10 ? 731 :
-                   s <= 12 ? 874 : 569;
+                   s <= 12 ? 874 : 924;
         case 63:
             return s <= 6 ? 417 :
                    s <= 8 ? 569 :
                    s <= 10 ? 731 :
-                   s <= 12 ? 874 : 569;
+                   s <= 12 ? 874 : 924;
         case 71:
             // TODO: update
             return s <= 6 ? 417 :
                    s <= 8 ? 569 :
                    s <= 10 ? 731 :
-                   s <= 12 ? 874 : 569;
+                   s <= 12 ? 874 : 924;
         case 74:
-            // TODO: update
-            return s <= 6 ? 417 :
-                   s <= 8 ? 569 :
-                   s <= 10 ? 731 :
-                   s <= 12 ? 874 : 569;
+            return s <= 6 ? 367 :
+                   s <= 8 ? 520 :
+                   s <= 10 ? 666 :
+                   s <= 12 ? 832 : 890;
     }
 }
 
