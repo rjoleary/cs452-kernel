@@ -176,7 +176,7 @@ bool Reservations::reserveForTrain(Train train) {
         // Ignore the case where there is not sufficient stopping distance for
         // a reverse. It should not happen and the routing will find another
         // route.
-        if (exitNode) d = totalDistance;
+        if (exitNode && !reverseInRes) d = totalDistance;
         if (d > trModel.stoppingDistance && trModel.velocity > 0) {
             Time duration = (d - trModel.stoppingDistance) * VELOCITY_CONSTANT /
                     trModel.velocity + 1;
