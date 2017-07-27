@@ -229,7 +229,6 @@ void safetyMain() {
             case MsgType::ReverseComplete: {
                 ~reply(tid, ctl::EmptyMessage);
                 state.trains.get(msg.train).lastKnownNode = reservations.clearReversing(msg.train);
-                reservations.clearStopping(msg.train);
                 reservations.processUpdate(msg.train);
                 break;
             }
