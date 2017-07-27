@@ -18,18 +18,18 @@
 void printHelp() {
     bwputstr(COM2,
         "Commands:\r\n"
-        "   cal TR SP SEN    - stop train on the next trigger.\r\n"
-        "   com i [BYTE...]  - Send arbitrary byte over COMi.\r\n"
-        "   help             - Display this help information.\r\n"
-        "   q                - Quit and return to RedBoot.\r\n"
-        "   route TR SP SEN  - Route train to sensor at given speed.\r\n"
-        "   rv NUMBER        - Reverse the direction of the train.\r\n"
-        "   ssd TR SP NUMBER - Set the stopping distance in mm.\r\n"
-        "   sw SP DIR [TR]   - Set switch direction ('S' or 'C').\r\n"
-        "   task (TID|NAME)  - Return info about a task.\r\n"
-        "   taskall          - Return info about all tasks.\r\n"
-        "   tr NUMBER SPEED  - Set train speed (0 for stop).\r\n"
-        "   unbreak          - Mark all sensors as unbroken.\r\n"
+        "   cal TR SP SEN      - stop train on the next trigger.\r\n"
+        "   com i [BYTE...]    - Send arbitrary byte over COMi.\r\n"
+        "   help               - Display this help information.\r\n"
+        "   q                  - Quit and return to RedBoot.\r\n"
+        "   route TR SP SN [D] - Route train to sensor at given speed.\r\n"
+        "   rv NUMBER          - Reverse the direction of the train.\r\n"
+        "   ssd TR SP NUMBER   - Set the stopping distance in mm.\r\n"
+        "   sw NUM DIR [TR]    - Set switch direction ('S' or 'C').\r\n"
+        "   task (TID|NAME)    - Return info about a task.\r\n"
+        "   taskall            - Return info about all tasks.\r\n"
+        "   tr NUMBER SPEED    - Set train speed (0 for stop).\r\n"
+        "   unbreak            - Mark all sensors as unbroken.\r\n"
     );
 }
 
@@ -235,6 +235,15 @@ int parseCmd(const char *cmd) {
             tokenErr("invalid sensor", sensor.start - cmdStart + 2, sensor.len);
             return 0;
         }
+        Distance offset = 0;
+        DecimalToken offsetToken = nextDec(&cmd);
+        if (offsetToken.err == 2) {
+            tokenErr("offset must be numeric", offsetToken.token.start - cmdStart + 2, offsetToken.token.len);
+            return 0;
+        }
+        if (offsetToken.err == 0) {
+            offset = offsetToken.val;
+        }
         if (terminateCmd(cmdStart, cmd)) {
             return 0;
         }
@@ -246,7 +255,7 @@ int parseCmd(const char *cmd) {
             tokenErr("Error: speed must be between 0 and 14 inclusive", speed.token.start - cmdStart + 2, speed.token.len);
             return 0;
         }
-        route.update(Train(number.val), speed.val, Position{sensorParsed.asValue().value(), 0});
+        route.update(Train(number.val), speed.val, Position{sensorParsed.asValue().value(), offset});
     } else if (isIdent(t, "rv")) {
         DecimalToken number = nextDec(&cmd);
         if (number.err) {
