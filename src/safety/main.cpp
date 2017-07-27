@@ -120,6 +120,7 @@ void safetyMain() {
                 ts->stoppingDistance = callibration.getStoppingDistance(msg.train, msg.speed);
                 // TODO: take safety into account
                 //if (newTrain) {
+                reservations.clearStopping(msg.train);
                 trainServer.setTrainSpeed(msg.train, msg.speed);
                 //} else {
                 //    reservations.processUpdate(msg.train);
@@ -137,6 +138,7 @@ void safetyMain() {
                 }
                 // TODO: safety
                 (void)ts;
+                reservations.clearStopping(msg.train);
                 trainServer.reverseTrain(msg.train);
                 ~reply(tid, ErrorReply{});
                 break;
@@ -162,6 +164,7 @@ void safetyMain() {
                     ~reply(tid, ErrorReply{err});
                     break;
                 }
+                reservations.clearStopping(msg.train);
                 ts->gasp = msg.gasp;
                 ~reply(tid, ErrorReply{});
                 break;
@@ -226,6 +229,7 @@ void safetyMain() {
             case MsgType::ReverseComplete: {
                 ~reply(tid, ctl::EmptyMessage);
                 state.trains.get(msg.train).lastKnownNode = reservations.clearReversing(msg.train);
+                reservations.clearStopping(msg.train);
                 reservations.processUpdate(msg.train);
                 break;
             }

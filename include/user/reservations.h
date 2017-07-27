@@ -40,5 +40,6 @@ class Reservations {
     // Return true if there is no contention.
     void processUpdate(Train train);
     bool hasReservation(Train, NodeIdx) const;
+    void clearStopping(Train);
     NodeIdx clearReversing(Train);
 };

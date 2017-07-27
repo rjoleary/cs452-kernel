@@ -17,6 +17,10 @@ Reservations::Reservations(const SafetyState &safety)
     : safety_(safety)
 {}
 
+void Reservations::clearStopping(Train tr) {
+    trainReservations_.get(tr).isStopping = false;
+}
+
 NodeIdx Reservations::clearReversing(Train tr) {
     trainReservations_.get(tr).isReversing = false;
     INFOF(60, "Train %d reversed and node set to %d\n", tr, trainReservations_.get(tr).reverseNode);
