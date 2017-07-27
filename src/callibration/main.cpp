@@ -25,7 +25,6 @@ struct Reply {
 
 Distance speedToStoppingDistance(Train t, Speed s) {
     switch (t.underlying()) {
-        default:
         case 24:
             return s <= 6 ? 149 :
                    s <= 8 ? 240 :
@@ -36,8 +35,8 @@ Distance speedToStoppingDistance(Train t, Speed s) {
                    s <= 8 ? 569 :
                    s <= 10 ? 731 :
                    s <= 12 ? 874 : 924;
+        default:
         case 71:
-            // TODO: update
             return s <= 6 ? 97 :
                    s <= 8 ? 212 :
                    s <= 10 ? 450 :
