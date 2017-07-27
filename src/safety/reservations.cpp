@@ -176,7 +176,7 @@ bool Reservations::reserveForTrain(Train train) {
         // should not happen and the routing will find another route.
         if (d > trModel.stoppingDistance && trModel.velocity > 0) {
             Time duration = (d - trModel.stoppingDistance) * VELOCITY_CONSTANT /
-                    trModel.velocity + (trModel.speed*34 - ctl::min(currTime - trModel.stoppedAt, trModel.speed * 34)) + 1;
+                    trModel.velocity + 1;
             // TODO: these two train operations are not atomic
             trainServer_.addDelay(train, duration);
             trainServer_.setTrainSpeed(train, 0);
@@ -241,7 +241,7 @@ void Reservations::processUpdate(Train train) {
     }
     for (Size i = 0; i < waitlist.length; ++i) {
         if (!reserveForTrain(waitlist.items[i].train)) {
-            if (waitlist.items[i].waitStart + 100 < currTime && safety_.trains.get(waitlist.items[i].train).gasp.end.nodeIdx != INVALID_NODE) {
+            if (waitlist.items[i].waitStart + 150 < currTime && safety_.trains.get(waitlist.items[i].train).gasp.end.nodeIdx != INVALID_NODE) {
                 ts.reverseTrain(waitlist.items[i].train);
             }
             else {
