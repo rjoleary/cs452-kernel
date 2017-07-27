@@ -7,7 +7,7 @@
 
 namespace {
 constexpr auto ReverseReservation = 200;
-constexpr auto SwitchClearance = 100;
+constexpr auto SwitchClearance = 170;
 }
 
 void savecur();
