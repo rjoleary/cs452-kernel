@@ -13,6 +13,7 @@ class Reservations {
         Size length = 0;
         NodeIdx reservations[15];
         bool isReversing = false;
+        bool isStopping = true;
         Distance totalDistance = 0;
         NodeIdx reverseNode;
     };
@@ -28,6 +29,8 @@ class Reservations {
 
     void flipSwitchesInReservation(Train t, const TrainReservation &r);
     bool checkForReverseInReservation(Train t,
+            TrainReservation &r, Distance *out);
+    bool checkForStopInReservation(Train t,
             TrainReservation &r, Distance *out);
     bool reserveNode(Train train, NodeIdx node);
     bool reserveForTrain(Train train);

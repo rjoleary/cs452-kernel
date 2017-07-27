@@ -34,6 +34,22 @@ void Reservations::flipSwitchesInReservation(Train t, const TrainReservation &r)
     }
 }
 
+bool Reservations::checkForStopInReservation(Train t,
+        TrainReservation &r, Distance *out) {
+    Distance d = 0; // TODO: does not take into account offset into the node
+    const auto &gasp = safety_.trains.get(t).gasp;
+    for (Size i = 0; i < r.length; i++) {
+        if (d > r.totalDistance - SwitchClearance) break;
+        d += safety_.nodeEdge(r.reservations[i], t).dist;
+        if (gasp.end.nodeIdx == r.reservations[i]) {
+            d += gasp.end.offset;
+            *out = d;
+            return true;
+        }
+    }
+    return false;
+}
+
 bool Reservations::checkForReverseInReservation(Train t,
         TrainReservation &r, Distance *out) {
     Distance d = 0; // TODO: does not take into account offset into the node
@@ -132,18 +148,33 @@ bool Reservations::reserveForTrain(Train train) {
         forward = next.dest;
     }
     r.totalDistance = totalDistance;
+
     // Flip switches, but only on the forwards reservation.
     flipSwitchesInReservation(train, r);
-    // Reverse trains, but only on the forwards reservation.
+
+    // Stop trains, but only on the forwards reservation.
     Distance d;
-    if (!r.isReversing && checkForReverseInReservation(train, r, &d)) {
+    if (!r.isReversing && !r.isStopping && checkForStopInReservation(train, r, &d)) {
+        // Ignore the case where there is not sufficient stopping distance. It
+        // should not happen and the routing will find another route.
+        if (d > trModel.stoppingDistance && trModel.velocity > 0) {
+            Time duration = (d - trModel.stoppingDistance) * VELOCITY_CONSTANT /
+                    trModel.velocity + 1;
+            // TODO: these two train operations are not atomic
+            trainServer_.addDelay(train, duration);
+            trainServer_.setTrainSpeed(train, 0);
+            r.isStopping = true;
+        }
+    }
+
+    // Reverse trains, but only on the forwards reservation.
+    if (!r.isReversing && !r.isStopping && checkForReverseInReservation(train, r, &d)) {
         // Ignore the case where there is not sufficient stopping distance for
         // a reverse. It should not happen and the routing will find another
         // route.
         if (d > trModel.stoppingDistance && trModel.velocity > 0) {
             Time duration = (d - trModel.stoppingDistance) * VELOCITY_CONSTANT /
                     trModel.velocity + 1;
-            INFOF(59, "DURATION: %d\r\n", duration);
             // TODO: these two train operations are not atomic
             trainServer_.addDelay(train, duration);
             trainServer_.reverseTrain(train);
