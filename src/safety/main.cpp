@@ -118,6 +118,7 @@ void safetyMain() {
                 ts->velocity = speedToVelocity(msg.speed);
                 ts->speed = msg.speed;
                 ts->stoppingDistance = callibration.getStoppingDistance(msg.train, msg.speed);
+                ts->stoppedAt = time(clock).asValue();
                 // TODO: take safety into account
                 //if (newTrain) {
                 reservations.clearStopping(msg.train);
@@ -228,6 +229,9 @@ void safetyMain() {
 
             case MsgType::ReverseComplete: {
                 ~reply(tid, ctl::EmptyMessage);
+                SafetyServer::TrainState *ts;
+                state.getTrainStateOrUnattributed(msg.train, &ts);
+                ts->stoppedAt = time(clock).asValue();
                 state.trains.get(msg.train).lastKnownNode = reservations.clearReversing(msg.train);
                 reservations.processUpdate(msg.train);
                 break;

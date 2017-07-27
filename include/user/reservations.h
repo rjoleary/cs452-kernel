@@ -26,7 +26,7 @@ class Reservations {
         } items[15];
     } waitlist;
 
-    const SafetyState &safety_;
+    SafetyState &safety_;
     TrainServer trainServer_;
     FixedMap<MAX_CONCURRENT_TRAINS, Train, TrainReservation> trainReservations_;
 
@@ -38,7 +38,7 @@ class Reservations {
     bool reserveNode(Train train, NodeIdx node);
     bool reserveForTrain(Train train);
   public:
-    Reservations(const SafetyState &safety);
+    Reservations(SafetyState &safety);
     void printReservations() const;
     // Return true if there is no contention.
     void processUpdate(Train train);

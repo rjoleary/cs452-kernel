@@ -13,7 +13,7 @@ constexpr auto SwitchClearance = 100;
 void savecur();
 void restorecur();
 
-Reservations::Reservations(const SafetyState &safety)
+Reservations::Reservations(SafetyState &safety)
     : safety_(safety)
 {}
 
@@ -220,9 +220,9 @@ void Reservations::processUpdate(Train train) {
     static const auto cs = whoIs(ctl::names::ClockServer).asValue();
     TrainServer ts;
     Waitlist newList;
-    const auto &trModel = safety_.trains.get(train);
     auto currTime = time(cs).asValue();
     if (!reserveForTrain(train)) {
+        safety_.trains.get(train).stoppedAt = currTime;
         newList.items[newList.length++] = {train, currTime};
         ts.setTrainSpeed(train, 0);
         bwprintf(COM2, "Train %d waitlisted\r\n", train);
@@ -238,7 +238,7 @@ void Reservations::processUpdate(Train train) {
             }
         }
         else {
-            ts.setTrainSpeed(waitlist.items[i].train, trModel.speed);
+            ts.setTrainSpeed(waitlist.items[i].train, safety_.trains.get(waitlist.items[i].train).speed);
             bwprintf(COM2, "Train %d unwaitlisted\r\n",
                     waitlist.items[i].train);
         }

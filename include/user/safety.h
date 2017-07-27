@@ -25,6 +25,7 @@ public:
         Position position;
         NodeIdx lastKnownNode;
         Gasp gasp;
+        Time stoppedAt = 0;
     };
 
     static void create();
