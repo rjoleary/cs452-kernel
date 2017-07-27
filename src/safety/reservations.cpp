@@ -26,7 +26,7 @@ NodeIdx Reservations::clearReversing(Train tr) {
     res.isReversing = false;
     auto nodeIdx = res.reverseNode != INVALID_NODE ? res.reverseNode : Track().nodes[safety_.trains.get(tr).lastKnownNode].reverse - Track().nodes;
     res.reverseNode = INVALID_NODE;
-    INFOF(60, "Train %d reversed and node set to %d\n", tr, nodeIdx);
+    INFOF(60, "Train %d reversed and node set to %s\n", tr, Track().nodes[nodeIdx].name);
     return nodeIdx;
 }
 
@@ -160,6 +160,9 @@ bool Reservations::reserveForTrain(Train train) {
     // Flip switches, but only on the forwards reservation.
     flipSwitchesInReservation(train, r);
 
+    static const auto cs = whoIs(ctl::names::ClockServer).asValue();
+    auto currTime = time(cs).asValue();
+
     // Stop trains, but only on the forwards reservation.
     Distance d;
     if (!r.isReversing && !r.isStopping && checkForStopInReservation(train, r, &d)) {
@@ -184,7 +187,7 @@ bool Reservations::reserveForTrain(Train train) {
         if (exitNode && !reverseInRes) d = totalDistance;
         if (d > trModel.stoppingDistance && trModel.velocity > 0) {
             Time duration = (d - trModel.stoppingDistance) * VELOCITY_CONSTANT /
-                    trModel.velocity + 1;
+                    trModel.velocity + (trModel.speed*38 - ctl::min(currTime - trModel.stoppedAt, trModel.speed * 38)) + 1;
             INFOF(58, "DISTANCE: %d\r\n", d);
             INFOF(59, "DURATION: %d\r\n", duration);
             // TODO: these two train operations are not atomic
@@ -217,9 +220,9 @@ bool Reservations::reserveForTrain(Train train) {
 }
 
 void Reservations::processUpdate(Train train) {
-    static const auto cs = whoIs(ctl::names::ClockServer).asValue();
     TrainServer ts;
     Waitlist newList;
+    static const auto cs = whoIs(ctl::names::ClockServer).asValue();
     auto currTime = time(cs).asValue();
     if (!reserveForTrain(train)) {
         safety_.trains.get(train).stoppedAt = currTime;
