@@ -237,7 +237,7 @@ void Reservations::processUpdate(Train train) {
         safety_.trains.get(train).stoppedAt = currTime;
         newList.items[newList.length++] = {train, currTime};
         ts.setTrainSpeed(train, 0);
-        bwprintf(COM2, "Train %d waitlisted\r\n", train);
+        INFOF(48, "Train %d waitlisted\r\n", train);
     }
     for (Size i = 0; i < waitlist.length; ++i) {
         if (!reserveForTrain(waitlist.items[i].train)) {
@@ -246,12 +246,12 @@ void Reservations::processUpdate(Train train) {
             }
             else {
                 newList.items[newList.length++] = waitlist.items[i];
-                bwprintf(COM2, "Train %d rewaitlisted\r\n", waitlist.items[i].train);
+                INFOF(49, "Train %d rewaitlisted\r\n", waitlist.items[i].train);
             }
         }
         else {
             ts.setTrainSpeed(waitlist.items[i].train, safety_.trains.get(waitlist.items[i].train).speed);
-            bwprintf(COM2, "Train %d unwaitlisted\r\n",
+            INFOF(50, "Train %d unwaitlisted\r\n",
                     waitlist.items[i].train);
         }
     }

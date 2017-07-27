@@ -283,8 +283,8 @@ int parseCmd(const char *cmd) {
             }
             cmdSetSwitch(number.val, SwitchState(dir.start[0]));
         } else {
-            if (number.val < 1 || 80 < number.val) {
-                tokenErr("train number must be between 1 and 80 inclusive", number.token.start - cmdStart + 2, number.token.len);
+            if (train.val < 1 || 80 < train.val) {
+                tokenErr("train number must be between 1 and 80 inclusive", train.token.start - cmdStart + 2, train.token.len);
                 return 0;
             }
             safety.setSwitch(Train(train.val), number.val, SwitchState(dir.start[0]));
