@@ -172,7 +172,7 @@ bool Reservations::reserveForTrain(Train train) {
 
     // Reverse trains, but only on the forwards reservation.
     auto reverseInRes = checkForReverseInReservation(train, r, &d);
-    if (reservedAll && !r.isReversing && (reverseInRes || exitNode)) {
+    if (!r.isStopping && !r.isReversing && (reverseInRes || exitNode)) {
         // Ignore the case where there is not sufficient stopping distance for
         // a reverse. It should not happen and the routing will find another
         // route.
