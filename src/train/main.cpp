@@ -150,7 +150,9 @@ void trainManMain() {
                 ~reply(train.tid, msg);
                 train.waiting = false;
             } else {
-                train.messages.push(msg);
+                if (!train.messages.full()) {
+                    train.messages.push(msg);
+                }
             }
 
             ~reply(tid, ctl::EmptyMessage);

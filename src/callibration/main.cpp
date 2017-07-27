@@ -27,11 +27,10 @@ Distance speedToStoppingDistance(Train t, Speed s) {
     switch (t.underlying()) {
         default:
         case 24:
-            // TODO: update
-            return s <= 6 ? 417 :
-                   s <= 8 ? 569 :
-                   s <= 10 ? 731 :
-                   s <= 12 ? 874 : 924;
+            return s <= 6 ? 149 :
+                   s <= 8 ? 240 :
+                   s <= 10 ? 484 :
+                   s <= 12 ? 807 : 1338;
         case 63:
             return s <= 6 ? 417 :
                    s <= 8 ? 569 :
@@ -39,10 +38,10 @@ Distance speedToStoppingDistance(Train t, Speed s) {
                    s <= 12 ? 874 : 924;
         case 71:
             // TODO: update
-            return s <= 6 ? 417 :
-                   s <= 8 ? 569 :
-                   s <= 10 ? 731 :
-                   s <= 12 ? 874 : 924;
+            return s <= 6 ? 97 :
+                   s <= 8 ? 212 :
+                   s <= 10 ? 450 :
+                   s <= 12 ? 824 : 1257;
         case 74:
             return s <= 6 ? 367 :
                    s <= 8 ? 520 :
@@ -71,10 +70,12 @@ void callibrationMain() {
 
         switch (msg.type) {
             case MsgType::GetStoppingDistance: {
-                Reply rply;
-                rply.distance = stoppingDistances[int(msg.train.underlying())][msg.speed];
-                if (rply.distance == -1) {
-                    rply.distance = speedToStoppingDistance(msg.train, msg.speed);
+                Reply rply{0};
+                if (msg.speed) {
+                    rply.distance = stoppingDistances[int(msg.train.underlying())][msg.speed];
+                    if (rply.distance == -1) {
+                        rply.distance = speedToStoppingDistance(msg.train, msg.speed);
+                    }
                 }
                 ~ctl::reply(tid, rply);
                 break;
