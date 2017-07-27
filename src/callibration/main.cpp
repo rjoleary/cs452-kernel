@@ -72,7 +72,7 @@ void callibrationMain() {
         switch (msg.type) {
             case MsgType::GetStoppingDistance: {
                 Reply rply;
-                rply.distance = stoppingDistances[int(msg.train.underlying())][msg.speed] = msg.distance;
+                rply.distance = stoppingDistances[int(msg.train.underlying())][msg.speed];
                 if (rply.distance == -1) {
                     rply.distance = speedToStoppingDistance(msg.train, msg.speed);
                 }
