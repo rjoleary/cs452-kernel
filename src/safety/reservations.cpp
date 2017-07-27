@@ -157,13 +157,11 @@ bool Reservations::reserveForTrain(Train train) {
     // Stop trains, but only on the forwards reservation.
     Distance d;
     if (!r.isReversing && !r.isStopping && checkForStopInReservation(train, r, &d)) {
-        INFOF(55, "Distance: %d\r\n", d);
         // Ignore the case where there is not sufficient stopping distance. It
         // should not happen and the routing will find another route.
         if (d > trModel.stoppingDistance && trModel.velocity > 0) {
             Time duration = (d - trModel.stoppingDistance) * VELOCITY_CONSTANT /
                     trModel.velocity + 1;
-            INFOF(56, "Duration: %d\r\n", d);
             // TODO: these two train operations are not atomic
             trainServer_.addDelay(train, duration);
             trainServer_.setTrainSpeed(train, 0);

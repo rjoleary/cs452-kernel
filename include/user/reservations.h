@@ -13,7 +13,7 @@ class Reservations {
         Size length = 0;
         NodeIdx reservations[15];
         bool isReversing = false;
-        bool isStopping = true;
+        bool isStopping = false;
         Distance totalDistance = 0;
         NodeIdx reverseNode;
     };
