@@ -19,6 +19,7 @@ Reservations::Reservations(const SafetyState &safety)
 
 NodeIdx Reservations::clearReversing(Train tr) {
     trainReservations_.get(tr).isReversing = false;
+    INFOF(60, "Train %d reversed and node set to %d\n", tr, trainReservations_.get(tr).reverseNode);
     return trainReservations_.get(tr).reverseNode;
 }
 
@@ -130,6 +131,7 @@ bool Reservations::reserveForTrain(Train train) {
     bool exitNode = false;
     while (!(foundNextSensor && forwardDistance > trModel.stoppingDistance + SwitchClearance)) {
         if (forward->type == NODE_EXIT) {
+            r.reverseNode = forward->reverse - Track().nodes;
             exitNode = true;
             break;
         }
@@ -178,6 +180,8 @@ bool Reservations::reserveForTrain(Train train) {
         if (d > trModel.stoppingDistance && trModel.velocity > 0) {
             Time duration = (d - trModel.stoppingDistance) * VELOCITY_CONSTANT /
                     trModel.velocity + 1;
+            INFOF(58, "DISTANCE: %d\r\n", d);
+            INFOF(59, "DURATION: %d\r\n", duration);
             // TODO: these two train operations are not atomic
             trainServer_.addDelay(train, duration);
             trainServer_.reverseTrain(train);

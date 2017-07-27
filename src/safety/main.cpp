@@ -288,6 +288,7 @@ const TrackEdge &SafetyState::nodeEdge(NodeIdx idx, Train tr) const {
 }
 
 void SafetyState::updateTrainStates() {
+    /*
     const static auto clock = whoIs(ctl::names::ClockServer).asValue();
     const auto t = time(clock).asValue();
 
@@ -302,6 +303,7 @@ void SafetyState::updateTrainStates() {
         }
     }
     lastUpdate = t;
+    */
 }
 
 void SafetyState::updateTrainAtSensor(Train train, Sensor sensor) {
