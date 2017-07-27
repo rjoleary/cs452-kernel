@@ -128,11 +128,17 @@ bool Reservations::reserveForTrain(Train train) {
     const auto &trModel = safety_.trains.get(train);
     const auto &startNode = Track().nodes[trModel.lastKnownNode];
 
+    auto forward = &startNode;
+    bool reservedAll = true;
+    // We are on the end node! Woo
+    if (trModel.gasp.end.nodeIdx == forward - Track().nodes) {
+        reserveNode(train, forward - Track().nodes);
+        goto ReserveBackwards;
+    }
+    {
     // Reserve forwards, to next sensor + stopping distance
     Distance forwardDistance = 0, totalDistance = 0;
     bool foundNextSensor = false;
-    auto forward = &startNode;
-    bool reservedAll = true;
     bool exitNode = false;
     while (!(foundNextSensor && forwardDistance > trModel.stoppingDistance + SwitchClearance)) {
         if (forward->type == NODE_EXIT) {
@@ -170,7 +176,7 @@ bool Reservations::reserveForTrain(Train train) {
         // should not happen and the routing will find another route.
         if (d > trModel.stoppingDistance && trModel.velocity > 0) {
             Time duration = (d - trModel.stoppingDistance) * VELOCITY_CONSTANT /
-                    trModel.velocity + 1;
+                    trModel.velocity + (trModel.speed*34 - ctl::min(currTime - trModel.stoppedAt, trModel.speed * 34)) + 1;
             // TODO: these two train operations are not atomic
             trainServer_.addDelay(train, duration);
             trainServer_.setTrainSpeed(train, 0);
@@ -179,24 +185,27 @@ bool Reservations::reserveForTrain(Train train) {
     }
 
     // Reverse trains, but only on the forwards reservation.
-    auto reverseInRes = checkForReverseInReservation(train, r, &d);
-    if (!r.isStopping && !r.isReversing && (reverseInRes || exitNode)) {
-        // Ignore the case where there is not sufficient stopping distance for
-        // a reverse. It should not happen and the routing will find another
-        // route.
-        if (exitNode && !reverseInRes) d = totalDistance;
-        if (d > trModel.stoppingDistance && trModel.velocity > 0) {
-            Time duration = (d - trModel.stoppingDistance) * VELOCITY_CONSTANT /
-                    trModel.velocity + (trModel.speed*38 - ctl::min(currTime - trModel.stoppedAt, trModel.speed * 38)) + 1;
-            INFOF(58, "DISTANCE: %d\r\n", d);
-            INFOF(59, "DURATION: %d\r\n", duration);
-            // TODO: these two train operations are not atomic
-            trainServer_.addDelay(train, duration);
-            trainServer_.reverseTrain(train);
-            r.isReversing = true;
+    if (!r.isStopping && !r.isReversing) {
+        auto reverseInRes = checkForReverseInReservation(train, r, &d);
+        if (reverseInRes || exitNode) {
+            // Ignore the case where there is not sufficient stopping distance for
+            // a reverse. It should not happen and the routing will find another
+            // route.
+            if (exitNode && !reverseInRes) d = totalDistance;
+            if (d > trModel.stoppingDistance && trModel.velocity > 0) {
+                Time duration = (d - trModel.stoppingDistance) * VELOCITY_CONSTANT /
+                    trModel.velocity + (trModel.speed*34 - ctl::min(currTime - trModel.stoppedAt, trModel.speed * 34)) + 1;
+                INFOF(58, "DISTANCE: %d\r\n", d);
+                INFOF(59, "DURATION: %d\r\n", duration);
+                // TODO: these two train operations are not atomic
+                trainServer_.addDelay(train, duration);
+                trainServer_.reverseTrain(train);
+                r.isReversing = true;
+            }
         }
     }
-
+    }
+ReserveBackwards:
     // Reserve backwards
     int backwardsDistance = 0;
     auto reverse = startNode.reverse;

@@ -234,6 +234,7 @@ void safetyMain() {
                 ts->stoppedAt = time(clock).asValue();
                 state.trains.get(msg.train).lastKnownNode = reservations.clearReversing(msg.train);
                 reservations.processUpdate(msg.train);
+                reservations.printReservations();
                 break;
             }
         }
