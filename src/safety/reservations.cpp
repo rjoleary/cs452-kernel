@@ -40,7 +40,6 @@ bool Reservations::checkForStopInReservation(Train t,
     Distance d = 0; // TODO: does not take into account offset into the node
     const auto &gasp = safety_.trains.get(t).gasp;
     for (Size i = 0; i < r.length; i++) {
-        if (d > r.totalDistance - SwitchClearance) break;
         d += safety_.nodeEdge(r.reservations[i], t).dist;
         if (gasp.end.nodeIdx == r.reservations[i]) {
             *out = d + gasp.end.offset;
