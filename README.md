@@ -1,4 +1,4 @@
-# CS 452 Train Milestone 1
+# CS 452 Final Project
 
 Name: The Coldwell Kernel
 
@@ -6,7 +6,7 @@ Students: Ryan O'Leary (rj2olear) and Elnar Dakeshov (edakesho)
 
 Student Ids: 20509502 and 20577578
 
-Date: July 18, 2017
+Date: July 27, 2017
 
 
 ## Overview
@@ -85,11 +85,11 @@ Enter instructions at the `%` prompt. The available instructions are:
 - `cal TR SP SEN` - stop train on the next trigger.
 - `com i [BYTE...]` - Send arbitrary bytes over COMi.
 - `help` - Display this help information.
-- `li NUMBER` - Toggle train lights.
 - `q` - Quit and return to RedBoot.
-- `route TR SP SEN` - Route train to sensor at given speed.
+- `route TR SP SEN [OFF]` - Route train to sensor at given speed with optional offset.
 - `rv NUMBER` - Reverse the direction of the train.
-- `sw NUMBER DIR` - Set switch direction ('S' or 'C').
+- `ssd TR SP NUMBER` - Set the stopping distance in mm.
+- `sw NUMBER DIR [TR]` - Set switch direction ('S' or 'C').
 - `task (TID|NAME)` - Return info about a task.
 - `taskall` - Return info about all tasks.
 - `tr NUMBER SPEED` - Set train speed (0 for stop).
@@ -98,26 +98,59 @@ Additionally, the Tab key will stop all trains in case of emergency.
 
 ## Description
 
-### New servers
+### Features
 
-Features:
 - multiple trains without collisions
 - reverse trains during routing
 - free running mode
+- set switch with respect to a train
 
-Hazards: Some of these have meaning in the code, the rest are conceptual.
-- Train Red Zone Hazard: The system has gotten to a state where trains will
-  collide.
-- Train Yellow Zone Hazard: The system has gotten to a state where, if no
-  action is taken, it will enter the red zone imminently. The model layer will
-  perform an action, such as triggering a switch or stopping a train.
-- Switch Red Zone Hazard: A train is over a switch and changing the switch's
-  state may cause the train the derail.
-- Switch Yellow Zone Hazard: A train will soon be over a switch. If a specific
-  direction is desired for the switch, it much be changes imminently before the
-  switch enters the red zone.
+### Layers of Abstraction
 
-Routing Layer
+Each layer is built from multiple classes and/or tasks:
+
+| Layer       | Description |
+| ----------- | ----------- |
+| Application | Routes one or more trains between two graph points; oblivious of sensors |
+| Safety      | Models all trains locations/velocities, performs sensor attribution, performs reservations |
+| Device      | Handles primitive commands (setSpeed, waitSensors, ...) |
+
+For our project, there are three applications:
+
+| Application | Description |
+| ----------- | ----------- |
+| Terminal    | User types in commands such as `tr 24 10` |
+| Calibration | Used as a tool to find a train's stopping distance at various calibrations |
+| Routing     | Routes a train from to the given destination and offset |
+
+Why have multiple layers?
+
+- Software abstraction: New applications can be written without changing the
+  bottom layers.
+- Failure isolation: For example, if the routing algorithm performs a bad route, the
+  safety layer will protect the trains against collision. This allows us to
+  experiment with more sophisticated routing algorithms.
+
+### Application Layer
+
+Terminal:
+
+Calibration:
+
+Routing:
+
+Path finding finds the shortest path between the start and end nodes. For train
+milestone 1, the start and end nodes are always sensors.
+
+Path finding uses Dijkstra's algorithm where the weight is the distance of each
+node. Our implementation of Dijkstra's has a memory usage proportional to the
+number of nodes in the graph.
+
+The graph used is the one supplied on the course website. Occasionally, when a
+sensor or switch is deemed broken, the node's type is modified to relay this
+information. This way, a broken sensor/switch does not incur any additional
+cost. Also, the complexity of the graph is not altered.
+
 - Exposes a function for routing a train from the terminal.
   - First, the routing layer may query the current state of the train. Not only
     is the optional, but it is not required for milestone 2.
@@ -127,7 +160,7 @@ Routing Layer
     every switch, the desired direction for passing through the switch is
     stored. Addtionally, the minimal point (the end switch and offset) is
     stored.
-  - The GASP is passed to the model server.
+  - The GASP is passed to the safety server.
 - After initial routing, there are two reasons for rerouting:
   - Contention: The train has stopped to avoid collision. To resolve this
     issue, the routing layer generates a new GASP from a graph with the
@@ -136,7 +169,8 @@ Routing Layer
     expected path. To resolve this issue, the routing layer generates a new
     GASP from a graph with the offending node removed.
 
-Model Layer
+### Safety Layer
+
 - Exposes a function for getting train state. The state contains:
   - current speed of the train
   - estimated velocity of the train
@@ -146,7 +180,8 @@ Model Layer
 - Models all trains locations/velocities
 - Train state extrapolation
 
-Reservation System (part of the model layer)
+### Reservation System (part of the safety layer)
+
 - Stores reservations: a list of track nodes reserved by each train
   - All trains have reservations regardless of whether they are being routed.
     This is required to support free-running mode.
@@ -174,7 +209,28 @@ Reservation System (part of the model layer)
     to routing server to reroute. The routing server is given the offending
     node.
 
-Solutions:
+### Attribution System (part of the safety layer)
+
+### Hazards
+
+Some of these have meaning in the code, the rest are conceptual.
+
+- Train Red Zone Hazard: The system has gotten to a state where trains will
+  collide.
+- Train Yellow Zone Hazard: The system has gotten to a state where, if no
+  action is taken, it will enter the red zone imminently. The safety layer will
+  perform an action, such as stopping and/or reversing the train.
+- Switch Red Zone Hazard: A train is over a switch and changing the switch's
+  state may cause the train the derail.
+- Switch Yellow Zone Hazard: A train will soon be over a switch. If a specific
+  direction is desired for the switch, it much be changes imminently before the
+  switch enters the red zone.
+
+### Solutions
+
+This section outlines several challenges and how the provided system solves
+them:
+
 - One train following another: The leader behaves normally. The follower is
   controlled via negative feedback to stay at the cusp of the reserved zone.
   That is, when a train receives a sensor notification and the offending
@@ -200,48 +256,15 @@ Solutions:
   - Creates a path from start to end
   - Tell reservation server to change train's speed
 
-Sensor attribution: Whenever the model gets sensor notified, the following
-steps are taken:
+Sensor attribution: Whenever the safety layer gets sensor notified, the
+following steps are taken:
+
 1. Extrapolate the position of all trains based on time (position & velocity)
 2. Figure out which train caused the sensor (the sensor should be on a train's
    reservation)
 3. Update that train's position to be exactly over the switch. Also, update the
    velocity of the train to be more exact.
 4. Inform the reservation class to update reservations.
-
-### Layers of Abstraction
-
-Each layer is built from multiple classes and/or tasks:
-
-| Layer       | Description |
-| ----------- | ----------- |
-| Routing     | Routes one or more trains between two graph points; oblivious of sensors |
-| Model       | Models all trains locations/velocities, performs sensor attribution, performs reservations |
-| Device      | Handles primitive commands (setSpeed, waitSensors, ...) |
-
-Why?
-
-- Software abstraction: Most of the model layer will likely stay the same
-  regardless of which project we choose. However, the routing layer may change
-  from performing path finding to something else.
-- Failure isolation: For example, if the routing algorithm performs a bad route, the
-  model layer will protect the trains against collision. This allows us to
-  experiment with more sophisticated routing algorithms.
-
-
-### Path finding
-
-Path finding finds the shortest path between the start and end nodes. For train
-milestone 1, the start and end nodes are always sensors.
-
-Path finding uses Dijkstra's algorithm where the weight is the distance of each
-node. Our implementation of Dijkstra's has a memory usage proportional to the
-number of nodes in the graph.
-
-The graph used is the one supplied on the course website. Occasionally, when a
-sensor or switch is deemed broken, the node's type is modified to relay this
-information. This way, a broken sensor/switch does not incur any additional
-cost. Also, the complexity of the graph is not altered.
 
 ### Rerouting and Broken Tracks
 
@@ -263,7 +286,9 @@ to be hit. This way, the manager can know at any point in time where a train is
 velocity of the last sensor segment covered, which is used for stopping and
 other operations. The track manager also maintains the routing information.
 
-### Calibration
+### Calibrating Velocity
+
+### Calibrating Stopping Distance
 
 Calibration is used to determine the stopping distance for each train at a
 given speed. The `cal` runs a train at the given speed and sends the stop
