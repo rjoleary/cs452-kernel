@@ -22,9 +22,12 @@ void Reservations::clearStopping(Train tr) {
 }
 
 NodeIdx Reservations::clearReversing(Train tr) {
-    trainReservations_.get(tr).isReversing = false;
-    INFOF(60, "Train %d reversed and node set to %d\n", tr, trainReservations_.get(tr).reverseNode);
-    return trainReservations_.get(tr).reverseNode;
+    auto &res = trainReservations_.get(tr);
+    res.isReversing = false;
+    auto nodeIdx = res.reverseNode != INVALID_NODE ? res.reverseNode : Track().nodes[safety_.trains.get(tr).lastKnownNode].reverse - Track().nodes;
+    res.reverseNode = INVALID_NODE;
+    INFOF(60, "Train %d reversed and node set to %d\n", tr, nodeIdx);
+    return nodeIdx;
 }
 
 void Reservations::flipSwitchesInReservation(Train t, const TrainReservation &r) {
@@ -214,23 +217,30 @@ bool Reservations::reserveForTrain(Train train) {
 }
 
 void Reservations::processUpdate(Train train) {
+    static const auto cs = whoIs(ctl::names::ClockServer).asValue();
     TrainServer ts;
     Waitlist newList;
     const auto &trModel = safety_.trains.get(train);
+    auto currTime = time(cs).asValue();
     if (!reserveForTrain(train)) {
-        newList.trains[newList.length++] = train;
+        newList.items[newList.length++] = {train, currTime};
         ts.setTrainSpeed(train, 0);
         bwprintf(COM2, "Train %d waitlisted\r\n", train);
     }
     for (Size i = 0; i < waitlist.length; ++i) {
-        if (!reserveForTrain(waitlist.trains[i])) {
-            newList.trains[newList.length++] = waitlist.trains[i];
-            bwprintf(COM2, "Train %d rewaitlisted\r\n", waitlist.trains[i]);
+        if (!reserveForTrain(waitlist.items[i].train)) {
+            if (waitlist.items[i].waitStart + 100 < currTime && safety_.trains.get(waitlist.items[i].train).gasp.end.nodeIdx != INVALID_NODE) {
+                ts.reverseTrain(waitlist.items[i].train);
+            }
+            else {
+                newList.items[newList.length++] = waitlist.items[i];
+                bwprintf(COM2, "Train %d rewaitlisted\r\n", waitlist.items[i].train);
+            }
         }
         else {
-            ts.setTrainSpeed(waitlist.trains[i], trModel.speed);
+            ts.setTrainSpeed(waitlist.items[i].train, trModel.speed);
             bwprintf(COM2, "Train %d unwaitlisted\r\n",
-                    waitlist.trains[i]);
+                    waitlist.items[i].train);
         }
     }
     waitlist = newList;

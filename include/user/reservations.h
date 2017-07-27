@@ -15,12 +15,15 @@ class Reservations {
         bool isReversing = false;
         bool isStopping = false;
         Distance totalDistance = 0;
-        NodeIdx reverseNode;
+        NodeIdx reverseNode = INVALID_NODE;
     };
 
     struct Waitlist {
         Size length = 0;
-        Train trains[15];
+        struct {
+            Train train;
+            Time waitStart;
+        } items[15];
     } waitlist;
 
     const SafetyState &safety_;
