@@ -25,7 +25,7 @@ void printHelp() {
         "   route TR SP SEN  - Route train to sensor at given speed.\r\n"
         "   rv NUMBER        - Reverse the direction of the train.\r\n"
         "   ssd TR SP NUMBER - Set the stopping distance in mm.\r\n"
-        "   sw NUMBER DIR    - Set switch direction ('S' or 'C').\r\n"
+        "   sw SP DIR [TR]   - Set switch direction ('S' or 'C').\r\n"
         "   task (TID|NAME)  - Return info about a task.\r\n"
         "   taskall          - Return info about all tasks.\r\n"
         "   tr NUMBER SPEED  - Set train speed (0 for stop).\r\n"
@@ -276,10 +276,19 @@ int parseCmd(const char *cmd) {
             tokenErr("invalid direction (must be 'C' or 'S')", dir.start - cmdStart + 2, dir.len);
             return 0;
         }
-        if (terminateCmd(cmdStart, cmd)) {
-            return 0;
+        DecimalToken train = nextDec(&cmd);
+        if (train.err) {
+            if (terminateCmd(cmdStart, cmd)) {
+                return 0;
+            }
+            cmdSetSwitch(number.val, SwitchState(dir.start[0]));
+        } else {
+            if (number.val < 1 || 80 < number.val) {
+                tokenErr("train number must be between 1 and 80 inclusive", number.token.start - cmdStart + 2, number.token.len);
+                return 0;
+            }
+            safety.setSwitch(Train(train.val), number.val, SwitchState(dir.start[0]));
         }
-        cmdSetSwitch(number.val, SwitchState(dir.start[0]));
     } else if (isIdent(t, "task")) {
         ctl::Tid tid;
         DecimalToken number = nextDec(&cmd);

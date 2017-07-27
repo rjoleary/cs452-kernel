@@ -59,6 +59,13 @@ public:
     //   ctl::Error::NoRes: more than MAX_CONCURRENT_TRAINS
     ctl::Error setGasp(Train train, const Gasp &gasp);
 
+    // Set switch state with respect to a train.
+    // Returns:
+    //   ctl::Error::Ok: success
+    //   ctl::Error::BadArg: multiple trains cannot be unattributed at once
+    //   ctl::Error::NoRes: more than MAX_CONCURRENT_TRAINS
+    ctl::Error setSwitch(Train, Switch, SwitchState);
+
     // Start calibration for a train.
     // TODO: this should be done in application layer
     // Returns:

@@ -17,6 +17,7 @@ enum class MsgType {
     ReverseTrain,
     GetTrainState,
     SetGasp,
+    SetSwitch,
     SensorNotify,
     SwitchNotify,
     Calibrate,
@@ -167,6 +168,18 @@ void safetyMain() {
                 }
                 reservations.clearStopping(msg.train);
                 ts->gasp = msg.gasp;
+                ~reply(tid, ErrorReply{});
+                break;
+            }
+
+            case MsgType::SetSwitch: {
+                SafetyServer::TrainState *ts;
+                auto err = state.getTrainStateOrUnattributed(msg.train, &ts);
+                if (err != ctl::Error::Ok) {
+                    ~reply(tid, ErrorReply{err});
+                    break;
+                }
+                ts->gasp.gradient[msg.sw] = msg.state;
                 ~reply(tid, ErrorReply{});
                 break;
             }
@@ -375,6 +388,17 @@ ctl::Error SafetyServer::setGasp(Train train, const Gasp &gasp) {
     msg.type = MsgType::SetGasp;
     msg.train = train;
     msg.gasp = gasp;
+    ErrorReply reply;
+    ~send(tid, msg, reply);
+    return reply.error;
+}
+
+ctl::Error SafetyServer::setSwitch(Train train, Switch swi, SwitchState state) {
+    Message msg;
+    msg.type = MsgType::SetSwitch;
+    msg.train = train;
+    msg.sw = swi;
+    msg.state = state;
     ErrorReply reply;
     ~send(tid, msg, reply);
     return reply.error;
