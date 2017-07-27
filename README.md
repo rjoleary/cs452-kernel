@@ -111,7 +111,7 @@ Each layer is built from multiple classes and/or tasks:
 
 | Layer       | Description |
 | ----------- | ----------- |
-| Application | Routes one or more trains between two graph points; oblivious of sensors |
+| Application | There are 3 applications outlined below |
 | Safety      | Models all trains locations/velocities, performs sensor attribution, performs reservations |
 | Device      | Handles primitive commands (setSpeed, waitSensors, ...) |
 
@@ -131,26 +131,21 @@ Why have multiple layers?
   safety layer will protect the trains against collision. This allows us to
   experiment with more sophisticated routing algorithms.
 
-### Application Layer
+### Application Layers
 
 Terminal:
 
-Calibration:
+-
 
 Routing:
 
-Path finding finds the shortest path between the start and end nodes. For train
-milestone 1, the start and end nodes are always sensors.
-
-Path finding uses Dijkstra's algorithm where the weight is the distance of each
-node. Our implementation of Dijkstra's has a memory usage proportional to the
-number of nodes in the graph.
-
-The graph used is the one supplied on the course website. Occasionally, when a
-sensor or switch is deemed broken, the node's type is modified to relay this
-information. This way, a broken sensor/switch does not incur any additional
-cost. Also, the complexity of the graph is not altered.
-
+- Path finding finds the shortest path between every node and the end node.
+  This is accomplished using Dijkstra's algorithm where the weight is the
+  length of each track piece.
+- The graph used is the one supplied on the course website. Occasionally, when
+  a sensor or switch is deemed broken, the node's type is modified to relay
+  this information. This way, a broken sensor/switch does not incur any
+  additional cost. Also, the complexity of the graph is not altered.
 - Exposes a function for routing a train from the terminal.
   - First, the routing layer may query the current state of the train. Not only
     is the optional, but it is not required for milestone 2.
@@ -169,13 +164,34 @@ cost. Also, the complexity of the graph is not altered.
     expected path. To resolve this issue, the routing layer generates a new
     GASP from a graph with the offending node removed.
 
+Calibration:
+
+- Calibration is used to find the stopping distance of trains.
+- During calibration, a specific switch is selected. When the train drives over
+  the switch, a stop signal is sent to the train. The stopping distance is
+  measured by hand from the switch's position to the front of the train.
+- Since calibration is in the application layer, a train which is calibration
+  will not collide with other trains.
+
+
 ### Safety Layer
 
-- Exposes a function for getting train state. The state contains:
+- The safety layer exposes the following functions and ensures they are used in
+  a safe manner which will not cause collision:
+  - `setTrainSpeed(Train, Speed)`:
+  - `reverseTrain(Train)`:
+  - `setGasp(Train, Gasp)`: Set all switches with respect to the given train.
+  - `setSwitch(Train, Switch, SwitchState)`: Set switch state with respect to
+    the given train.
+- Additionally, a `getTrainState` function is exposed for getting train state.
+  The state contains:
+  - last time a sensor was attributed to the train
   - current speed of the train
   - estimated velocity of the train
   - estimated stopping distance of the train
-  - estimated location of the train
+  - estimated position of the train (graph node and offset)
+  - last known exact position of the train (graph node)
+  - switch states with respect to the train (GASP)
 - Sensor attribution
 - Models all trains locations/velocities
 - Train state extrapolation
