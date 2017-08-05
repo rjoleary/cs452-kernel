@@ -1,10 +1,12 @@
+This repository contains the realtime kernel, operating system and application
+used for controlling model trains. It was created over a span of 3 months for
+the course CS452. Details about the kernel are in `README_kernel.md`.
+
 # CS 452 Final Project
 
 Name: The Coldwell Kernel
 
-Students: Ryan O'Leary (rj2olear) and Elnar Dakeshov (edakesho)
-
-Student Ids: 20509502 and 20577578
+Students: Ryan O'Leary and Elnar Dakeshov
 
 Date: July 27, 2017
 
@@ -35,11 +37,6 @@ switches.
              _\/__\/_
              _/\  /\_       For stickers and glory!
              /\    /\
-
-
-## Download Path
-
-    git clone https://git.uwaterloo.ca/coldwell/kernel.git
 
 
 ## Checksums

@@ -2,9 +2,7 @@
 
 Name: The Coldwell Kernel
 
-Students: Ryan O'Leary (rj2olear) and Elnar Dakeshov (edakesho)
-
-Student Ids: 20509502 and 20577578
+Students: Ryan O'Leary and Elnar Dakeshov
 
 Date: June 14, 2017
 
@@ -34,11 +32,6 @@ for controlling the trains. The kernel is stable and is tested to run for over
              _\/__\/_
              _/\  /\_       For stickers and glory!
              /\    /\
-
-
-## Download Path
-
-    git clone https://git.uwaterloo.ca/coldwell/kernel.git
 
 
 ## Checksums
@@ -602,64 +595,3 @@ tests.
 - There is a relatively long pause before entering and exiting the prompt. This
   ensures the switches have powered off, but can probably be more streamlined.
 - Corrupt data from the UART is treated like regular data.
-
-## List of files
-
-    .gitignore
-    Makefile
-    README.md
-    bench.txt
-    include/def.h
-    include/interrupt.h
-    include/panic.h
-    include/profiler.h
-    include/scheduler.h
-    include/syscall.h
-    include/task.h
-    include/user/bwio.h
-    include/user/circularbuffer.h
-    include/user/clock.h
-    include/user/def.h
-    include/user/err.h
-    include/user/event.h
-    include/user/heap.h
-    include/user/io.h
-    include/user/itc.h
-    include/user/ns.h
-    include/user/parse.h
-    include/user/sensor.h
-    include/user/std.h
-    include/user/switch.h
-    include/user/syscall.h
-    include/user/task.h
-    include/user/train.h
-    include/user/ts7200.h
-    include/user/types.h
-    logo.txt
-    makeall.sh
-    orex.ld
-    src/clock/main.cpp
-    src/first/main.cpp
-    src/first/parse.cpp
-    src/first/sensor.cpp
-    src/first/switch.cpp
-    src/first/terminal.cpp
-    src/first/train.cpp
-    src/idle/main.cpp
-    src/io/main.cpp
-    src/kernel/buildstr.cpp
-    src/kernel/interrupt.cpp
-    src/kernel/main.cpp
-    src/kernel/panic.cpp
-    src/kernel/profiler.cpp
-    src/kernel/profiler_irq.s
-    src/kernel/scheduler.cpp
-    src/kernel/syscall.s
-    src/kernel/task.cpp
-    src/ns/main.cpp
-    src/user/bwio.cpp
-    src/user/event.cpp
-    src/user/fast_memcpy.s
-    src/user/itc.cpp
-    src/user/std.cpp
-    src/user/task.cpp
